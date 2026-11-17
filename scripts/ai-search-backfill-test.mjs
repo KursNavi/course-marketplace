@@ -28,7 +28,7 @@ import { createClient } from '@supabase/supabase-js';
 import { pathToFileURL } from 'node:url';
 import { checkTestTarget, EXPECTED_TEST_REF } from './ai-search-db-tests.mjs';
 import { drainOutbox } from '../src/lib/aiSearch/worker.js';
-import { runReconciliation } from '../src/lib/aiSearch/reconciliation.js';
+import { runReconciliation, verifyChunkIntegrity } from '../src/lib/aiSearch/reconciliation.js';
 
 async function main() {
   const guard = checkTestTarget(process.env);
@@ -106,6 +106,9 @@ async function main() {
   const orphanedDocs = [...docIds].filter((id) => !publishedIds.has(id));
   const pendingJobs = await count('ai_search_jobs', (q) => q.eq('status', 'pending'));
   const failedJobs = await count('ai_search_jobs', (q) => q.eq('status', 'failed'));
+  // VOLLSTAENDIGER Abschnittsvergleich je indexiertem Kurs: Position und
+  // Inhalt jedes erwarteten Chunks gegen den gespeicherten Bestand.
+  const chunkIntegrity = await verifyChunkIntegrity(service, [...docIds]);
 
   console.log('\n--- Nachweise (Pruefpunkt 5) ---');
   console.log(`Veroeffentlichte Kurse:            ${publishedCount}`);
@@ -113,13 +116,18 @@ async function main() {
   console.log(`Fehlend im Index:                  ${missingDocs.length}${missingDocs.length ? ` (${missingDocs.slice(0, 10).join(', ')}…)` : ''}`);
   console.log(`Verwaist im Index (zurueckgezogen): ${orphanedDocs.length}${orphanedDocs.length ? ` (${orphanedDocs.slice(0, 10).join(', ')}…)` : ''}`);
   console.log(`Dokumente ohne Chunks:             ${docsWithoutChunks.length}${docsWithoutChunks.length ? ` (${docsWithoutChunks.slice(0, 10).join(', ')}…)` : ''}`);
+  console.log(`Abschnittsvergleich (Pos.+Inhalt): ${chunkIntegrity.checked} geprueft, ${chunkIntegrity.failed} abweichend`);
+  if (chunkIntegrity.failed > 0) {
+    console.log(`  Erste Befunde: ${JSON.stringify(chunkIntegrity.details)}`);
+  }
   console.log(`Offene Jobs (pending):             ${pendingJobs}`);
   console.log(`Fehlgeschlagene Jobs (failed):     ${failedJobs}`);
   console.log(`Alarme der letzten Reconciliation: ${JSON.stringify(reconciliation?.alarms ?? [])}`);
   console.log('\nHinweis: Dieser Nachweis gilt fuer den TESTbestand. Der Abgleich mit dem');
   console.log('aktuellen OEFFENTLICHEN Katalog (E1) ist ein separates Arbeitspaket.');
 
-  const gaps = missingDocs.length + orphanedDocs.length + docsWithoutChunks.length + failedJobs;
+  const gaps = missingDocs.length + orphanedDocs.length + docsWithoutChunks.length
+    + chunkIntegrity.failed + failedJobs;
   process.exit(gaps === 0 && pendingJobs === 0 ? 0 : 1);
 }
 

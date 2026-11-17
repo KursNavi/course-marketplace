@@ -44,7 +44,9 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { processOutboxBatch } from '../src/lib/aiSearch/worker.js';
+import { processOutboxBatch, loadCourseSource } from '../src/lib/aiSearch/worker.js';
+import { verifyCourseChunks } from '../src/lib/aiSearch/reconciliation.js';
+import { buildProjection } from '../src/lib/aiSearch/projection.js';
 
 export const PRODUCTION_REF = 'nplxmpfasgpumpiddjfl';
 export const EXPECTED_TEST_REF = 'omoapbvfligjfznzivyu'; // "TESTumgebung KursNavi"
@@ -336,7 +338,7 @@ async function main() {
       }
 
       // --- 9. Atomare Uebernahme am eigenen echten Kurs ----------------------
-      console.log('9. Atomare Übernahme: eigener Testkurs, Nebenläufigkeit, Rücknahme, Reparatur');
+      console.log('9. Atomare Übernahme: eigener Testkurs, Vollständigkeit, Nebenläufigkeit, Rücknahme, Reparatur');
       const marker = `AI-DB-TEST ${randomUUID()}`;
       const { data: ownCourse, error: courseInsertError } = await service
         .from('courses')
@@ -344,7 +346,10 @@ async function main() {
           title: marker,
           status: 'published',
           booking_type: 'lead',
+          // Zwei Textfelder → mehrere Abschnitte (noetig fuer den
+          // Regressionsfall "einer von mehreren Abschnitten fehlt"):
           description: 'Eigener Testkurs der KI-Such-DB-Tests. Wird im Cleanup gelöscht.',
+          objectives: ['Zielbeschreibung des Testkurses mit eigenem Abschnitt.'],
           canton: 'Zürich',
         })
         .select('id')
@@ -368,6 +373,11 @@ async function main() {
             .select('*', { count: 'exact', head: true }).eq('course_id', ownCourse.id);
           return count ?? 0;
         };
+        const currentVersion = async () => {
+          const { data } = await service.from('ai_search_index_state')
+            .select('last_source_version').eq('course_id', ownCourse.id).maybeSingle();
+          return Number(data?.last_source_version ?? 0);
+        };
 
         // 9a. Trigger → Worker → Index (Ende-zu-Ende): Das Anlegen des Kurses
         // hat per Outbox-Trigger bereits einen echten Job eingereiht.
@@ -379,12 +389,83 @@ async function main() {
           .select('title, content_hash, source_version')
           .eq('course_id', ownCourse.id).maybeSingle();
         check('Dokument vorhanden und trägt den Kurstitel', docRow?.title === marker, JSON.stringify(docRow));
-        check('Chunks vollständig vorhanden', (await chunkCountOf()) > 0, 'keine Chunks');
 
-        const baseVersion = Number(docRow?.source_version ?? 0);
+        // 9a-v. VOLLSTAENDIGER Abschnittsvergleich (Position + Inhalt je
+        // Chunk gegen die frisch gebaute Projektion) — "mindestens ein
+        // Chunk" genuegt ausdruecklich nicht.
+        const verifyClean = await verifyCourseChunks(service, ownCourse.id);
+        check('Abschnittsvergleich: alle erwarteten Chunks exakt gespeichert (>= 2 Abschnitte)',
+          verifyClean.ok && verifyClean.expectedCount >= 2,
+          JSON.stringify(verifyClean));
 
-        // 9b. Zwei gleichzeitig arbeitende Übernahmen mit unterschiedlicher
-        // Version (echte parallele HTTP-Sitzungen): am Ende gewinnt die höhere.
+        // 9a-r. REGRESSION: einer von mehreren Abschnitten fehlt → der
+        // Vergleich benennt ihn; identischer Retry repariert den Bestand.
+        {
+          const { error: dropError } = await service.from('ai_search_chunks')
+            .delete().eq('course_id', ownCourse.id).eq('section', 'objectives');
+          const verifyBroken = await verifyCourseChunks(service, ownCourse.id);
+          check('fehlender Abschnitt wird vom Vergleich erkannt und benannt',
+            !dropError && !verifyBroken.ok && verifyBroken.missing.length >= 1
+              && verifyBroken.missing.every((key) => key.startsWith('objectives#')),
+            JSON.stringify({ dropError: dropError?.message, verifyBroken }));
+
+          const repairVersion = await currentVersion();
+          const source = await loadCourseSource(service, ownCourse.id);
+          const projection = buildProjection(source.course,
+            { profile: source.profile, categoryPaths: source.categoryPaths },
+            { sourceVersion: repairVersion });
+          const repair = await service.rpc('ai_search_apply_upsert', {
+            p_course_id: ownCourse.id,
+            p_source_version: repairVersion,
+            p_document: projection.document,
+            p_chunks: projection.chunks.map((c) => ({
+              section: c.section, chunk_index: c.chunk_index,
+              char_start: c.char_start, char_end: c.char_end, text: c.text,
+            })),
+          });
+          const verifyRepaired = await verifyCourseChunks(service, ownCourse.id);
+          check('identischer Retry repariert den unvollständigen Bestand vollständig',
+            repair.data === 'repaired' && verifyRepaired.ok,
+            JSON.stringify({ repair: repair.data ?? repair.error?.message, verifyRepaired }));
+        }
+
+        // 9b-w. ZWEI VOLLSTAENDIGE WORKERLAEUFE gleichzeitig (nicht nur
+        // RPCs): beide holen dieselben offenen Jobs, koaleszieren und
+        // uebernehmen — der Kurs-Lock serialisiert, nichts geht verloren.
+        {
+          const { error: twoJobsError } = await service.from('ai_search_jobs').insert([
+            { course_id: ownCourse.id, reason: 'reconciliation', priority: 5 },
+            { course_id: ownCourse.id, reason: 'course_upsert', priority: 5 },
+          ]);
+          const { data: jobVersions } = await service.from('ai_search_jobs')
+            .select('source_version').eq('course_id', ownCourse.id).eq('status', 'pending');
+          const maxJobVersion = Math.max(...(jobVersions ?? []).map((row) => Number(row.source_version)));
+          const [workerA, workerB] = await Promise.all([
+            processOutboxBatch(service, { onlyCourseIds: [ownCourse.id] }),
+            processOutboxBatch(service, { onlyCourseIds: [ownCourse.id] }),
+          ]);
+          const { data: openAfter } = await service.from('ai_search_jobs')
+            .select('id').eq('course_id', ownCourse.id).eq('status', 'pending');
+          const verifyAfterWorkers = await verifyCourseChunks(service, ownCourse.id);
+          check('zwei gleichzeitige Workerläufe: keine Fehler, alle Jobs abgeschlossen, Stand = höchste Jobversion, Bestand vollständig',
+            !twoJobsError && workerA.failures === 0 && workerB.failures === 0
+              && (openAfter ?? []).length === 0
+              && (await currentVersion()) === maxJobVersion
+              && verifyAfterWorkers.ok,
+            JSON.stringify({
+              twoJobsError: twoJobsError?.message,
+              workerA: { courses: workerA.courses, failures: workerA.failures, errors: workerA.errors },
+              workerB: { courses: workerB.courses, failures: workerB.failures, errors: workerB.errors },
+              openAfter: (openAfter ?? []).length,
+              maxJobVersion,
+            }));
+        }
+
+        const baseVersion = await currentVersion();
+
+        // 9b. Zwei gleichzeitige Uebernahme-RPCs mit unterschiedlicher
+        // Version (echte parallele HTTP-Sitzungen; derselbe Mechanismus,
+        // den die Workerlaeufe nutzen): am Ende gewinnt die hoehere.
         const vHigh = baseVersion + 10;
         const vLow = baseVersion + 5;
         const [highRes, lowRes] = await Promise.all([

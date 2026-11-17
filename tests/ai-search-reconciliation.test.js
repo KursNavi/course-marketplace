@@ -8,6 +8,7 @@ import {
   diffCoverage,
   pickSample,
   runReconciliation,
+  verifyCourseChunks,
 } from '../src/lib/aiSearch/reconciliation.js';
 import { buildProjection } from '../src/lib/aiSearch/projection.js';
 import { createFakeSupabase, filterValue, findCall } from './helpers/fakeSupabase.js';
@@ -80,6 +81,70 @@ function makeScenario({ pendingForMissing = false, sampleSize = 0, docHash = nul
     return { data: null, error: null };
   };
 }
+
+describe('verifyCourseChunks – vollstaendiger Abschnittsvergleich', () => {
+  const course = publishedCourse(7);
+  course.description = 'Erste Beschreibung mit genug Text für einen Abschnitt.';
+  course.objectives = 'Zweites Ziel mit eigenem Abschnitt.';
+  const expectedChunks = buildProjection(course, { profile: null, categoryPaths: null }, { sourceVersion: 0 }).chunks;
+
+  const respondWith = (storedChunks) => (call) => {
+    const key = `${call.table}:${call.op}`;
+    if (key === 'courses:select') return { data: course, error: null };
+    if (key === 'v_course_full_categories:select') return { data: [], error: null };
+    if (key === 'ai_search_chunks:select') return { data: storedChunks, error: null };
+    return { data: null, error: null };
+  };
+
+  it('identischer Bestand (Position und Inhalt) ist ok', async () => {
+    const { client } = createFakeSupabase(respondWith(expectedChunks));
+    const result = await verifyCourseChunks(client, 7);
+    expect(result.expectedCount).toBeGreaterThanOrEqual(2);
+    expect(result).toMatchObject({ ok: true, missing: [], extra: [], mismatched: [] });
+  });
+
+  it('einer von mehreren Abschnitten fehlt → wird benannt (Regressionsfall)', async () => {
+    const { client } = createFakeSupabase(respondWith(expectedChunks.slice(0, -1)));
+    const result = await verifyCourseChunks(client, 7);
+    expect(result.ok).toBe(false);
+    expect(result.missing).toHaveLength(1);
+    const last = expectedChunks[expectedChunks.length - 1];
+    expect(result.missing[0]).toBe(`${last.section}#${last.chunk_index}`);
+  });
+
+  it('abweichender Text oder Position wird als mismatched gemeldet', async () => {
+    const tampered = expectedChunks.map((chunk, index) => (
+      index === 0 ? { ...chunk, text: 'manipuliert' } : chunk
+    ));
+    const { client } = createFakeSupabase(respondWith(tampered));
+    const result = await verifyCourseChunks(client, 7);
+    expect(result.ok).toBe(false);
+    expect(result.mismatched).toHaveLength(1);
+  });
+
+  it('ueberzaehlige gespeicherte Abschnitte werden als extra gemeldet', async () => {
+    const extraRow = { section: 'description', chunk_index: 99, char_start: 0, char_end: 1, text: 'alt' };
+    const { client } = createFakeSupabase(respondWith([...expectedChunks, extraRow]));
+    const result = await verifyCourseChunks(client, 7);
+    expect(result.ok).toBe(false);
+    expect(result.extra).toEqual(['description#99']);
+  });
+
+  it('nicht mehr oeffentlicher Kurs: jeder verbliebene Abschnitt ist extra', async () => {
+    const draft = { ...course, status: 'draft' };
+    const { client } = createFakeSupabase((call) => {
+      const key = `${call.table}:${call.op}`;
+      if (key === 'courses:select') return { data: draft, error: null };
+      if (key === 'v_course_full_categories:select') return { data: [], error: null };
+      if (key === 'ai_search_chunks:select') return { data: expectedChunks.slice(0, 1), error: null };
+      return { data: null, error: null };
+    });
+    const result = await verifyCourseChunks(client, 7);
+    expect(result.action).toBe('delete');
+    expect(result.ok).toBe(false);
+    expect(result.extra).toHaveLength(1);
+  });
+});
 
 describe('runReconciliation', () => {
   it('reiht Verwaiste prioritaer und Fehlende normal ein; NULL-Status alarmiert', async () => {

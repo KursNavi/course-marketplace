@@ -36,6 +36,91 @@ export function diffCoverage(publishedIds, documentIds) {
   };
 }
 
+/**
+ * Vollstaendiger Chunk-Abgleich EINES Kurses: erwartete Abschnitte aus der
+ * frisch gebauten Projektion gegen die gespeicherten Zeilen — je Abschnitt
+ * Position (char_start/char_end) UND Inhalt (Text). "Mindestens ein Chunk
+ * vorhanden" genuegt ausdruecklich nicht (Pruefbefund zur Erstbefuellung).
+ */
+export async function verifyCourseChunks(client, courseId) {
+  const source = await loadCourseSource(client, courseId);
+  const projection = buildProjection(
+    source.course,
+    { profile: source.profile, categoryPaths: source.categoryPaths },
+    { sourceVersion: 0 },
+  );
+  const expected = projection.action === 'upsert' ? projection.chunks : [];
+
+  const { data: storedRows, error } = await client
+    .from('ai_search_chunks')
+    .select('section, chunk_index, char_start, char_end, text')
+    .eq('course_id', courseId)
+    .order('section', { ascending: true })
+    .order('chunk_index', { ascending: true });
+  if (error) throw new Error(`Chunks lesen ${courseId}: ${error.message}`);
+  const stored = storedRows ?? [];
+
+  const keyOf = (chunk) => `${chunk.section}#${chunk.chunk_index}`;
+  const expectedMap = new Map(expected.map((chunk) => [keyOf(chunk), chunk]));
+  const storedMap = new Map(stored.map((chunk) => [keyOf(chunk), chunk]));
+
+  const missing = [...expectedMap.keys()].filter((key) => !storedMap.has(key));
+  const extra = [...storedMap.keys()].filter((key) => !expectedMap.has(key));
+  const mismatched = [...expectedMap.keys()].filter((key) => {
+    const want = expectedMap.get(key);
+    const have = storedMap.get(key);
+    if (!have) return false;
+    return have.char_start !== want.char_start
+      || have.char_end !== want.char_end
+      || have.text !== want.text;
+  });
+
+  return {
+    courseId,
+    action: projection.action,
+    expectedCount: expected.length,
+    storedCount: stored.length,
+    missing,
+    extra,
+    mismatched,
+    ok: missing.length === 0 && extra.length === 0 && mismatched.length === 0,
+  };
+}
+
+/**
+ * Chunk-Abgleich ueber viele Kurse (fuer den Befuellungsnachweis), mit
+ * begrenzter Parallelitaet. Liefert Anzahl geprueft/fehlerhaft plus die
+ * ersten Detailbefunde.
+ */
+export async function verifyChunkIntegrity(client, courseIds, options = {}) {
+  const concurrency = options.concurrency ?? 10;
+  const maxDetails = options.maxDetails ?? 10;
+  const ids = [...(courseIds ?? [])];
+  const failures = [];
+  let checked = 0;
+  for (let offset = 0; offset < ids.length; offset += concurrency) {
+    const batch = ids.slice(offset, offset + concurrency);
+    const results = await Promise.all(batch.map((id) => verifyCourseChunks(client, id)));
+    for (const result of results) {
+      checked += 1;
+      if (!result.ok) failures.push(result);
+    }
+  }
+  return {
+    checked,
+    failed: failures.length,
+    details: failures.slice(0, maxDetails).map((f) => ({
+      courseId: f.courseId,
+      action: f.action,
+      expectedCount: f.expectedCount,
+      storedCount: f.storedCount,
+      missing: f.missing.slice(0, 5),
+      extra: f.extra.slice(0, 5),
+      mismatched: f.mismatched.slice(0, 5),
+    })),
+  };
+}
+
 /** Deterministische Stichprobenwahl bei injizierbarem Zufall (Tests). */
 export function pickSample(ids, sampleSize, random = Math.random) {
   const pool = [...(ids ?? [])];
