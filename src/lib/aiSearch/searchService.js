@@ -159,16 +159,41 @@ async function lexicalDocumentChannel(client, tsQuery) {
   return (data ?? []).map((row) => ({ courseId: row.course_id }));
 }
 
-async function indexCoverage(client) {
-  const [published, documents] = await Promise.all([
-    client.from('courses').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-    client.from('ai_search_documents').select('course_id', { count: 'exact', head: true }),
+async function fetchAllIds(client, table, column, applyFilter) {
+  const ids = new Set();
+  for (let offset = 0; ; offset += 1000) {
+    let query = client.from(table).select(column).order(column).range(offset, offset + 999);
+    if (applyFilter) query = applyFilter(query);
+    const { data, error } = await query;
+    if (error) throw new Error(`Abdeckung (${table}): ${error.message}`);
+    for (const row of data ?? []) ids.add(String(row[column]));
+    if ((data ?? []).length < 1000) break;
+  }
+  return ids;
+}
+
+/**
+ * Abdeckungsnachweis VOR jeder Suche: Abgleich auf Kurs-ID-Ebene (nicht nur
+ * Anzahl): Jeder aktuell veröffentlichte Kurs muss ein Indexdokument haben.
+ * Zusätzlich wird ausgewiesen, wie viele Änderungen noch nicht eingearbeitet
+ * sind (offene Aufträge), damit keine Aktualitätsbehauptung entsteht.
+ */
+export async function indexCoverage(client) {
+  const [publishedIds, documentIds, pending] = await Promise.all([
+    fetchAllIds(client, 'courses', 'id', (q) => q.eq('status', 'published')),
+    fetchAllIds(client, 'ai_search_documents', 'course_id'),
+    client.from('ai_search_jobs').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
   ]);
-  if (published.error) throw new Error(`Abdeckung (Kurse): ${published.error.message}`);
-  if (documents.error) throw new Error(`Abdeckung (Index): ${documents.error.message}`);
-  const publishedCount = published.count ?? 0;
-  const documentCount = documents.count ?? 0;
-  return { publishedCount, documentCount, complete: publishedCount > 0 && documentCount >= publishedCount };
+  if (pending.error) throw new Error(`Abdeckung (Aufträge): ${pending.error.message}`);
+  const missingCount = [...publishedIds].filter((id) => !documentIds.has(id)).length;
+  return {
+    publishedCount: publishedIds.size,
+    documentCount: documentIds.size,
+    missingCount,
+    pendingUpdates: pending.count ?? 0,
+    complete: publishedIds.size > 0 && missingCount === 0,
+    method: 'id_anti_join',
+  };
 }
 
 async function loadCandidates(client, courseIds) {

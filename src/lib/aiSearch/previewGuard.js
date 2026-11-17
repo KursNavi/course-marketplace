@@ -45,7 +45,9 @@ export function checkAiSearchEnvironment(env) {
   }
   // Das Browser-Ziel bestimmt, wo sich Nutzer anmelden; es muss dasselbe
   // Testprojekt sein, sonst passen Sitzung und Daten nicht zusammen.
-  if (env?.VITE_SUPABASE_URL !== undefined && supabaseRefOf(env.VITE_SUPABASE_URL) !== AI_SEARCH_TEST_REF) {
+  // Pflicht (nicht nur falls gesetzt): fehlt die Angabe, ist die Zuordnung
+  // nicht belegt und wird abgelehnt.
+  if (supabaseRefOf(env?.VITE_SUPABASE_URL) !== AI_SEARCH_TEST_REF) {
     return { ok: false, code: 'wrong_environment', reason: 'Browserziel ist nicht die TESTumgebung KursNavi — abgelehnt.' };
   }
   return { ok: true, ref: serverRef };

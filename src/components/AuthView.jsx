@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { trackSignup, trackLogin } from '../lib/analytics';
 import { TERMS_VERSION, PRIVACY_VERSION } from '../lib/legalVersions';
 import { readStored, removeStored } from '../lib/safeStorage';
+import { getSignupEmailRedirect } from '../lib/authRedirect';
 
 const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [isSignUp, setIsSignUp] = useState(false); 
@@ -51,7 +52,8 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 email,
                 password,
                 options: {
-                    emailRedirectTo: 'https://kursnavi.ch',
+                    // Vorschau (Testdatenbank): Bestätigung bleibt auf der Vorschau.
+                    emailRedirectTo: getSignupEmailRedirect(),
                     data: {
                         full_name: fullName,
                         role: role,

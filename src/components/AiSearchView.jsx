@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Sparkles, Search, LayoutGrid, Lock, AlertTriangle, Info, MapPin, Calendar, Tag, ChevronDown, ExternalLink, Loader, FlaskConical } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { AI_SEARCH_TEST_REF, supabaseRefOf } from '../lib/aiSearch/previewGuard';
 import { writeStored, readSession, writeSession, removeSession } from '../lib/safeStorage';
 
 /**
@@ -12,6 +13,10 @@ import { writeStored, readSession, writeSession, removeSession } from '../lib/sa
  * Konto zwischengespeichert und beim Abmelden verworfen; das Umschalten
  * 3/5/10 arbeitet ausschliesslich auf diesem Ergebnis (keine neue Suche).
  */
+
+// Datenbank, mit der DIESER Browser spricht (zur Build-Zeit eingebettet).
+const BROWSER_DB_REF = supabaseRefOf(import.meta.env.VITE_SUPABASE_URL);
+const BROWSER_ON_TEST_DB = BROWSER_DB_REF === AI_SEARCH_TEST_REF;
 
 const DRAFT_KEY = 'kn_ai_search_draft';
 const RESULT_KEY = 'kn_ai_search_last_result';
@@ -60,6 +65,17 @@ async function authHeader() {
 function navigate(path) {
   window.scrollTo(0, 0);
   window.history.pushState({}, '', path);
+}
+
+function coverageText(coverage) {
+  if (!coverage) return null;
+  if (!coverage.complete) {
+    return `Suchindex unvollständig: ${coverage.missingCount ?? '?'} von ${coverage.publishedCount} veröffentlichten Kursen fehlen im Index. Passende Kurse können hier fehlen.`;
+  }
+  const base = `Abgleich vor dieser Suche: Jeder der ${coverage.publishedCount} aktuell veröffentlichten Kurse ist im Suchindex enthalten und wurde durchsucht.`;
+  return coverage.pendingUpdates > 0
+    ? `${base} ${coverage.pendingUpdates} Kursänderungen sind noch nicht eingearbeitet – einzelne Angaben können veraltet sein.`
+    : base;
 }
 
 function QuotaBadge({ quota }) {
@@ -196,6 +212,7 @@ export default function AiSearchView({ user, setView }) {
 
   const submit = async (retry = false) => {
     setError(null);
+    if (!BROWSER_ON_TEST_DB) { setError('wrong_environment'); return; }
     let pending = pendingRef.current;
     if (!retry || !pending) {
       const musts = {};
@@ -248,6 +265,9 @@ export default function AiSearchView({ user, setView }) {
         <div>
           <strong>Vorschau mit Testdaten.</strong> Diese KI-Suche läuft ausschliesslich gegen die Testumgebung und ist nicht öffentlich.
           Die Bewertung durch das Sprachmodell (Luna) und die Bedeutungssuche sind noch nicht freigeschaltet – Reihenfolge und Begründungen beruhen vorläufig auf Textbelegen aus den Kursbeschreibungen.
+          <span className="block mt-1" data-testid="ai-db-check">
+            {BROWSER_ON_TEST_DB ? '✓ Datenbank dieses Browsers: Testumgebung' : '✗ Dieser Browser ist NICHT mit der Testumgebung verbunden – KI-Suche gesperrt.'}
+          </span>
         </div>
       </div>
 
@@ -302,7 +322,7 @@ export default function AiSearchView({ user, setView }) {
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button type="submit" disabled={loading || limitReached || statusError === 'wrong_environment' || statusError === 'not_available'} className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-bold disabled:opacity-50">
+              <button type="submit" disabled={loading || !BROWSER_ON_TEST_DB || limitReached || statusError === 'wrong_environment' || statusError === 'not_available'} className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-bold disabled:opacity-50">
                 {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 KI-Suche starten
               </button>
@@ -346,9 +366,7 @@ export default function AiSearchView({ user, setView }) {
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-gray-700 flex items-center gap-1">
                   <Info className="w-4 h-4 text-gray-400" />
-                  {result.coverage.complete
-                    ? 'Aus allen veröffentlichten Kursen gesucht.'
-                    : `Der Suchindex ist noch unvollständig (${result.coverage.documentCount} von ${result.coverage.publishedCount} Kursen). Es kann passende Kurse geben, die hier fehlen.`}
+                  {coverageText(result.coverage)}
                 </p>
                 <div className="flex items-center gap-1 text-sm" role="group" aria-label="Anzahl Vorschläge">
                   <span className="text-gray-500 mr-1">Vorschläge:</span>
@@ -361,8 +379,13 @@ export default function AiSearchView({ user, setView }) {
               {result.method && (
                 <p className="mt-1 text-xs text-gray-500" data-testid="ai-method">
                   Suche: {result.method.retrieval} · Bewertung: {result.method.ranking}
-                  {!result.method.luna && ' (simuliert)'}
                 </p>
+              )}
+              {result.method && !result.method.luna && (
+                <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg px-3 py-2 text-sm" data-testid="ai-simulated">
+                  <FlaskConical className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span><strong>Simulierte Bewertung:</strong> Diese Reihenfolge stammt nicht von der KI. Sie zählt vorläufig, wie viele deiner Suchbegriffe belegbar im Kurstext vorkommen. Die echte KI-Bewertung (Luna) ist noch nicht freigeschaltet.</span>
+                </div>
               )}
               <div className="mt-2 text-xs text-gray-500">
                 Passung und gebuchte Hervorhebung beeinflussen die Reihenfolge.{' '}

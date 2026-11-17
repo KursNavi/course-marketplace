@@ -102,14 +102,20 @@ function course(id, overrides = {}) {
   };
 }
 
-function searchScenario({ courses, chunks, profiles = [], published = 3, documents = 3 }) {
+function searchScenario({ courses, chunks, profiles = [], published = 3, documents = 3, pendingUpdates = 0 }) {
   return (call) => {
     if (call.op === 'rpc' && call.table === 'ai_search_lexical') {
       return { data: chunks.map((c) => ({ course_id: c.course_id })), error: null };
     }
-    if (call.table === 'courses' && call.head) return { data: null, error: null, count: published };
-    if (call.table === 'ai_search_documents' && call.head) return { data: null, error: null, count: documents };
+    // Abdeckungsnachweis: ID-Listen (Seiten à 1000) und offene Aufträge.
+    const page = (count, key) => {
+      const [from, to] = call.range ?? [0, 999];
+      return Array.from({ length: Math.max(0, Math.min(count, to + 1) - from) }, (_, i) => ({ [key]: from + i + 1 }));
+    };
+    if (call.table === 'ai_search_jobs' && call.head) return { data: null, error: null, count: pendingUpdates };
+    if (call.table === 'ai_search_documents' && call.range) return { data: page(documents, 'course_id'), error: null };
     if (call.table === 'ai_search_documents') return { data: [], error: null };
+    if (call.table === 'courses' && call.range) return { data: page(published, 'id'), error: null };
     if (call.table === 'courses') {
       const ids = (filterValue(call, 'in', 'id') ?? []).map(String);
       // Die Abfrage filtert status=published; der Fake bildet das nach.
@@ -185,11 +191,22 @@ describe('runAiSearch', () => {
     expect(result.results[1].paidHighlight).toBe(false);
   });
 
-  it('unvollständiger Index wird ehrlich ausgewiesen', async () => {
-    const { client } = createFakeSupabase(searchScenario({ courses: [], chunks: [], published: 800, documents: 300 }));
+  it('unvollständiger Index wird ehrlich ausgewiesen (ID-Abgleich über mehrere Seiten)', async () => {
+    const { client } = createFakeSupabase(searchScenario({ courses: [], chunks: [], published: 1500, documents: 1200, pendingUpdates: 4 }));
     const result = await runAiSearch(client, { query: 'Töpfern', now: NOW });
-    expect(result.coverage).toEqual({ publishedCount: 800, documentCount: 300, complete: false });
+    expect(result.coverage).toEqual({ publishedCount: 1500, documentCount: 1200, missingCount: 300, pendingUpdates: 4, complete: false, method: 'id_anti_join' });
     expect(result.results).toEqual([]);
+  });
+
+  it('gleiche Anzahl, aber andere Kurse: KEINE Vollständigkeitsaussage', async () => {
+    // 3 veröffentlicht (IDs 1-3), 3 Dokumente — aber mit anderen IDs.
+    const inner = searchScenario({ courses: [], chunks: [] });
+    const { client } = createFakeSupabase((call) => {
+      if (call.table === 'ai_search_documents' && call.range) return { data: [{ course_id: 1 }, { course_id: 2 }, { course_id: 99 }], error: null };
+      return inner(call);
+    });
+    const result = await runAiSearch(client, { query: 'Töpfern', now: NOW });
+    expect(result.coverage).toMatchObject({ publishedCount: 3, documentCount: 3, missingCount: 1, complete: false });
   });
 });
 
@@ -507,5 +524,29 @@ describe('Worker – parallele Kursverarbeitung (Backfill)', async () => {
     expect(summary.deleted).toBe(10);
     expect(stats().maxInFlight).toBe(4);
     expect([...stats().deletes].sort()).toEqual(Array.from({ length: 10 }, (_, i) => 100 + i));
+  });
+});
+
+describe('Testanmeldung der Preview', async () => {
+  const { getSignupEmailRedirect } = await import('../src/lib/authRedirect.js');
+  const { validateAccountInput } = await import('../scripts/ai-search-preview-account.mjs');
+
+  it('Registrierung auf der Preview bleibt auf der Preview', () => {
+    expect(getSignupEmailRedirect({ hostname: 'course-marketplace-git-x-kursnavis-projects.vercel.app', origin: 'https://course-marketplace-git-x-kursnavis-projects.vercel.app' }))
+      .toBe('https://course-marketplace-git-x-kursnavis-projects.vercel.app/ki-suche');
+  });
+
+  it('auf kursnavi.ch bleibt das bisherige Ziel unverändert', () => {
+    expect(getSignupEmailRedirect({ hostname: 'kursnavi.ch', origin: 'https://kursnavi.ch' })).toBe('https://kursnavi.ch');
+  });
+
+  it('Servercheck verlangt auch ein belegtes Browserziel', () => {
+    expect(checkAiSearchEnvironment({ VERCEL_ENV: 'preview', SUPABASE_URL: TEST_URL })).toMatchObject({ ok: false, code: 'wrong_environment' });
+  });
+
+  it('Testkonto-Eingaben werden geprüft', () => {
+    expect(validateAccountInput('', 'x'.repeat(12))).toMatch(/EMAIL/);
+    expect(validateAccountInput('a@b.ch', 'kurz')).toMatch(/PASSWORD/);
+    expect(validateAccountInput('a@b.ch', 'x'.repeat(12))).toBeNull();
   });
 });
