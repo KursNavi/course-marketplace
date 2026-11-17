@@ -70,6 +70,11 @@ async function main() {
     console.log(`Reconciliation Runde ${round}:`, JSON.stringify(reconciliation));
     const drained = await drainOutbox(service, { timeBudgetMs: 10 * 60_000 });
     console.log(`Worker Runde ${round}:`, JSON.stringify({ ...drained, errors: drained.errors.slice(0, 5) }));
+    // Unerwartete Fehler: nicht weiterlaufen, sondern stoppen und berichten.
+    if (drained.failures > 0) {
+      console.error(`STOPP: ${drained.failures} Kurs(e) fehlgeschlagen — keine weiteren Runden.`);
+      break;
+    }
     if (!reconciliation.truncated && drained.drained) break;
   }
 
