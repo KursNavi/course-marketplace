@@ -27,6 +27,7 @@
     "retest:security": "node scripts/security-retest.mjs",
     "test:ai-db": "node scripts/ai-search-db-tests.mjs",
     "backfill:ai-test": "node scripts/ai-search-backfill-test.mjs",
+    "embed:ai-test": "node scripts/ai-search-embed-test.mjs",
     "dev:finalize-yoga": "node scripts/finalize-yoga-cleanup-dev.mjs",
     "cleanup:check": "node scripts/cleanup-images.js --dry-run",
     "cleanup:execute": "node scripts/cleanup-images.js --execute",

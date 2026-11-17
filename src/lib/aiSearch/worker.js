@@ -178,7 +178,20 @@ export async function processOutboxBatch(client, options = {}) {
     errors: [],
   };
 
-  for (const group of groups) {
+  // Optional mehrere KURSE gleichzeitig (Standard 1 = unverändert). Sicher,
+  // weil die Übernahme je Kurs per Advisory-Lock serialisiert ist und jede
+  // Gruppe einen anderen Kurs betrifft (coalesceJobs).
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? 1, 16));
+  let nextIndex = 0;
+  const runNext = async () => {
+    while (nextIndex < groups.length) {
+      const group = groups[nextIndex];
+      nextIndex += 1;
+      await processGroup(group);
+    }
+  };
+
+  async function processGroup(group) {
     try {
       const source = await loadCourseSource(client, group.courseId);
       const projection = buildProjection(
@@ -228,6 +241,8 @@ export async function processOutboxBatch(client, options = {}) {
       }
     }
   }
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, groups.length) }, () => runNext()));
 
   return summary;
 }

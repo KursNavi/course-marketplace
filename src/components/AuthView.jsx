@@ -108,7 +108,13 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                 setUser(loggedInUser);
                 trackLogin('email');
 
-                if (!restorePendingBookingFlow()) {
+                // KI-Suche (Preview): nach Login zurück zum KI-Einstieg; der
+                // bewahrte Suchtext wird dort NICHT automatisch abgeschickt.
+                if (readStored('postLoginAiSearch')) {
+                    removeStored('postLoginAiSearch');
+                    window.history.replaceState({}, document.title, '/ki-suche');
+                    setView('ai-search');
+                } else if (!restorePendingBookingFlow()) {
                     if (loggedInUser.role === 'teacher' || loggedInUser.role === 'admin') setView('dashboard'); else setView('home');
                 }
                 showNotification(t.msg_welcome_back_toast);

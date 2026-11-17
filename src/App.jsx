@@ -18,6 +18,7 @@ import { useTaxonomy } from './hooks/useTaxonomy';
 import { getSearchAreaSlugs } from './lib/searchAreaAliases';
 import { RADIUS_OPTIONS, courseWithinRadius, createGeoResolver, realCantonSelections } from './lib/courseGeo';
 import { loadSwissPlaces, resolvePlaceId } from './lib/swissPlaces';
+import { isAiSearchPreviewHost } from './lib/aiSearch/previewGuard';
 
 // Disable browser scroll auto-restoration synchronously so it can't override
 // React's scroll-to-top in useLayoutEffect before scrollRestoration is set in useEffect.
@@ -136,6 +137,9 @@ const SimpleTopicLandingPage = lazyWithRetry(() => import('./components/SimpleTo
 const CampaignLandingPage = lazyWithRetry(() => import('./components/CampaignLandingPage'));
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'));
 const SetPasswordView = lazyWithRetry(() => import('./components/SetPasswordView'));
+// KI-Suche (Preview): nur auf Vorschau-/Entwicklungsadressen erreichbar; der
+// Server prüft zusätzlich verbindlich Umgebung (nie Produktion) und Testdatenbank.
+const AiSearchView = lazyWithRetry(() => import('./components/AiSearchView'));
 
 // --- DEBUG: ERROR BOUNDARY (Fängt Abstürze ab) ---
 class ErrorBoundary extends React.Component {
@@ -296,6 +300,11 @@ export default function KursNaviPro() {  // 1. Initial State Logic
       };
       
       if (routes[path]) return routes[path];
+
+      // KI-SUCHE (Preview): ausserhalb von Vorschauadressen wie eine unbekannte Seite
+      if (path === '/ki-suche') {
+          return isAiSearchPreviewHost(window.location.hostname) ? 'ai-search' : 'not-found';
+      }
 
       // BLOG ROUTING
       if (path === '/blog') return 'blog';
@@ -2752,6 +2761,7 @@ useEffect(() => {
       {view === 'teacher-hub' && <TeacherHub setView={setView} t={t} user={user} />}
       {view === 'teacher-profile' && selectedTeacher && ( <TeacherProfileView teacher={selectedTeacher} courses={publishedCourses} setView={setView} setSelectedCourse={setSelectedCourse} t={t} getCatLabel={getCatLabel} /> )}
       {view === 'how-it-works' && <HowItWorksPage t={t} setView={setView} />}
+      {view === 'ai-search' && <AiSearchView user={user} setView={setView} />}
       {view === 'login' && <AuthView setView={setView} setUser={setUser} showNotification={showNotification} lang={lang} />}
       {view === 'set-password' && <SetPasswordView setView={setView} showNotification={showNotification} lang={lang} mode={isRecoveryMode ? 'reset' : 'request'} linkExpired={passwordLinkExpired} onLinkExpiredDismiss={() => setPasswordLinkExpired(false)} pendingResetToken={pendingResetToken} onTokenVerified={() => { setPendingResetToken(null); setIsRecoveryMode(true); }} onTokenFailed={() => { setPendingResetToken(null); setPasswordLinkExpired(true); }} />}
       {view === 'about' && <AboutPage t={t} setView={setView} />}

@@ -68,7 +68,9 @@ async function main() {
   for (let round = 1; round <= 10; round += 1) {
     reconciliation = await runReconciliation(service, { skipQuotaCleanup: true });
     console.log(`Reconciliation Runde ${round}:`, JSON.stringify(reconciliation));
-    const drained = await drainOutbox(service, { timeBudgetMs: 10 * 60_000 });
+    // Grössere Batches + mehrere Kurse parallel (Advisory-Lock je Kurs):
+    // beschleunigt das Abarbeiten aufgelaufener Aufträge, Ergebnis identisch.
+    const drained = await drainOutbox(service, { timeBudgetMs: 10 * 60_000, batchSize: 400, concurrency: 8 });
     console.log(`Worker Runde ${round}:`, JSON.stringify({ ...drained, errors: drained.errors.slice(0, 5) }));
     // Unerwartete Fehler: nicht weiterlaufen, sondern stoppen und berichten.
     if (drained.failures > 0) {

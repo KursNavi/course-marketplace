@@ -27,6 +27,18 @@ aktuellen öffentlichen Katalog nicht. Embeddings entstehen weiterhin nicht
 (Gate E3: Modellwahl/Budget/API-Zugang offen) — der Worker schreibt Projektion,
 Chunks und Lexikalik; `embedding`/`model_version` bleiben NULL (Backfill-Stufe 2).
 
+**Preview-Stand (17.11.2026, nur Arbeitszweig, nicht gemergt):** Die Testbefüllung läuft
+als bewusst per Label `ki-befuellung-test` ausgelöster CI-Lauf (nur TESTumgebung). Die
+Such-API `api/ai-search.js` ist nur ausserhalb der Vercel-Produktion und nur gegen die
+TESTumgebung aktiv (`previewGuard.js`, serverseitig geprüft) und setzt Auth-Gate,
+Kontingent (reservieren → suchen → abschliessen/freigeben) und den Suchdienst
+`searchService.js` um: katalogweiter lexikalischer Abruf über Titel und vollständige
+Beschreibungen, Statusprüfung vor Ausgabe, eventgebundene Muss-Prüfung, begrenzte
+Paid-Priorität. Luna und Bedeutungssuche sind vorbereitet (`openaiGateway.js`), aber
+standardmässig aus. Bis zur Freigabe ersetzt eine gekennzeichnete Textpassung die
+Luna-Bewertung. Oberfläche: `/ki-suche` (`AiSearchView.jsx`), nur auf
+Vorschauadressen sichtbar. Entscheidungsvorlage: `docs/ai-search/e3-entscheidungsvorlage.md`.
+
 ## Komponenten
 
 ```

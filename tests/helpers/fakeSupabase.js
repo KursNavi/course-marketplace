@@ -43,7 +43,7 @@ export function createFakeSupabase(respond) {
     builder.upsert = (payload, options) => { call.op = 'upsert'; call.payload = payload; call.options = options; return builder; };
     builder.insert = (payload) => { call.op = 'insert'; call.payload = payload; return builder; };
     builder.delete = () => { call.op = 'delete'; return builder; };
-    for (const name of ['eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in', 'is']) {
+    for (const name of ['eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in', 'is', 'textSearch']) {
       builder[name] = addFilter(name);
     }
     builder.order = (column, options) => { call.order.push([column, options]); return builder; };
@@ -65,6 +65,13 @@ export function createFakeSupabase(respond) {
       const call = { op: 'rpc', table: name, payload: params, filters: [] };
       calls.push(call);
       return Promise.resolve(respond(call) ?? { data: null, error: null });
+    },
+    auth: {
+      getUser: (token) => {
+        const call = { op: 'auth.getUser', table: 'auth', payload: token, filters: [] };
+        calls.push(call);
+        return Promise.resolve(respond(call) ?? { data: { user: null }, error: { message: 'no user' } });
+      },
     },
   };
 
