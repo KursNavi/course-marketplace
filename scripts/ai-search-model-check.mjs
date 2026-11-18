@@ -19,7 +19,13 @@ async function main() {
       headers: { Authorization: `Bearer ${key}` },
     });
     console.log(`Modell ${model}: HTTP ${response.status}${response.ok ? ' (Zugriff vorhanden)' : ' (KEIN Zugriff)'}`);
-    if (!response.ok) ok = false;
+    if (!response.ok) {
+      ok = false;
+      // Fehlercode/-text des Anbieters (enthält keine Eingaben); Schlüsselartiges vorsorglich maskiert.
+      const body = await response.json().catch(() => null);
+      const detail = `${body?.error?.type ?? ''} ${body?.error?.code ?? ''} ${body?.error?.message ?? ''}`.replace(/sk-[A-Za-z0-9_-]+/g, 'sk-***').trim();
+      if (detail) console.log(`  Anbieterhinweis: ${detail.slice(0, 400)}`);
+    }
   }
   if (!ok) process.exit(1);
 }
