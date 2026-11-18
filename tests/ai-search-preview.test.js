@@ -8,6 +8,7 @@ import { checkAiSearchEnvironment, isAiSearchPreviewHost, supabaseRefOf } from '
 import { parseQuery, validateQuery, findTermInText } from '../src/lib/aiSearch/queryParse.js';
 import { runAiSearch, resolveActiveTier, describePrice } from '../src/lib/aiSearch/searchService.js';
 import { createFakeSupabase, filterValue } from './helpers/fakeSupabase.js';
+import { buildExplanation, countWords, shortenQuote, MAX_EXPLANATION_WORDS } from '../src/lib/aiSearch/explanation.js';
 
 const TEST_URL = 'https://omoapbvfligjfznzivyu.supabase.co';
 const PROD_URL = 'https://nplxmpfasgpumpiddjfl.supabase.co';
@@ -173,7 +174,7 @@ describe('runAiSearch', () => {
     expect(result.stats.belowThreshold).toBe(1); // Kurs 3: nur 1 von 6 Begriffen
   });
 
-  it('bezahlte Hervorhebung wirkt nur innerhalb des Passungsbands und ist gekennzeichnet', async () => {
+  it('bezahlte Priorität wirkt nur innerhalb des Passungsbands, ohne Einzelbadge an der Karte', async () => {
     const courses = [
       course(1, { title: 'Malen' }),
       course(2, { title: 'Malen', is_prio: true }),
@@ -187,8 +188,37 @@ describe('runAiSearch', () => {
     const result = await runAiSearch(client, { query: 'Malen Aquarell', now: NOW });
 
     expect(result.results.map((r) => r.courseId)).toEqual([2, 1]);
-    expect(result.results[0].paidHighlight).toBe(true);
-    expect(result.results[1].paidHighlight).toBe(false);
+    // Nachtrag 10: kein Hervorgehoben-Merkmal je Karte, keine Paketangabe im Text.
+    for (const card of result.results) {
+      expect(card).not.toHaveProperty('paidHighlight');
+      expect(card.explanation).not.toMatch(/Paket|Premium|hervorgehoben/i);
+    }
+  });
+
+  it('jede Karte hat eine belegte Begründung (≤100 Wörter), offizielles Bild nur falls vorhanden', async () => {
+    const longText = `Fotografie ${'Licht und Komposition im Alltag üben '.repeat(30)}`;
+    const courses = [
+      course(1, { title: 'Fotografie Grundkurs', image_url: 'https://example.org/bild.jpg', canton: 'Bern', course_events: [{ start_date: '2026-12-05', canton: 'Bern', location: 'Bern' }] }),
+      course(2, { title: 'Fotografie am Abend', image_url: 'javascript:alert(1)' }),
+    ];
+    const chunks = [
+      { course_id: 1, section: 'description', chunk_index: 0, text: longText },
+      { course_id: 1, section: 'objectives', chunk_index: 1, text: longText },
+      { course_id: 2, section: 'description', chunk_index: 0, text: 'Fotografie mit dem Smartphone in Zürich.' },
+    ];
+    const { client } = createFakeSupabase(searchScenario({ courses, chunks }));
+    const result = await runAiSearch(client, { query: 'Fotografie in Zürich', now: NOW });
+
+    const byId = Object.fromEntries(result.results.map((c) => [c.courseId, c]));
+    expect(byId[1].imageUrl).toBe('https://example.org/bild.jpg');
+    expect(byId[2].imageUrl).toBeNull();
+    for (const card of result.results) {
+      expect(countWords(card.explanation)).toBeGreaterThan(0);
+      expect(countWords(card.explanation)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
+    }
+    // Abweichung vom Ortswunsch bleibt im Text erkennbar.
+    expect(byId[1].explanation).toMatch(/Abweichung von deinem Wunsch „Zürich“: Als Ort ist Bern angegeben/);
+    expect(byId[2].explanation).toMatch(/in Zürich statt, wie gewünscht/);
   });
 
   it('unvollständiger Index wird ehrlich ausgewiesen (ID-Abgleich über mehrere Seiten)', async () => {
@@ -548,5 +578,37 @@ describe('Testanmeldung der Preview', async () => {
     expect(validateAccountInput('', 'x'.repeat(12))).toMatch(/EMAIL/);
     expect(validateAccountInput('a@b.ch', 'kurz')).toMatch(/PASSWORD/);
     expect(validateAccountInput('a@b.ch', 'x'.repeat(12))).toBeNull();
+  });
+});
+
+describe('Begründungstext (Nachtrag 10)', () => {
+  const quote = `…${'Wort '.repeat(40)}Fotografie ${'Text '.repeat(40)}…`;
+
+  it('kürzt Zitate wörtlich um den Begriff', () => {
+    const short = shortenQuote(quote, 'fotografie');
+    expect(short).toMatch(/Fotografie/);
+    expect(countWords(short)).toBeLessThanOrEqual(16);
+  });
+
+  it('hält höchstens 100 Wörter ein und behält Einschränkungen beim Kürzen', () => {
+    const reasons = Array.from({ length: 3 }, (_, i) => ({ kind: 'text', section: 'description', sectionLabel: 'Beschreibung', term: `begriff${i}`, quote: 'x '.repeat(60) }));
+    const text = buildExplanation({
+      reasons,
+      wishes: [{ type: 'location', label: 'Zürich', value: 'Zürich' }],
+      musts: { location: 'Zürich', maxBudget: 100 },
+      mustUnknowns: ['event', 'budget', 'language'],
+      place: 'Bern',
+      event: { startDate: '2026-12-05' },
+      price: 'Preis auf Anfrage',
+    });
+    expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
+    expect(text).toMatch(/Abweichung von deinem Wunsch/);
+    expect(text).toMatch(/Nicht bestätigt: Ob ein Termin/);
+    expect(text).toMatch(/Nicht bestätigt: Ob der Preis/);
+  });
+
+  it('füllt bei knapper Evidenz nicht auf', () => {
+    const text = buildExplanation({ reasons: [{ kind: 'text', section: 'title', sectionLabel: 'Titel', term: 'yoga', quote: 'Yoga' }] });
+    expect(text).toBe('Schon der Kurstitel greift „yoga“ auf.');
   });
 });

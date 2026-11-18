@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Sparkles, Search, LayoutGrid, Lock, AlertTriangle, Info, MapPin, Calendar, Tag, ChevronDown, ExternalLink, Loader, FlaskConical } from 'lucide-react';
+import { Sparkles, Search, LayoutGrid, Lock, AlertTriangle, ChevronDown, ArrowRight, Loader, FlaskConical } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { AI_SEARCH_TEST_REF, supabaseRefOf } from '../lib/aiSearch/previewGuard';
 import { writeStored, readSession, writeSession, removeSession } from '../lib/safeStorage';
@@ -10,8 +10,9 @@ import { writeStored, readSession, writeSession, removeSession } from '../lib/sa
  *
  * Datenschutz: Der Suchtext bleibt im Browser (sessionStorage) und wird nie
  * in die URL geschrieben. Das letzte Ergebnis wird nur für das angemeldete
- * Konto zwischengespeichert und beim Abmelden verworfen; das Umschalten
- * 3/5/10 arbeitet ausschliesslich auf diesem Ergebnis (keine neue Suche).
+ * Konto zwischengespeichert und beim Abmelden verworfen. Angezeigt werden
+ * bis zu zehn Vorschläge mit Mindestpassung (Nachtrag 10, keine Auswahl
+ * 3/5/10 mehr); die Anzeige löst nie eine neue Suche aus.
  */
 
 // Datenbank, mit der DIESER Browser spricht (zur Build-Zeit eingebettet).
@@ -67,14 +68,18 @@ function navigate(path) {
   window.history.pushState({}, '', path);
 }
 
-function coverageText(coverage) {
-  if (!coverage) return null;
-  if (!coverage.complete) {
-    return `Suchindex unvollständig: ${coverage.missingCount ?? '?'} von ${coverage.publishedCount} veröffentlichten Kursen fehlen im Index. Passende Kurse können hier fehlen.`;
-  }
-  const base = `Abgleich vor dieser Suche: Jeder der ${coverage.publishedCount} aktuell veröffentlichten Kurse ist im Suchindex enthalten und wurde durchsucht.`;
+// Nachweislich unvollständiger Index = sichtbare Warnung über den Ergebnissen.
+function coverageWarning(coverage) {
+  if (!coverage || coverage.complete) return null;
+  return `Suchindex unvollständig: ${coverage.missingCount ?? '?'} von ${coverage.publishedCount} veröffentlichten Kursen fehlen im Index. Passende Kurse können hier fehlen.`;
+}
+
+// Vollständiger Abgleich (ggf. mit Aktualisierungsrückstand) = ruhige Fussnote.
+function coverageFootnote(coverage) {
+  if (!coverage || !coverage.complete) return null;
+  const base = `Indexabgleich vor dieser Suche: Alle ${coverage.publishedCount} aktuell veröffentlichten Kurse sind im Suchindex enthalten.`;
   return coverage.pendingUpdates > 0
-    ? `${base} ${coverage.pendingUpdates} Kursänderungen sind noch nicht eingearbeitet – einzelne Angaben können veraltet sein.`
+    ? `${base} ${coverage.pendingUpdates} Kursänderungen sind noch nicht eingearbeitet; einzelne Angaben können veraltet sein.`
     : base;
 }
 
@@ -89,60 +94,28 @@ function QuotaBadge({ quota }) {
   );
 }
 
+// Schlanke Karte (Nachtrag 10): Titel, eine Begründung als Fliesstext,
+// Kurslink; offizielles Kursbild nur, wenn vorhanden (Desktop rechts,
+// mobil oberhalb in voller Breite – keine gequetschte Textspalte).
 function ResultCard({ card }) {
-  const eventDate = card.event ? formatDate(card.event.startDate) : null;
+  const [imageFailed, setImageFailed] = useState(false);
+  const open = (e) => { e.preventDefault(); navigate(card.url); };
+  const showImage = card.imageUrl && !imageFailed;
   return (
-    <article className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm" data-testid="ai-result-card">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="text-lg font-bold text-dark font-heading">
-            <a href={card.url} onClick={(e) => { e.preventDefault(); navigate(card.url); }} className="hover:text-primary">{card.title}</a>
-          </h3>
-          <p className="text-sm text-gray-500">
-            {[card.provider, card.category].filter(Boolean).join(' · ')}
-          </p>
-        </div>
-        {card.paidHighlight && (
-          <span className="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-1 rounded-full" title="Der Anbieter hat eine Hervorhebung gebucht. Sie wirkt nur innerhalb gleich gut passender Treffer.">
-            Hervorgehoben
-          </span>
-        )}
-      </div>
-
-      {card.reasons.length > 0 && (
-        <div className="mt-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Warum dieser Kurs</p>
-          <ul className="mt-1 space-y-1">
-            {card.reasons.map((reason, index) => (
-              <li key={index} className="text-sm text-gray-700">
-                <span className="font-medium">{reason.sectionLabel}:</span>{' '}
-                <span className="text-gray-600">„{reason.quote}“</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-700">
-        <span className="flex items-center gap-1"><Calendar className="w-4 h-4 text-gray-400" />{eventDate ? `Nächster Termin: ${eventDate}` : 'Termin unbekannt'}</span>
-        <span className="flex items-center gap-1"><MapPin className="w-4 h-4 text-gray-400" />{card.place || 'Ort unbekannt'}</span>
-        <span className="flex items-center gap-1"><Tag className="w-4 h-4 text-gray-400" />{card.price}</span>
-      </div>
-
-      {card.gaps.length > 0 && (
-        <div className="mt-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          <p className="text-xs font-semibold text-amber-800">Fehlende oder unklare Angaben</p>
-          <ul className="list-disc list-inside text-sm text-amber-900">
-            {card.gaps.map((gap) => <li key={gap}>{gap}</li>)}
-          </ul>
-        </div>
-      )}
-
-      <div className="mt-3">
-        <a href={card.url} onClick={(e) => { e.preventDefault(); navigate(card.url); }} className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
-          Zur Kursseite <ExternalLink className="w-3.5 h-3.5" />
+    <article className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col-reverse sm:flex-row gap-4" data-testid="ai-result-card">
+      <div className="min-w-0 flex-1">
+        <h3 className="text-lg font-bold text-dark font-heading break-words">
+          <a href={card.url} onClick={open} className="hover:text-primary">{card.title}</a>
+        </h3>
+        {card.explanation && <p className="mt-2 text-[15px] leading-relaxed text-gray-700" data-testid="ai-explanation">{card.explanation}</p>}
+        <a href={card.url} onClick={open} className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline">
+          Zum Kurs <ArrowRight className="w-4 h-4" />
         </a>
       </div>
+      {showImage && (
+        <img src={card.imageUrl} alt="" loading="lazy" decoding="async" onError={() => setImageFailed(true)}
+          className="w-full h-40 sm:w-44 sm:h-32 object-cover rounded-lg flex-shrink-0 bg-gray-100" />
+      )}
     </article>
   );
 }
@@ -171,8 +144,6 @@ export default function AiSearchView({ user, setView }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
-  const [visibleCount, setVisibleCount] = useState(5);
-  const [showRankingInfo, setShowRankingInfo] = useState(false);
   const pendingRef = useRef(null); // { requestId, payload } für idempotenten Wiederholversuch
 
   // Entwurf nur lokal bewahren (nie in URL/Analytics).
@@ -235,7 +206,6 @@ export default function AiSearchView({ user, setView }) {
       if (response.ok) {
         pendingRef.current = null;
         setResult(body);
-        setVisibleCount(5);
         writeSession(RESULT_KEY, JSON.stringify({ userId: user.id, result: body }));
       } else {
         if (body.error !== 'network') pendingRef.current = null;
@@ -256,27 +226,26 @@ export default function AiSearchView({ user, setView }) {
   };
 
   const limitReached = error === 'limit_reached' || (quota && quota.remaining === 0);
-  const visibleResults = result ? result.results.slice(0, visibleCount) : [];
+  const coverageAlert = result ? coverageWarning(result.coverage) : null;
+  const coverageNote = result ? coverageFootnote(result.coverage) : null;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-      <div className="mb-4 flex items-start gap-2 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg px-4 py-3 text-sm" data-testid="ai-preview-banner">
-        <FlaskConical className="w-5 h-5 flex-shrink-0 mt-0.5" />
-        <div>
-          <strong>Vorschau mit Testdaten.</strong> Diese KI-Suche läuft ausschliesslich gegen die Testumgebung und ist nicht öffentlich.
-          Die Bewertung durch das Sprachmodell (Luna) und die Bedeutungssuche sind noch nicht freigeschaltet – Reihenfolge und Begründungen beruhen vorläufig auf Textbelegen aus den Kursbeschreibungen.
-          <span className="block mt-1" data-testid="ai-db-check">
-            {BROWSER_ON_TEST_DB ? '✓ Datenbank dieses Browsers: Testumgebung' : '✗ Dieser Browser ist NICHT mit der Testumgebung verbunden – KI-Suche gesperrt.'}
-          </span>
-        </div>
-      </div>
+      <p className={`mb-6 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full px-3 py-1 text-xs ${BROWSER_ON_TEST_DB ? 'bg-indigo-50 text-indigo-900' : 'bg-red-50 text-red-800'}`} data-testid="ai-preview-banner">
+        <FlaskConical className="w-3.5 h-3.5" />
+        <span>Vorschau mit Testdaten, nicht öffentlich</span>
+        <span aria-hidden="true">·</span>
+        <span data-testid="ai-db-check">
+          {BROWSER_ON_TEST_DB ? '✓ Datenbank dieses Browsers: Testumgebung' : '✗ Dieser Browser ist NICHT mit der Testumgebung verbunden – KI-Suche gesperrt.'}
+        </span>
+      </p>
 
-      <h1 className="text-3xl font-bold font-heading text-dark flex items-center gap-2">
-        <Sparkles className="w-7 h-7 text-primary" /> KI-Suche
+      <h1 className="text-3xl sm:text-4xl font-bold font-heading text-dark leading-tight" data-testid="ai-title">
+        <Sparkles className="inline-block w-8 h-8 sm:w-9 sm:h-9 text-primary align-[-0.15em] mr-2" aria-hidden="true" />
+        KI-Suche: Beschreibe in eigenen Worten, was du lernen möchtest.
       </h1>
-      <p className="mt-2 text-gray-600">
-        Beschreibe in eigenen Worten, was du lernen möchtest. Die Suche durchsucht alle veröffentlichten Kurse inklusive der vollständigen Beschreibungen.
-        Lieber selbst stöbern? Kategorien und klassische Filtersuche bleiben ohne Anmeldung verfügbar.
+      <p className="mt-3 text-sm text-gray-500">
+        Lieber selbst stöbern? Kategorien und klassische Filtersuche gibt es auch ohne Anmeldung.
       </p>
       <ClassicAlternatives />
 
@@ -293,7 +262,7 @@ export default function AiSearchView({ user, setView }) {
         <div className="mt-8">
           <form onSubmit={(e) => { e.preventDefault(); if (!loading) submit(false); }} className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="flex flex-wrap justify-between gap-2 items-center">
-              <label htmlFor="ai-query" className="font-semibold text-dark">Was möchtest du lernen?</label>
+              <label htmlFor="ai-query" className="font-semibold text-dark">Deine Beschreibung</label>
               <QuotaBadge quota={quota} />
             </div>
             <textarea id="ai-query" value={query} onChange={(e) => setQuery(e.target.value)} rows={3} maxLength={500} className="mt-2 w-full border border-gray-300 rounded-lg p-3 text-sm" placeholder="z. B. Ich möchte nach der Arbeit besser fotografieren, vorzugsweise in Bern" />
@@ -326,7 +295,7 @@ export default function AiSearchView({ user, setView }) {
                 {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 KI-Suche starten
               </button>
-              <span className="text-xs text-gray-500">Zählt als 1 von 10 Suchen dieses Monats. Umschalten der Trefferzahl zählt nicht.</span>
+              <span className="text-xs text-gray-500">Zählt als 1 von 10 Suchen dieses Monats.</span>
             </div>
           </form>
 
@@ -361,39 +330,20 @@ export default function AiSearchView({ user, setView }) {
                 {result.criteria.musts.canton && <span className="bg-petrol/10 text-petrol px-2 py-1 rounded-full">Muss: {result.criteria.musts.canton}{result.criteria.musts.onlineAllowed ? ' oder online' : ''}</span>}
                 {result.criteria.musts.maxBudget && <span className="bg-petrol/10 text-petrol px-2 py-1 rounded-full">Muss: bis CHF {result.criteria.musts.maxBudget}</span>}
               </div>
-              <p className="mt-2 text-xs text-gray-500">Wünsche beeinflussen die Reihenfolge, schliessen aber keine Kurse aus. Um etwas zwingend zu machen, nutze „Zwingende Vorgaben“ (eine geänderte Suche zählt als neue KI-Suche).</p>
 
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-gray-700 flex items-center gap-1">
-                  <Info className="w-4 h-4 text-gray-400" />
-                  {coverageText(result.coverage)}
-                </p>
-                <div className="flex items-center gap-1 text-sm" role="group" aria-label="Anzahl Vorschläge">
-                  <span className="text-gray-500 mr-1">Vorschläge:</span>
-                  {[3, 5, 10].map((n) => (
-                    <button key={n} type="button" onClick={() => setVisibleCount(n)} aria-pressed={visibleCount === n} className={`px-3 py-1 rounded-full border ${visibleCount === n ? 'bg-primary text-white border-primary' : 'bg-white border-gray-300'}`}>{n}</button>
-                  ))}
+              {coverageAlert && (
+                <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm" role="alert" data-testid="ai-coverage-alert">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />{coverageAlert}
                 </div>
-              </div>
-
-              {result.method && (
-                <p className="mt-1 text-xs text-gray-500" data-testid="ai-method">
-                  Suche: {result.method.retrieval} · Bewertung: {result.method.ranking}
-                </p>
               )}
+
+              {/* Genau EIN kompakter Simulationshinweis, solange Luna nicht aktiv ist. */}
               {result.method && !result.method.luna && (
-                <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg px-3 py-2 text-sm" data-testid="ai-simulated">
-                  <FlaskConical className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span><strong>Simulierte Bewertung:</strong> Diese Reihenfolge stammt nicht von der KI. Sie zählt vorläufig, wie viele deiner Suchbegriffe belegbar im Kurstext vorkommen. Die echte KI-Bewertung (Luna) ist noch nicht freigeschaltet.</span>
-                </div>
+                <p className="mt-4 inline-flex items-start gap-1.5 rounded-md bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-xs text-amber-900" data-testid="ai-simulated">
+                  <FlaskConical className="w-3.5 h-3.5 flex-shrink-0 mt-px" />
+                  <span><strong>Simulierte Bewertung:</strong> Reihenfolge und Begründungen beruhen vorläufig auf Textbelegen, nicht auf der KI (Luna ist noch nicht aktiv).</span>
+                </p>
               )}
-              <div className="mt-2 text-xs text-gray-500">
-                Passung und gebuchte Hervorhebung beeinflussen die Reihenfolge.{' '}
-                <button type="button" onClick={() => setShowRankingInfo(!showRankingInfo)} className="underline">Mehr erfahren</button>
-                {showRankingInfo && (
-                  <p className="mt-1">Zuerst zählt, wie gut ein Kurs zu deiner Beschreibung passt. Kurse unter einer Mindestpassung werden nicht vorgeschlagen, auch nicht gegen Bezahlung. Anbieter mit gebuchtem Paket erhalten nur innerhalb gleich gut passender Treffer einen kleinen Vorteil; solche Kurse sind als „Hervorgehoben“ gekennzeichnet. In dieser Vorschau wird die Passung vorläufig über Textbelege bestimmt (Sprachmodell noch nicht freigeschaltet).</p>
-                )}
-              </div>
 
               {result.results.length === 0 && result.incompleteResults.length === 0 ? (
                 <div className="mt-6 bg-white border border-gray-200 rounded-xl p-6" data-testid="ai-empty">
@@ -403,26 +353,42 @@ export default function AiSearchView({ user, setView }) {
                 </div>
               ) : (
                 <>
+                  {/* Bis zu zehn Vorschläge – nur solche mit Mindestpassung, keine Auffüllung. */}
                   <div className="mt-4 space-y-4">
-                    {visibleResults.map((card) => <ResultCard key={card.courseId} card={card} />)}
+                    {result.results.map((card) => <ResultCard key={card.courseId} card={card} />)}
                   </div>
-                  {result.results.length > 0 && result.results.length < visibleCount && (
-                    <p className="mt-3 text-sm text-gray-600">Nur {result.results.length} {result.results.length === 1 ? 'Kurs erfüllt' : 'Kurse erfüllen'} die Mindestpassung – wir füllen nicht künstlich auf.</p>
-                  )}
                   {result.results.length === 0 && (
                     <p className="mt-3 text-sm text-gray-600">Kein Kurs erfüllt alle zwingenden Vorgaben nachweislich.</p>
                   )}
                   {result.incompleteResults.length > 0 && (
                     <div className="mt-8">
                       <h2 className="text-lg font-bold text-dark">Angaben unvollständig</h2>
-                      <p className="text-sm text-gray-600">Diese Kurse passen inhaltlich, aber ihre Angaben belegen nicht alle zwingenden Vorgaben (z. B. kein Termin oder Preis auf Anfrage).</p>
+                      <p className="text-sm text-gray-600">Diese Kurse passen inhaltlich, aber ihre Angaben belegen nicht alle zwingenden Vorgaben. Was offen ist, steht jeweils in der Begründung.</p>
                       <div className="mt-3 space-y-4">
-                        {result.incompleteResults.slice(0, visibleCount).map((card) => <ResultCard key={card.courseId} card={card} />)}
+                        {result.incompleteResults.map((card) => <ResultCard key={card.courseId} card={card} />)}
                       </div>
                     </div>
                   )}
                 </>
               )}
+
+              <footer className="mt-8 border-t border-gray-200 pt-4 space-y-2 text-xs text-gray-500" data-testid="ai-footnotes">
+                {result.results.length > 0 && result.results.length < 10 && (
+                  <p>Gezeigt werden nur Kurse mit ausreichender Passung; diesmal {result.results.length === 1 ? 'einer' : result.results.length}.</p>
+                )}
+                {coverageNote && <p data-testid="ai-coverage">{coverageNote}</p>}
+                <details className="group" data-testid="ai-ranking-info">
+                  <summary className="cursor-pointer select-none underline decoration-dotted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
+                    Wie entsteht die Reihenfolge? Passung und gebuchte Pakete
+                  </summary>
+                  <div className="mt-2 space-y-1.5 text-gray-600">
+                    <p>Zuerst zählt, wie gut ein Kurs zu deiner Beschreibung passt. Kurse unter einer Mindestpassung erscheinen nicht, auch nicht gegen Bezahlung. Zwingende Vorgaben gelten nur als erfüllt, wenn die Kursangaben sie belegen.</p>
+                    <p>Anbieter mit einem gebuchten Paket können innerhalb gleich gut passender Kurse etwas weiter oben stehen. An der Auswahl, der Mindestpassung und den zwingenden Vorgaben ändert ein Paket nichts.</p>
+                    <p>Wünsche wie ein bevorzugter Ort beeinflussen die Reihenfolge, schliessen aber keine Kurse aus. Für feste Bedingungen gibt es „Zwingende Vorgaben“; eine geänderte Suche zählt als neue KI-Suche.</p>
+                    {result.method && <p>Suchverfahren: {result.method.retrieval}.</p>}
+                  </div>
+                </details>
+              </footer>
             </section>
           )}
         </div>

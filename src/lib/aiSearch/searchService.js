@@ -15,7 +15,8 @@
  *     TEXTPASSUNG (Anteil der Suchbegriffe mit Beleg im Kurstext). Das ist
  *     ausdrücklich eine Ersatzbewertung und wird so gekennzeichnet.
  *  6. Begrenzte bezahlte Priorität (paidRanking.js) nur innerhalb geeigneter
- *     Treffer, mit sichtbarer Kennzeichnung.
+ *     Treffer; offengelegt in der Fussnote unter den Ergebnissen (Nachtrag 10:
+ *     keine Einzelbadges).
  *
  * Paket-/Prio-Daten fliessen ausschliesslich in Schritt 6, nie in Gründe.
  * Keine Rohsuche in Logs.
@@ -28,6 +29,7 @@ import { isPubliclySearchable } from './publication.js';
 import { fuseRankedLists } from './retrieval.js';
 import { rankWithPaidPriority, MIN_SCORE } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
+import { buildExplanation } from './explanation.js';
 
 export const CANDIDATE_LIMIT = 100;
 export const RESULT_LIMIT = 10;
@@ -276,7 +278,18 @@ function categoryLabel(rows) {
   return [primary.level2_label_de, primary.level3_label_de].filter(Boolean).join(' › ') || null;
 }
 
-function buildCard(course, ranked, mustResult, context, now) {
+/** Nur ein dem Kurs zugeordnetes offizielles Bild (http/https), sonst keins. */
+export function officialImageUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildCard(course, ranked, mustResult, context, now, request) {
   const priceStatus = derivePriceStatus(course);
   const price = describePrice(priceStatus);
   const event = mustResult.matchingEvent ?? nextUpcomingEvent(course, now);
@@ -299,18 +312,32 @@ function buildCard(course, ranked, mustResult, context, now) {
     category_focus: row.level4_slug || null, category_focus_label: row.level4_label_de || null, is_primary: row.is_primary,
   })) };
 
+  const cardEvent = event ? { startDate: event.start_date, endDate: event.end_date ?? null, location: event.location ?? null, canton: event.canton ?? null } : null;
+  const explanation = buildExplanation({
+    reasons: ranked.reasons,
+    wishes: request.wishes,
+    musts: request.musts,
+    mustUnknowns: mustResult.unknowns ?? [],
+    place,
+    event: cardEvent,
+    price: price.text,
+  });
+
+  // Paketeinfluss bewusst NICHT je Karte (Nachtrag 10: keine Einzelbadges);
+  // er wird allgemein in der Fussnote unter den Ergebnissen erklärt.
   return {
     courseId: course.id,
     title: course.title ?? '',
     url: buildCanonicalCoursePath(courseForUrl),
+    imageUrl: officialImageUrl(course.image_url),
+    explanation,
     provider: profile?.full_name ?? null,
     category: categoryLabel(categoryRows),
     score: ranked.score,
-    paidHighlight: ranked.paidInfluence === true,
     reasons: ranked.reasons,
     price: price.text,
     place,
-    event: event ? { startDate: event.start_date, endDate: event.end_date ?? null, location: event.location ?? null, canton: event.canton ?? null } : null,
+    event: cardEvent,
     gaps: [...new Set(gaps)],
     mustStatus: mustResult.result,
   };
@@ -409,9 +436,12 @@ export async function runAiSearch(client, input) {
     const byId = new Map(accepted.map((a) => [String(a.courseId), a]));
     for (const entry of scored) {
       const judged = byId.get(String(entry.course.id));
+      // Ortsabgleich (aus Kursangaben, nicht vom Modell) bleibt erhalten,
+      // damit Abweichungen vom Ortswunsch korrekt benannt werden.
+      const locationReasons = entry.candidate.reasons.filter((r) => r.kind === 'location');
       entry.candidate.score = judged ? judged.score : 0;
       entry.candidate.reasons = judged
-        ? judged.reasons.slice(0, 3).map((r) => ({ kind: 'luna', section: r.field, sectionLabel: EVIDENCE_LABELS[r.field] ?? r.field, quote: r.quote }))
+        ? [...judged.reasons.slice(0, 3).map((r) => ({ kind: 'luna', section: r.field, sectionLabel: EVIDENCE_LABELS[r.field] ?? r.field, quote: r.quote })), ...locationReasons]
         : [];
     }
     lunaUsed = true;
@@ -426,7 +456,7 @@ export async function runAiSearch(client, input) {
       .slice(0, RESULT_LIMIT)
       .map((ranked) => {
         const entry = byId.get(String(ranked.courseId));
-        return buildCard(entry.course, ranked, entry.mustResult, context, now);
+        return buildCard(entry.course, ranked, entry.mustResult, context, now, { wishes: parsed.wishes, musts });
       });
   };
 
