@@ -146,6 +146,8 @@ export default async function handler(req, res) {
           embeddingModel: modelConfig.embeddingModel,
           reasoningEffort: modelConfig.lunaReasoningEffort,
           batchSize: modelConfig.lunaBatchSize,
+          distribution: modelConfig.lunaDistribution,
+          mode: modelConfig.lunaMode,
         }),
         embeddingVersion: modelConfig.embeddingVersion,
       }
@@ -187,6 +189,8 @@ export default async function handler(req, res) {
       semantic: result.method.semantic,
       effort: models ? modelConfig.lunaReasoningEffort : null,
       batch: models ? modelConfig.lunaBatchSize : null,
+      distribution: models ? modelConfig.lunaDistribution : null,
+      mode: models ? modelConfig.lunaMode : null,
       stats: result.stats,
     }));
     res.setHeader('Server-Timing', Object.entries(serverTimings).map(([name, ms]) => `${name};dur=${ms}`).join(', '));

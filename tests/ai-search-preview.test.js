@@ -567,6 +567,40 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     expect(gateway.usage).toMatchObject({ lunaCalls: 3, lunaInputTokens: 30, lunaOutputTokens: 15 });
   });
 
+  it('Verteilung: reihum gleich gross, Block in Abrufreihenfolge; keine Kandidaten gehen verloren', async () => {
+    const { distributeCandidates } = await import('../src/lib/aiSearch/openaiGateway.js');
+    const list = Array.from({ length: 25 }, (_, i) => i + 1);
+    const stripe = distributeCandidates(list, 10, 'stripe');
+    expect(stripe.map((b) => b.length)).toEqual([9, 8, 8]);
+    expect(stripe[0].slice(0, 3)).toEqual([1, 4, 7]);
+    expect(distributeCandidates(list, 10, 'block').map((b) => b.length)).toEqual([10, 10, 5]);
+    expect(stripe.flat().sort((a, b) => a - b)).toEqual(list);
+  });
+
+  it('Zweistufig: Stufe 1 bewertet alle, Stufe 2 begründet nur geeignete; je Teilaufruf Tokens/Dauer erfasst', async () => {
+    const fetchImpl = vi.fn(async (url, init) => {
+      const sent = JSON.parse(init.body);
+      const input = JSON.parse(sent.input);
+      const results = sent.text.format.name === 'score'
+        ? input.candidates.map((c) => ({ courseId: c.courseId, score: c.courseId === '2' ? 90 : 40 }))
+        : input.candidates.map((c) => ({ courseId: c.courseId, explanation: 'Du lernst sanftes Yoga am Abend. Das passt, weil der Kurs ruhig beginnt.', reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }));
+      return { ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify({ results }), usage: { input_tokens: 100, output_tokens: 20 } }) };
+    });
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, mode: 'twoStage', batchSize: 2, distribution: 'stripe' });
+    const candidates = [1, 2, 3].map((id) => ({ courseId: id, evidence: { title: `Kurs ${id}`, description: 'Sanftes Yoga am Abend.' } }));
+    const result = await gateway.rerank('Yoga', candidates);
+    const stages = fetchImpl.mock.calls.map(([, init]) => JSON.parse(init.body).text.format.name);
+    expect(stages.filter((s) => s === 'score')).toHaveLength(2);
+    expect(stages.filter((s) => s === 'explain')).toHaveLength(1);
+    const explainInput = JSON.parse(JSON.parse(fetchImpl.mock.calls.find(([, i]) => JSON.parse(i.body).text.format.name === 'explain')[1].body).input);
+    expect(explainInput.candidates.map((c) => c.courseId)).toEqual(['2']);
+    expect(result.accepted).toHaveLength(3);
+    expect(result.accepted.find((a) => a.courseId === '2').explanation).toMatch(/^Du lernst sanftes Yoga/);
+    expect(result.accepted.find((a) => a.courseId === '1').explanation).toBeNull();
+    expect(gateway.usage.lunaCallDetails).toHaveLength(3);
+    expect(gateway.usage.lunaCallDetails[0]).toMatchObject({ stage: 'score', in: 100, out: 20 });
+  });
+
   it('Modellkonfiguration: Denkstufe/Teilgrösse nur aus erlaubten Werten', () => {
     const base = { VERCEL_ENV: 'preview', SUPABASE_URL: TEST_URL, VITE_SUPABASE_URL: TEST_URL };
     expect(readModelConfig({ ...base, AI_SEARCH_LUNA_EFFORT: 'none', AI_SEARCH_LUNA_BATCH: '15' })).toMatchObject({ lunaReasoningEffort: 'none', lunaBatchSize: 15 });
