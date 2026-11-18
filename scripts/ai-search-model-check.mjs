@@ -22,9 +22,15 @@ async function main() {
     if (!response.ok) {
       ok = false;
       // Fehlercode/-text des Anbieters (enthält keine Eingaben); Schlüsselartiges vorsorglich maskiert.
-      const body = await response.json().catch(() => null);
-      const detail = `${body?.error?.type ?? ''} ${body?.error?.code ?? ''} ${body?.error?.message ?? ''}`.replace(/sk-[A-Za-z0-9_-]+/g, 'sk-***').trim();
-      if (detail) console.log(`  Anbieterhinweis: ${detail.slice(0, 400)}`);
+      const raw = await response.text().catch(() => '');
+      let detail = raw;
+      try {
+        const body = JSON.parse(raw);
+        detail = `${body?.error?.type ?? ''} ${body?.error?.code ?? ''} ${body?.error?.message ?? ''}`.trim() || raw;
+      } catch { /* kein JSON */ }
+      const mask = (s) => String(s ?? '').replace(/sk-[A-Za-z0-9_-]+/g, 'sk-***').replace(/\s+/g, ' ').trim();
+      console.log(`  Antworttyp: ${response.headers.get('content-type') ?? '-'}, Server: ${response.headers.get('server') ?? '-'}, Request-ID vorhanden: ${response.headers.get('x-request-id') ? 'ja' : 'nein'}`);
+      console.log(`  Anbieterhinweis: ${mask(detail).slice(0, 400) || '(leer)'}`);
     }
   }
   if (!ok) process.exit(1);
