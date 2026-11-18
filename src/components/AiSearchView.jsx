@@ -3,6 +3,7 @@ import { Sparkles, Search, LayoutGrid, Lock, AlertTriangle, ChevronDown, ArrowRi
 import { supabase } from '../lib/supabase';
 import { AI_SEARCH_TEST_REF, supabaseRefOf } from '../lib/aiSearch/previewGuard';
 import { writeStored, readSession, writeSession, removeSession } from '../lib/safeStorage';
+import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 
 /**
  * KI-Suche (Preview). Dritter Einstieg neben Kategorien und klassischer
@@ -95,12 +96,14 @@ function QuotaBadge({ quota }) {
 }
 
 // Schlanke Karte (Nachtrag 10): Titel, eine Begründung als Fliesstext,
-// Kurslink; offizielles Kursbild nur, wenn vorhanden (Desktop rechts,
-// mobil oberhalb in voller Breite – keine gequetschte Textspalte).
+// Kurslink und immer ein Bild – eingetragenes Kursbild oder, wie in der
+// klassischen Suche und im Kursdetail, das Laptop-Standardbild
+// (Desktop rechts, mobil oberhalb in voller Breite).
 function ResultCard({ card }) {
   const [imageFailed, setImageFailed] = useState(false);
   const open = (e) => { e.preventDefault(); navigate(card.url); };
-  const showImage = card.imageUrl && !imageFailed;
+  // Ladefehler eines eigenen Bildes → Standardbild statt leerer Fläche.
+  const imageSrc = (!imageFailed && card.imageUrl) || DEFAULT_COURSE_IMAGE;
   return (
     <article className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col-reverse sm:flex-row gap-4" data-testid="ai-result-card">
       <div className="min-w-0 flex-1">
@@ -112,14 +115,11 @@ function ResultCard({ card }) {
           Zum Kurs <ArrowRight className="w-4 h-4" />
         </a>
       </div>
-      {showImage && (
-        // Gleiche Bildquelle (courses.image_url) und Behandlung wie die klassische
-        // Suche (16:9, object-cover, feste Masse), aber ohne Platzhalter-Ersatz.
-        <div className="w-full sm:w-48 aspect-video shrink-0 self-start overflow-hidden rounded-lg bg-gray-100" data-testid="ai-card-image">
-          <img src={card.imageUrl} alt={card.title} loading="lazy" decoding="async" width="600" height="338"
-            onError={() => setImageFailed(true)} className="w-full h-full object-cover" />
-        </div>
-      )}
+      {/* Gleiche Bildauflösung wie klassische Suche/Kursdetail: image_url || Standardbild; 16:9, object-cover. */}
+      <div className="w-full sm:w-48 aspect-video shrink-0 self-start overflow-hidden rounded-lg bg-gray-100" data-testid="ai-card-image">
+        <img src={imageSrc} alt={card.title} loading="lazy" decoding="async" width="600" height="338"
+          onError={() => { if (card.imageUrl && !imageFailed) setImageFailed(true); }} className="w-full h-full object-cover" />
+      </div>
     </article>
   );
 }

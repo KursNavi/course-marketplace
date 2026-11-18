@@ -30,8 +30,6 @@ import { fuseRankedLists } from './retrieval.js';
 import { rankWithPaidPriority, MIN_SCORE } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
 import { buildExplanation } from './explanation.js';
-import { isPlaceholderCourseImage } from '../courseImageDefaults.js';
-
 export const CANDIDATE_LIMIT = 100;
 export const RESULT_LIMIT = 10;
 
@@ -280,12 +278,12 @@ function categoryLabel(rows) {
 }
 
 /**
- * Nur das dem Kurs zugeordnete eigene Bild (dieselbe Quelle wie die klassische
- * Suche: courses.image_url). Platzhalterbilder gelten als "kein eigenes Bild".
+ * Eingetragenes Kursbild (dieselbe Quelle wie klassische Suche und
+ * Kursdetail: courses.image_url). Fehlt es, setzt die Oberfläche wie dort das
+ * Laptop-Standardbild ein (Nachtrag 10, Korrektur vom 18.11.2026).
  */
-export function officialImageUrl(value) {
+export function courseImageUrl(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
-  if (isPlaceholderCourseImage(value)) return null;
   try {
     const url = new URL(value.trim());
     return url.protocol === 'https:' ? url.href : null;
@@ -334,7 +332,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     courseId: course.id,
     title: course.title ?? '',
     url: buildCanonicalCoursePath(courseForUrl),
-    imageUrl: officialImageUrl(course.image_url),
+    imageUrl: courseImageUrl(course.image_url),
     explanation,
     provider: profile?.full_name ?? null,
     category: categoryLabel(categoryRows),

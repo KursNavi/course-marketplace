@@ -195,7 +195,7 @@ describe('runAiSearch', () => {
     }
   });
 
-  it('jede Karte hat eine belegte Begründung (≤100 Wörter), offizielles Bild nur falls vorhanden', async () => {
+  it('jede Karte hat eine belegte Begründung (≤100 Wörter) und die Bildadresse aus image_url', async () => {
     const longText = `Fotografie ${'Licht und Komposition im Alltag üben '.repeat(30)}`;
     const courses = [
       course(1, { title: 'Fotografie Grundkurs', image_url: 'https://example.org/bild.jpg', canton: 'Bern', course_events: [{ start_date: '2026-12-05', canton: 'Bern', location: 'Bern' }] }),
@@ -214,8 +214,9 @@ describe('runAiSearch', () => {
     const byId = Object.fromEntries(result.results.map((c) => [c.courseId, c]));
     expect(byId[1].imageUrl).toBe('https://example.org/bild.jpg');
     expect(byId[2].imageUrl).toBeNull();
-    // Platzhalterbild der klassischen Suche ist kein eigenes Kursbild.
-    expect(byId[3].imageUrl).toBeNull();
+    // Eingetragene Bildadresse wird unverändert weitergegeben (auch das Standardbild);
+    // fehlt sie, setzt die Oberfläche wie die klassische Suche das Standardbild ein.
+    expect(byId[3].imageUrl).toMatch(/a0e887f57107603aaf4327ad40de2ab7\.jpg$/);
     for (const card of result.results) {
       expect(countWords(card.explanation)).toBeGreaterThan(0);
       expect(countWords(card.explanation)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
