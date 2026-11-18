@@ -196,7 +196,7 @@ describe('runAiSearch', () => {
     }
   });
 
-  it('jede Karte hat eine belegte Begründung (≤100 Wörter) und die Bildadresse aus image_url', async () => {
+  it('jede Karte hat eine belegte Begründung (≤50 Wörter) und die Bildadresse aus image_url', async () => {
     const longText = `Fotografie ${'Licht und Komposition im Alltag üben '.repeat(30)}`;
     const courses = [
       course(1, { title: 'Fotografie Grundkurs', image_url: 'https://example.org/bild.jpg', canton: 'Bern', course_events: [{ start_date: '2026-12-05', canton: 'Bern', location: 'Bern' }] }),
@@ -223,8 +223,8 @@ describe('runAiSearch', () => {
       expect(countWords(card.explanation)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
     }
     // Abweichung vom Ortswunsch bleibt im Text erkennbar.
-    expect(byId[1].explanation).toMatch(/Abweichung von deinem Wunsch „Zürich“: Als Ort ist Bern angegeben/);
-    expect(byId[2].explanation).toMatch(/in Zürich statt, wie gewünscht/);
+    expect(byId[1].explanation).toMatch(/Abweichung vom Wunsch „Zürich“: Ort ist Bern\./);
+    expect(byId[2].explanation).toMatch(/Ort laut Kursangaben: Zürich\./);
   });
 
   it('unvollständiger Index wird ehrlich ausgewiesen (ID-Abgleich über mehrere Seiten)', async () => {
@@ -535,13 +535,42 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     expect(result.rejected.filter((r) => /Begründungstext verworfen/.test(r.reason))).toHaveLength(3);
   });
 
-  it('validateExplanation kürzt zu lange Texte an Satzgrenzen auf höchstens 100 Wörter', () => {
+  it('validateExplanation kürzt zu lange Texte an Satzgrenzen auf höchstens 50 Wörter', () => {
     const sentence = 'Dieser Kurs vermittelt die Grundlagen ruhig und verständlich für Einsteiger ohne Vorkenntnisse im Thema.'; // 15 Wörter
     const long = Array.from({ length: 8 }, () => sentence).join(' '); // 120 Wörter
     const check = validateExplanation(long, { description: 'x' }, [{ field: 'description', quote: 'x' }]);
     expect(check.rejectedBecause).toBeNull();
-    expect(countWords(check.text)).toBeLessThanOrEqual(100);
+    expect(countWords(check.text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
+    expect(MAX_EXPLANATION_WORDS).toBe(50);
     expect(check.text.endsWith('.')).toBe(true);
+  });
+
+  it('Luna-Teilaufrufe laufen parallel, bewerten alle Kandidaten und nutzen die gewählte Denkstufe', async () => {
+    let inFlight = 0;
+    let maxInFlight = 0;
+    const fetchImpl = vi.fn(async (url, init) => {
+      inFlight += 1; maxInFlight = Math.max(maxInFlight, inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      inFlight -= 1;
+      const sent = JSON.parse(JSON.parse(init.body).input);
+      const results = sent.candidates.map((c) => ({ courseId: c.courseId, score: 50, explanation: '', reasons: [] }));
+      return { ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify({ results }), usage: { input_tokens: 10, output_tokens: 5 } }) };
+    });
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, reasoningEffort: 'none', batchSize: 10 });
+    const candidates = Array.from({ length: 25 }, (_, i) => ({ courseId: i + 1, evidence: { title: `Kurs ${i + 1}` } }));
+    const result = await gateway.rerank('Yoga', candidates);
+    expect(fetchImpl).toHaveBeenCalledTimes(3);
+    expect(maxInFlight).toBe(3);
+    expect(result.accepted).toHaveLength(25);
+    expect(result.sentIds).toHaveLength(25);
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body).reasoning).toEqual({ effort: 'none' });
+    expect(gateway.usage).toMatchObject({ lunaCalls: 3, lunaInputTokens: 30, lunaOutputTokens: 15 });
+  });
+
+  it('Modellkonfiguration: Denkstufe/Teilgrösse nur aus erlaubten Werten', () => {
+    const base = { VERCEL_ENV: 'preview', SUPABASE_URL: TEST_URL, VITE_SUPABASE_URL: TEST_URL };
+    expect(readModelConfig({ ...base, AI_SEARCH_LUNA_EFFORT: 'none', AI_SEARCH_LUNA_BATCH: '15' })).toMatchObject({ lunaReasoningEffort: 'none', lunaBatchSize: 15 });
+    expect(readModelConfig({ ...base, AI_SEARCH_LUNA_EFFORT: 'extreme', AI_SEARCH_LUNA_BATCH: '999' })).toMatchObject({ lunaReasoningEffort: 'low', lunaBatchSize: 10 });
   });
 
   it('keepGroundedReasons verlangt wörtliche Belege', () => {
@@ -673,7 +702,7 @@ describe('Begründungstext (Nachtrag 10)', () => {
     expect(countWords(short)).toBeLessThanOrEqual(16);
   });
 
-  it('hält höchstens 100 Wörter ein und behält Einschränkungen beim Kürzen', () => {
+  it('hält höchstens 50 Wörter ein und behält Einschränkungen beim Kürzen', () => {
     const reasons = Array.from({ length: 3 }, (_, i) => ({ kind: 'text', section: 'description', sectionLabel: 'Beschreibung', term: `begriff${i}`, quote: 'x '.repeat(60) }));
     const text = buildExplanation({
       reasons,
@@ -685,9 +714,9 @@ describe('Begründungstext (Nachtrag 10)', () => {
       price: 'Preis auf Anfrage',
     });
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
-    expect(text).toMatch(/Abweichung von deinem Wunsch/);
-    expect(text).toMatch(/Nicht bestätigt: Ob ein Termin/);
-    expect(text).toMatch(/Nicht bestätigt: Ob der Preis/);
+    expect(text).toMatch(/Abweichung vom Wunsch/);
+    expect(text).toMatch(/Nicht bestätigt: ein Termin in Zürich\./);
+    expect(text).toMatch(/Nicht bestätigt: Preis im Budget/);
   });
 
   it('füllt bei knapper Evidenz nicht auf', () => {
@@ -707,8 +736,8 @@ describe('Begründungstext (Nachtrag 10)', () => {
     });
     expect(text).not.toMatch(/steht: „Zitat“/);
     expect(text).toMatch(/^Satz 0/);
-    expect(text).toMatch(/Abweichung von deinem Wunsch „Zürich“: Als Ort ist Bern angegeben\./);
-    expect(text).toMatch(/Nicht bestätigt: Ob ein Termin/);
+    expect(text).toMatch(/Abweichung vom Wunsch „Zürich“: Ort ist Bern\./);
+    expect(text).toMatch(/Nicht bestätigt: ein Termin in Zürich\./);
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
   });
 });

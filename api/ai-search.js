@@ -59,6 +59,8 @@ async function quotaStatus(service, userId) {
 }
 
 export default async function handler(req, res) {
+  const requestStarted = Date.now();
+  const serverTimings = {};
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' });
@@ -77,7 +79,9 @@ export default async function handler(req, res) {
   // 2. Konto
   const token = String(req.headers.authorization ?? '').replace(/^Bearer\s+/i, '').trim();
   if (!token) return res.status(401).json({ error: 'login_required' });
+  const authStarted = Date.now();
   const { data: authData, error: authError } = await service.auth.getUser(token);
+  serverTimings.auth = Date.now() - authStarted;
   const user = authData?.user;
   if (authError || !user) return res.status(401).json({ error: 'login_required' });
   if (user.is_anonymous === true) return res.status(403).json({ error: 'real_account_required' });
@@ -103,12 +107,14 @@ export default async function handler(req, res) {
     const queryHash = buildQueryHash(body.query, musts);
 
     // 4. Atomare Reservierung
+    const reserveStarted = Date.now();
     const { data: reservation, error: reserveError } = await service.rpc('ai_search_quota_reserve', {
       p_user_id: user.id,
       p_request_id: body.requestId,
       p_query_hash: queryHash,
       p_limit: QUOTA_LIMIT,
     });
+    serverTimings.reserve = Date.now() - reserveStarted;
     if (reserveError) throw new Error(`Reservierung: ${reserveError.message}`);
 
     if (reservation === 'limit_reached') {
@@ -134,7 +140,15 @@ export default async function handler(req, res) {
     // Modellaufrufe (Luna, Embeddings) nur nach Freigabe E3 — sonst null.
     const modelConfig = readModelConfig(process.env);
     const models = modelConfig.enabled
-      ? { gateway: createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: modelConfig.embeddingModel }), embeddingVersion: modelConfig.embeddingVersion }
+      ? {
+        gateway: createOpenAiGateway({
+          apiKey: process.env.OPENAI_API_KEY,
+          embeddingModel: modelConfig.embeddingModel,
+          reasoningEffort: modelConfig.lunaReasoningEffort,
+          batchSize: modelConfig.lunaBatchSize,
+        }),
+        embeddingVersion: modelConfig.embeddingVersion,
+      }
       : null;
     try {
       result = await runAiSearch(service, { query: body.query, musts, models });
@@ -146,20 +160,37 @@ export default async function handler(req, res) {
       if (models) console.log('ai-search usage (fehlgeschlagen):', JSON.stringify(models.gateway.usage));
       return res.status(502).json({ error: 'search_failed', modelsEnabled: Boolean(models), quota: await quotaStatus(service, user.id) });
     }
-    // Nur Zahlen, keine Suchtexte.
-    if (models) console.log('ai-search usage:', JSON.stringify({ ...models.gateway.usage, luna: result.method.luna, semantic: result.method.semantic }));
+    serverTimings.search = result.timings?.total ?? null;
 
     // 6. Abschluss — nur 'completed' gibt das Ergebnis frei.
+    const finalizeStarted = Date.now();
     const { data: finalized, error: finalizeError } = await service.rpc('ai_search_quota_finalize', {
       p_request_id: body.requestId,
       p_limit: QUOTA_LIMIT,
     });
+    serverTimings.finalize = Date.now() - finalizeStarted;
     if (finalizeError) throw new Error(`Abschluss: ${finalizeError.message}`);
     if (finalized !== 'completed') {
       return res.status(409).json({ error: 'not_released', quota: await quotaStatus(service, user.id) });
     }
 
-    return res.status(200).json({ requestId: body.requestId, ...result, quota: await quotaStatus(service, user.id) });
+    const quotaStarted = Date.now();
+    const quota = await quotaStatus(service, user.id);
+    serverTimings.quota = Date.now() - quotaStarted;
+    serverTimings.total = Date.now() - requestStarted;
+    // Nur Zahlen, keine Suchtexte (Nachtrag 11/12).
+    console.log('ai-search timing+usage:', JSON.stringify({
+      server: serverTimings,
+      phases: result.timings,
+      usage: models ? models.gateway.usage : null,
+      luna: result.method.luna,
+      semantic: result.method.semantic,
+      effort: models ? modelConfig.lunaReasoningEffort : null,
+      batch: models ? modelConfig.lunaBatchSize : null,
+      stats: result.stats,
+    }));
+    res.setHeader('Server-Timing', Object.entries(serverTimings).map(([name, ms]) => `${name};dur=${ms}`).join(', '));
+    return res.status(200).json({ requestId: body.requestId, ...result, serverTimings, quota });
   } catch (error) {
     console.error('ai-search error:', error?.message);
     return res.status(500).json({ error: 'server_error' });

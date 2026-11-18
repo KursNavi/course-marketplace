@@ -11,8 +11,10 @@
  * - Paket-/Prio-Daten fliessen nie ein.
  */
 
-export const MAX_EXPLANATION_WORDS = 100;
-const QUOTE_MAX_WORDS = 16;
+// Nachtrag 12 (18.11.2026): normal 25–40 Wörter, höchstens 50 einschliesslich
+// serverseitiger Hinweise (ersetzt 40–70/100 aus Nachtrag 10).
+export const MAX_EXPLANATION_WORDS = 50;
+const QUOTE_MAX_WORDS = 12;
 
 const IN_SECTION = {
   title: 'im Titel',
@@ -99,18 +101,18 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], musts
   const locationWishes = wishes.filter((w) => w.type === 'location');
   if (locationReason) {
     const where = String(locationReason.quote ?? '').replace(/^Ort laut Kursangaben:\s*/, '');
-    add(20, 2, `Laut Kursangaben findet er in ${where} statt, wie gewünscht.`);
+    add(20, 2, `Ort laut Kursangaben: ${where}.`);
   } else if (locationWishes.length > 0) {
     const wish = locationWishes.map((w) => w.label).join(' / ');
     add(20, 0, place
-      ? `Abweichung von deinem Wunsch „${wish}“: Als Ort ist ${place} angegeben.`
-      : `Ob der Kurs in ${wish} stattfindet, ist offen: Ein Ort ist nicht angegeben.`);
+      ? `Abweichung vom Wunsch „${wish}“: Ort ist ${place}.`
+      : `Offen, ob in ${wish}: kein Ort angegeben.`);
   }
 
   for (const unknown of mustUnknowns) {
-    if (unknown === 'event') add(30, 0, `Nicht bestätigt: Ob ein Termin deine Ortsvorgabe${musts.location ? ` (${musts.location})` : ''} erfüllt, geht aus den Angaben nicht hervor.`);
-    if (unknown === 'budget') add(31, 0, `Nicht bestätigt: Ob der Preis (${price || 'nicht angegeben'}) in deinem Budget liegt, lässt sich aus den Angaben nicht sicher ablesen.`);
-    if (unknown === 'language') add(32, 0, 'Nicht bestätigt: Die Kurssprache ist nicht angegeben.');
+    if (unknown === 'event') add(30, 0, `Nicht bestätigt: ein Termin${musts.location ? ` in ${musts.location}` : ' passend zur Ortsvorgabe'}.`);
+    if (unknown === 'budget') add(31, 0, `Nicht bestätigt: Preis im Budget (${price || 'kein Preis angegeben'}).`);
+    if (unknown === 'language') add(32, 0, 'Nicht bestätigt: Kurssprache.');
   }
 
   const budgetWish = wishes.find((w) => w.type === 'budget');

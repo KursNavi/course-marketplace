@@ -1,10 +1,10 @@
 /**
- * Begrenzte Luna-Probe (Nachtrag 11) AUSSCHLIESSLICH gegen die TESTumgebung.
- * Führt dieselbe Suchlogik wie die Preview-API (runAiSearch) mit echten
- * Modellaufrufen für eine kleine, feste Liste von Testanfragen aus.
- * Höchstens PROBES.length Luna-Aufrufe je Lauf; keine Wiederholung bei Fehler.
- * Ausgabe: Methode, Treffer (Titel, Begründung), Tokenverbrauch.
- * Kein Kontingentverbrauch (direkter Aufruf ohne API), keine Schreibzugriffe.
+ * Begrenzter Luna-Vergleichstest (Nachtrag 11/12) AUSSCHLIESSLICH gegen die
+ * TESTumgebung. Führt dieselbe Suchlogik wie die Preview-API (runAiSearch)
+ * mit echten Modellaufrufen für feste Testfälle und wenige Einstellungen aus.
+ * Feste Obergrenze: CONFIGS × CASES + REPEATS Suchen; keine Wiederholung bei
+ * Fehlern. Kein Kontingentverbrauch (direkter Aufruf ohne API), keine
+ * Schreibzugriffe. Zeiten sind Runner→Supabase/OpenAI, NICHT Browser-Ende-zu-Ende.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -13,44 +13,63 @@ import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openai
 import { runAiSearch } from '../src/lib/aiSearch/searchService.js';
 import { countWords } from '../src/lib/aiSearch/explanation.js';
 
-// Feste Testanfragen (keine Nutzereingaben).
-// Wiederholung 18.11.2026: nur die zwei zuvor abgebrochenen Anfragen.
-const PROBES = [
-  { query: 'Entspannung und Stressabbau nach der Arbeit', musts: { canton: 'Zürich', onlineAllowed: true } },
-  { query: 'Programmieren lernen für Einsteiger' },
+// Feste Testfälle (keine Nutzereingaben): normale Suche, Orts-Muss mit
+// unbestätigten Daten, Zielgruppenfall, Nulltreffer.
+const CASES = [
+  { id: 'normal', query: 'Ich möchte als Anfänger fotografieren lernen, gerne im Selbststudium' },
+  { id: 'ort-muss', query: 'Entspannung und Stressabbau nach der Arbeit', musts: { canton: 'Zürich', onlineAllowed: true } },
+  { id: 'zielgruppe', query: 'Programmieren lernen für Einsteiger' },
+  { id: 'nulltreffer', query: 'Unterwasserschweissen für Tiefseetaucher mit Kranschein' },
 ];
+const CONFIGS = [
+  { id: 'A low/1×30', effort: 'low', batchSize: 30 },
+  { id: 'B low/3×10', effort: 'low', batchSize: 10 },
+  { id: 'C none/3×10', effort: 'none', batchSize: 10 },
+];
+// Wiederholte (gleiche) Suche je Einstellung B/C — es gibt keinen Ergebniscache.
+const REPEATS = [{ config: 'B low/3×10', caseId: 'normal' }, { config: 'C none/3×10', caseId: 'normal' }];
+
+async function runOne(service, config, testCase, label) {
+  const modelConfig = readModelConfig({ ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST });
+  const gateway = createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: modelConfig.embeddingModel, reasoningEffort: config.effort, batchSize: config.batchSize });
+  const started = Date.now();
+  console.log(`\n=== [${config.id}] ${testCase.id}${label ? ` (${label})` : ''}`);
+  try {
+    const result = await runAiSearch(service, { query: testCase.query, musts: testCase.musts, models: { gateway, embeddingVersion: modelConfig.embeddingVersion } });
+    const s = result.stats;
+    console.log(`Gesamt ${Date.now() - started} ms | Phasen ${JSON.stringify(result.timings)} | Luna-Teilaufrufe ms ${JSON.stringify(gateway.usage.lunaCallMs)}`);
+    console.log(`luna=${result.method.luna} semantic=${result.method.semantic} | gefunden ${s.candidates}, Muss-ausgeschl. ${s.excludedByMust}, an Luna ${s.sentToLuna}, bewertet ${s.rated} (unter Mindestpassung ${s.belowThreshold}), unbewertet ${s.notRated}, ungültig ${s.lunaDiscarded}, Texte verworfen ${s.explanationsRejected} | Treffer ${result.results.length}, unvollständig ${result.incompleteResults.length}`);
+    for (const card of [...result.results.slice(0, 4), ...result.incompleteResults.slice(0, 2).map((c) => ({ ...c, incomplete: true }))]) {
+      console.log(`- ${card.incomplete ? '(unvollst.) ' : ''}[${card.score}] ${card.title} — ${countWords(card.explanation)} Wörter: ${card.explanation}`);
+    }
+  } catch (error) {
+    console.log(`FEHLER nach ${Date.now() - started} ms: ${error?.message ?? error}`);
+  }
+  const u = gateway.usage;
+  console.log(`Tokens: Luna ${u.lunaInputTokens} ein / ${u.lunaOutputTokens} aus (davon Reasoning ${u.lunaReasoningTokens}), Aufrufe ${u.lunaCalls}, fehlgeschlagen ${u.lunaFailedCalls}; Embedding ${u.embeddingTokens}`);
+  return u;
+}
 
 async function main() {
   const guard = checkTestTarget(process.env);
   if (!guard.ok) { console.error(`Abbruch: ${guard.reason}`); process.exit(2); }
-  const env = { ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST };
-  const config = readModelConfig(env);
+  const config = readModelConfig({ ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST });
   if (!config.enabled) { console.error(`Abbruch: ${config.reason}`); process.exit(2); }
   const service = createClient(process.env.SUPABASE_URL_TEST, process.env.SUPABASE_SECRET_KEY_TEST, { auth: { persistSession: false } });
 
-  const total = { lunaInputTokens: 0, lunaOutputTokens: 0, lunaReasoningTokens: 0, embeddingTokens: 0 };
-  for (const [index, probe] of PROBES.entries()) {
-    const gateway = createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: config.embeddingModel });
-    const started = Date.now();
-    console.log(`\n=== Probe ${index + 1}: „${probe.query}“${probe.musts ? ` (Muss: ${JSON.stringify(probe.musts)})` : ''}`);
-    try {
-      const result = await runAiSearch(service, { query: probe.query, musts: probe.musts, models: { gateway, embeddingVersion: config.embeddingVersion } });
-      console.log(`Methode: ${result.method.ranking} | ${result.method.retrieval} | luna=${result.method.luna} semantic=${result.method.semantic} | ${Date.now() - started} ms`);
-      const s = result.stats;
-      console.log(`Gefunden ${s.candidates}, Muss-ausgeschlossen ${s.excludedByMust}, an Luna gesendet ${s.sentToLuna}, von Luna bewertet ${s.rated} (davon unter Mindestpassung ${s.belowThreshold}), unbewertet ${s.notRated}; Treffer ${result.results.length}, unvollständig ${result.incompleteResults.length}`);
-      for (const card of result.results.slice(0, 5)) {
-        console.log(`- [${card.score}] ${card.title} (${countWords(card.explanation)} Wörter)\n    ${card.explanation}`);
-      }
-      for (const card of result.incompleteResults.slice(0, 2)) {
-        console.log(`- (unvollständig) [${card.score}] ${card.title}\n    ${card.explanation}`);
-      }
-    } catch (error) {
-      console.log(`FEHLER: ${error?.message ?? error}`);
-    }
-    console.log(`Verbrauch: ${JSON.stringify(gateway.usage)}`);
-    for (const key of Object.keys(total)) total[key] += gateway.usage[key] ?? 0;
+  const totals = {};
+  const add = (id, u) => {
+    totals[id] ??= { lunaInputTokens: 0, lunaOutputTokens: 0, lunaReasoningTokens: 0, lunaCalls: 0, lunaFailedCalls: 0, embeddingTokens: 0 };
+    for (const key of Object.keys(totals[id])) totals[id][key] += u[key] ?? 0;
+  };
+  for (const cfg of CONFIGS) {
+    for (const testCase of CASES) add(cfg.id, await runOne(service, cfg, testCase));
   }
-  console.log(`\nGesamtverbrauch: ${JSON.stringify(total)}`);
+  for (const repeat of REPEATS) {
+    const cfg = CONFIGS.find((c) => c.id === repeat.config);
+    add(cfg.id, await runOne(service, cfg, CASES.find((c) => c.id === repeat.caseId), 'Wiederholung'));
+  }
+  console.log(`\nVerbrauch je Einstellung: ${JSON.stringify(totals)}`);
 }
 
 main().catch((error) => { console.error('Unerwarteter Fehler:', error?.message ?? error); process.exit(1); });

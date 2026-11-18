@@ -50,6 +50,10 @@ function formatDate(value) {
   return date.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Zurich' });
 }
 
+function formatSeconds(ms) {
+  return `${(ms / 1000).toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} s`;
+}
+
 function newRequestId() {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   // Fallback (ältere Browser): RFC-4122-v4-Format
@@ -150,6 +154,20 @@ export default function AiSearchView({ user, setView }) {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const pendingRef = useRef(null); // { requestId, payload } für idempotenten Wiederholversuch
+  // Testmessung (Nachtrag 12): Klick bis fertig gerenderte Vorschläge.
+  const clickStartedRef = useRef(null);
+  const [clientMs, setClientMs] = useState(null);
+
+  useEffect(() => {
+    if (!result || clickStartedRef.current === null) return undefined;
+    const started = clickStartedRef.current;
+    clickStartedRef.current = null;
+    // Nach dem Zeichnen der Karten messen (zwei Frames: Layout + Paint).
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setClientMs(Math.round(performance.now() - started)));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [result]);
 
   // Entwurf nur lokal bewahren (nie in URL/Analytics).
   useEffect(() => { writeSession(DRAFT_KEY, query); }, [query]);
@@ -187,6 +205,8 @@ export default function AiSearchView({ user, setView }) {
   useEffect(() => { if (user) loadStatus(); }, [user, loadStatus]);
 
   const submit = async (retry = false) => {
+    clickStartedRef.current = performance.now();
+    setClientMs(null);
     setError(null);
     if (!BROWSER_ON_TEST_DB) { setError('wrong_environment'); return; }
     let pending = pendingRef.current;
@@ -213,6 +233,7 @@ export default function AiSearchView({ user, setView }) {
         setResult(body);
         writeSession(RESULT_KEY, JSON.stringify({ userId: user.id, result: body }));
       } else {
+        clickStartedRef.current = null;
         if (body.error !== 'network') pendingRef.current = null;
         // Modellfehler eigens benennen (kein stiller Simulationsersatz).
         setError(body.error === 'search_failed' && body.modelsEnabled ? 'model_failed' : (body.error || 'server_error'));
@@ -394,6 +415,15 @@ export default function AiSearchView({ user, setView }) {
                     {result.method && <p>Suchverfahren: {result.method.retrieval}.</p>}
                   </div>
                 </details>
+                {(clientMs !== null || result.serverTimings) && (
+                  <p data-testid="ai-timing">
+                    Messung (Testvorschau):
+                    {clientMs !== null && <> Klick bis fertige Anzeige {formatSeconds(clientMs)}</>}
+                    {result.serverTimings?.total != null && <>{clientMs !== null ? ' ·' : ''} Server {formatSeconds(result.serverTimings.total)}</>}
+                    {result.timings?.luna != null && <>, davon KI-Bewertung {formatSeconds(result.timings.luna)}</>}
+                    .
+                  </p>
+                )}
               </footer>
             </section>
           )}

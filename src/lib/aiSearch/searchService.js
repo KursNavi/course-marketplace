@@ -365,41 +365,58 @@ export async function runAiSearch(client, input) {
   }
   if (Number.isFinite(input.musts?.maxBudget) && input.musts.maxBudget > 0) musts.maxBudget = input.musts.maxBudget;
 
-  const coverage = await indexCoverage(client);
   const models = input.models ?? null; // { gateway, embeddingVersion } — nur nach Freigabe E3
 
-  const channels = [];
-  if (parsed.tsQuery) {
-    const [chunkHits, documentHits] = await Promise.all([
+  // Phasenzeiten in ms (Nachtrag 12) — nur Zahlen, keine Inhalte.
+  const searchStarted = Date.now();
+  const timings = {};
+  const timed = async (name, fn) => {
+    const started = Date.now();
+    try { return await fn(); } finally { timings[name] = Date.now() - started; }
+  };
+
+  // Unabhängige Schritte PARALLEL: Abdeckungsnachweis, lexikalischer Abruf
+  // (Abschnitte + Titel) und Bedeutungssuche (Konfiguration → Query-
+  // Embedding → semantischer Abruf). Alle bleiben katalogweit.
+  const lexicalPath = parsed.tsQuery
+    ? timed('lexical', () => Promise.all([
       lexicalChunkChannel(client, parsed.tsQuery),
       lexicalDocumentChannel(client, parsed.tsQuery),
-    ]);
-    channels.push(chunkHits, documentHits);
-  }
-  let semanticUsed = false;
-  if (models?.gateway) {
-    // Bedeutungssuche nur, wenn der Index für genau diese Modellversion
-    // vollständig eingebettet und aktiv geschaltet ist (ai_search_config).
-    const { data: config, error: configError } = await client
-      .from('ai_search_config').select('active_model_version').eq('id', 1).maybeSingle();
-    if (configError) throw new Error(`Konfiguration: ${configError.message}`);
-    if (config?.active_model_version && config.active_model_version === models.embeddingVersion) {
+    ]))
+    : Promise.resolve([]);
+  const semanticPath = models?.gateway
+    ? timed('semantic', async () => {
+      // Bedeutungssuche nur, wenn der Index für genau diese Modellversion
+      // vollständig eingebettet und aktiv geschaltet ist (ai_search_config).
+      const { data: config, error: configError } = await client
+        .from('ai_search_config').select('active_model_version').eq('id', 1).maybeSingle();
+      if (configError) throw new Error(`Konfiguration: ${configError.message}`);
+      if (!config?.active_model_version || config.active_model_version !== models.embeddingVersion) return null;
+      const embedStarted = Date.now();
       const [vector] = await models.gateway.embed(parsed.normalized);
+      timings.queryEmbedding = Date.now() - embedStarted;
       const { data, error } = await client.rpc('ai_search_semantic', {
         p_embedding: JSON.stringify(vector),
         p_model_version: models.embeddingVersion,
         p_limit: CANDIDATE_LIMIT,
       });
       if (error) throw new Error(`Abruf (Bedeutung): ${error.message}`);
-      channels.push((data ?? []).map((row) => ({ courseId: row.course_id })));
-      semanticUsed = true;
-    }
-  }
+      return (data ?? []).map((row) => ({ courseId: row.course_id }));
+    })
+    : Promise.resolve(null);
+  const [coverage, lexicalChannels, semanticChannel] = await Promise.all([
+    timed('coverage', () => indexCoverage(client)),
+    lexicalPath,
+    semanticPath,
+  ]);
+  const channels = [...lexicalChannels];
+  const semanticUsed = Array.isArray(semanticChannel);
+  if (semanticUsed) channels.push(semanticChannel);
   const candidateIds = channels.length > 0
     ? fuseRankedLists(channels, { limit: CANDIDATE_LIMIT }).map((c) => c.courseId)
     : [];
 
-  const context = await loadCandidates(client, candidateIds);
+  const context = await timed('loadCandidates', () => loadCandidates(client, candidateIds));
   // Statusprüfung unmittelbar vor Ausgabe (zusätzlich zum Filter in der Abfrage).
   const freshCourses = context.courses.filter((course) => isPubliclySearchable(course));
 
@@ -433,12 +450,16 @@ export async function runAiSearch(client, input) {
   // Kandidaten fallen heraus (kein Auffüllen mit unbewerteten Kursen).
   let lunaUsed = false;
   let lunaSent = 0;
+  let lunaDiscarded = 0;
+  let explanationsRejected = 0;
   if (models?.gateway && scored.length > 0) {
     const rankIndex = new Map(candidateIds.map((id, index) => [String(id), index]));
     const ordered = [...scored].sort((a, b) => (rankIndex.get(String(a.course.id)) ?? 1e9) - (rankIndex.get(String(b.course.id)) ?? 1e9));
     const evidenceCandidates = ordered.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
-    const { accepted, sentIds } = await models.gateway.rerank(parsed.normalized, evidenceCandidates);
+    const { accepted, sentIds, rejected = [] } = await timed('luna', () => models.gateway.rerank(parsed.normalized, evidenceCandidates));
     lunaSent = Array.isArray(sentIds) ? sentIds.length : evidenceCandidates.length;
+    lunaDiscarded = rejected.filter((r) => /Kurs-ID|doppelt|Score/.test(r.reason)).length;
+    explanationsRejected = rejected.filter((r) => /Begründungstext/.test(r.reason)).length;
     const byId = new Map(accepted.map((a) => [String(a.courseId), a]));
     for (const entry of scored) {
       const judged = byId.get(String(entry.course.id));
@@ -468,8 +489,11 @@ export async function runAiSearch(client, input) {
       });
   };
 
+  const cardsStarted = Date.now();
   const results = toCards(confirmed);
   const incompleteResults = toCards(incomplete);
+  timings.cards = Date.now() - cardsStarted;
+  timings.total = Date.now() - searchStarted;
   // Nur tatsächlich bewertete Kandidaten können "unter Mindestpassung" sein.
   // Mit Luna: nicht an Luna gesendete bzw. von Luna nicht zurückgegebene
   // Kandidaten sind UNBEWERTET, nicht "als ungeeignet bewertet".
@@ -497,7 +521,11 @@ export async function runAiSearch(client, input) {
       belowThreshold,
       notRated: scored.length - rated.length,
       sentToLuna: lunaUsed ? lunaSent : 0,
+      // Ungültige Luna-Einträge (fremde ID, doppelt, ohne Score) und verworfene Texte.
+      lunaDiscarded,
+      explanationsRejected,
     },
+    timings,
     method: {
       retrieval: semanticUsed
         ? 'lexikalisch + Bedeutungssuche (Titel + vollständige Beschreibungen)'
