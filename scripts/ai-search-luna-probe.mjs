@@ -14,8 +14,8 @@ import { runAiSearch } from '../src/lib/aiSearch/searchService.js';
 import { countWords } from '../src/lib/aiSearch/explanation.js';
 
 // Feste Testanfragen (keine Nutzereingaben).
+// Wiederholung 18.11.2026: nur die zwei zuvor abgebrochenen Anfragen.
 const PROBES = [
-  { query: 'Ich möchte als Anfänger fotografieren lernen, gerne im Selbststudium' },
   { query: 'Entspannung und Stressabbau nach der Arbeit', musts: { canton: 'Zürich', onlineAllowed: true } },
   { query: 'Programmieren lernen für Einsteiger' },
 ];
@@ -36,7 +36,8 @@ async function main() {
     try {
       const result = await runAiSearch(service, { query: probe.query, musts: probe.musts, models: { gateway, embeddingVersion: config.embeddingVersion } });
       console.log(`Methode: ${result.method.ranking} | ${result.method.retrieval} | luna=${result.method.luna} semantic=${result.method.semantic} | ${Date.now() - started} ms`);
-      console.log(`Kandidaten ${result.stats.candidates}, unter Mindestpassung ${result.stats.belowThreshold}, Muss-ausgeschlossen ${result.stats.excludedByMust}; Treffer ${result.results.length}, unvollständig ${result.incompleteResults.length}`);
+      const s = result.stats;
+      console.log(`Gefunden ${s.candidates}, Muss-ausgeschlossen ${s.excludedByMust}, an Luna gesendet ${s.sentToLuna}, von Luna bewertet ${s.rated} (davon unter Mindestpassung ${s.belowThreshold}), unbewertet ${s.notRated}; Treffer ${result.results.length}, unvollständig ${result.incompleteResults.length}`);
       for (const card of result.results.slice(0, 5)) {
         console.log(`- [${card.score}] ${card.title} (${countWords(card.explanation)} Wörter)\n    ${card.explanation}`);
       }

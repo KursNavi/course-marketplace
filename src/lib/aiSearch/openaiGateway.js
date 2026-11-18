@@ -31,7 +31,11 @@ export const RERANK_MAX_CANDIDATES = 30;
 // internes Abwägen des Modells. Wird das Limit erreicht, gilt die Antwort als
 // unvollständig und die Suche schlägt ehrlich fehl (kein Simulationsersatz).
 export const RERANK_MAX_OUTPUT_TOKENS = 4000;
-export const REQUEST_TIMEOUT_MS = 25_000;
+// Vorläufige Testgrenzen (Nachtrag 11, 18.11.2026) — keine akzeptierte
+// normale Antwortzeit. Die Suchfunktion darf höchstens 90 s laufen (vercel.json).
+export const LUNA_TIMEOUT_MS = 60_000;
+export const EMBEDDING_TIMEOUT_MS = 15_000;
+export const LUNA_REASONING_EFFORT = 'low';
 const OPENAI_BASE = 'https://api.openai.com/v1';
 
 /**
@@ -52,9 +56,9 @@ export function readModelConfig(env) {
   return { ...base, enabled: true, reason: null };
 }
 
-async function postJson(fetchImpl, path, apiKey, body) {
+async function postJson(fetchImpl, path, apiKey, body, timeoutMs) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetchImpl(`${OPENAI_BASE}${path}`, {
       method: 'POST',
@@ -188,7 +192,7 @@ export function createOpenAiGateway(options) {
 
   // Verbrauch dieser Gateway-Instanz (je Suche neu erzeugt): nur Zahlen,
   // keine Inhalte — für Kostenbericht und Logs.
-  const usage = { embeddingTokens: 0, lunaInputTokens: 0, lunaOutputTokens: 0, lunaReasoningTokens: 0, lunaCalls: 0, embeddingCalls: 0 };
+  const usage = { embeddingTokens: 0, lunaInputTokens: 0, lunaOutputTokens: 0, lunaReasoningTokens: 0, lunaCalls: 0, lunaFailedCalls: 0, embeddingCalls: 0 };
 
   return {
     usage,
@@ -199,7 +203,7 @@ export function createOpenAiGateway(options) {
         model: embeddingModel,
         input,
         dimensions: EMBEDDING_DIMENSIONS,
-      });
+      }, EMBEDDING_TIMEOUT_MS);
       usage.embeddingCalls += 1;
       usage.embeddingTokens += Number(body?.usage?.total_tokens ?? body?.usage?.prompt_tokens ?? 0) || 0;
       const vectors = (body.data ?? []).sort((a, b) => a.index - b.index).map((row) => row.embedding);
@@ -216,6 +220,7 @@ export function createOpenAiGateway(options) {
     async rerank(query, candidates) {
       const limited = candidates.slice(0, RERANK_MAX_CANDIDATES);
       const request = buildRerankRequest(query, limited);
+      usage.lunaCalls += 1; // Versuche, auch abgebrochene
       const body = await postJson(fetchImpl, '/responses', apiKey, {
         model: request.model,
         instructions: SYSTEM_INSTRUCTIONS,
@@ -224,11 +229,18 @@ export function createOpenAiGateway(options) {
         // Keine Speicherung der Antwort beim Anbieter für spätere Abrufe
         // (Nachtrag 11). Das ist KEINE Zero-Data-Retention-Zusage.
         store: false,
+        // Wenig internes Abwägen: kürzere Antwortzeit; die Begründungen selbst
+        // bleiben vollständig (max_output_tokens wird nicht verkleinert).
+        reasoning: { effort: LUNA_REASONING_EFFORT },
         max_output_tokens: RERANK_MAX_OUTPUT_TOKENS,
         text: { format: { type: 'json_schema', name: 'rerank', strict: true, schema: RERANK_SCHEMA } },
+      }, LUNA_TIMEOUT_MS).catch((error) => {
+        // Abgebrochene/fehlgeschlagene Aufrufe können trotzdem Kosten
+        // verursachen; ihre Tokens sind dann unbekannt.
+        usage.lunaFailedCalls += 1;
+        throw error;
       });
       const callUsage = readUsage(body);
-      usage.lunaCalls += 1;
       usage.lunaInputTokens += callUsage.inputTokens;
       usage.lunaOutputTokens += callUsage.outputTokens;
       usage.lunaReasoningTokens += callUsage.reasoningTokens;
@@ -249,7 +261,7 @@ export function createOpenAiGateway(options) {
         if (check.rejectedBecause && check.rejectedBecause !== 'leer') rejected.push({ courseId: entry.courseId, reason: `Begründungstext verworfen (${check.rejectedBecause})` });
         return { ...entry, explanation: check.text };
       });
-      return { accepted: grounded, rejected, usage: callUsage };
+      return { accepted: grounded, rejected, usage: callUsage, sentIds: limited.map((c) => String(c.courseId)) };
     },
   };
 }

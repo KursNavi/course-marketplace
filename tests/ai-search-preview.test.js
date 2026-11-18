@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { checkAiSearchEnvironment, isAiSearchPreviewHost, supabaseRefOf } from '../src/lib/aiSearch/previewGuard.js';
 import { parseQuery, validateQuery, findTermInText } from '../src/lib/aiSearch/queryParse.js';
 import { runAiSearch, resolveActiveTier, describePrice } from '../src/lib/aiSearch/searchService.js';
@@ -458,6 +459,8 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }]);
     const sent = JSON.parse(fetchImpl.mock.calls[0][1].body);
     expect(sent.store).toBe(false);
+    expect(sent.reasoning).toEqual({ effort: 'low' });
+    expect(sent.max_output_tokens).toBe(4000); // Begründungen nicht durch kleinere Grenze abschneiden
     expect(sent.tools).toEqual([]);
     expect(sent.text.format.schema.properties.results.items.required).toContain('explanation');
     expect(gateway.usage).toMatchObject({ lunaCalls: 1, lunaInputTokens: 1200, lunaOutputTokens: 300, lunaReasoningTokens: 50 });
@@ -468,6 +471,20 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
     await expect(gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }])).rejects.toThrow(/incomplete.*max_output_tokens/);
     expect(gateway.usage.lunaCalls).toBe(1);
+  });
+
+  it('Abgebrochener Luna-Aufruf wird als Versuch gezählt (Kosten möglich)', async () => {
+    const fetchImpl = vi.fn(async () => { throw new Error('This operation was aborted'); });
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    await expect(gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }])).rejects.toThrow(/aborted/);
+    expect(gateway.usage).toMatchObject({ lunaCalls: 1, lunaFailedCalls: 1 });
+  });
+
+  it('Zeitgrenzen: Luna 60 s, Suchfunktion 90 s', async () => {
+    const { LUNA_TIMEOUT_MS } = await import('../src/lib/aiSearch/openaiGateway.js');
+    expect(LUNA_TIMEOUT_MS).toBe(60_000);
+    const vercel = JSON.parse(readFileSync(`${process.cwd()}/vercel.json`, 'utf8'));
+    expect(vercel.functions['api/ai-search.js']).toEqual({ maxDuration: 90 });
   });
 
   it('Luna: unbekannte IDs und nicht belegte Zitate werden verworfen', async () => {
@@ -558,6 +575,8 @@ describe('runAiSearch mit Modellen (gemockt)', () => {
     const result = await runAiSearch(client, { query: 'Yoga', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
     expect(result.results.map((r) => r.courseId)).toEqual([2]);
     expect(result.results[0].reasons[0]).toMatchObject({ kind: 'luna', quote: 'Kraftvolles Yoga' });
+    // Kurs 1 wurde von Luna nicht zurückgegeben: unbewertet, nicht "unter Mindestpassung".
+    expect(result.stats).toMatchObject({ rated: 1, notRated: 1, belowThreshold: 0 });
     expect(result.method).toMatchObject({ luna: true, semantic: false });
     expect(gateway.embed).not.toHaveBeenCalled(); // Index nicht für diese Version aktiv
     expect(calls.some((c) => c.table === 'ai_search_semantic')).toBe(false);

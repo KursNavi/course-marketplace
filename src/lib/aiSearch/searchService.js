@@ -432,14 +432,17 @@ export async function runAiSearch(client, input) {
   // Textpassung für die nach Abrufrang besten Kandidaten. Nicht bewertete
   // Kandidaten fallen heraus (kein Auffüllen mit unbewerteten Kursen).
   let lunaUsed = false;
+  let lunaSent = 0;
   if (models?.gateway && scored.length > 0) {
     const rankIndex = new Map(candidateIds.map((id, index) => [String(id), index]));
     const ordered = [...scored].sort((a, b) => (rankIndex.get(String(a.course.id)) ?? 1e9) - (rankIndex.get(String(b.course.id)) ?? 1e9));
     const evidenceCandidates = ordered.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
-    const { accepted } = await models.gateway.rerank(parsed.normalized, evidenceCandidates);
+    const { accepted, sentIds } = await models.gateway.rerank(parsed.normalized, evidenceCandidates);
+    lunaSent = Array.isArray(sentIds) ? sentIds.length : evidenceCandidates.length;
     const byId = new Map(accepted.map((a) => [String(a.courseId), a]));
     for (const entry of scored) {
       const judged = byId.get(String(entry.course.id));
+      entry.rated = Boolean(judged);
       // Ortsabgleich (aus Kursangaben, nicht vom Modell) bleibt erhalten,
       // damit Abweichungen vom Ortswunsch korrekt benannt werden.
       const locationReasons = entry.candidate.reasons.filter((r) => r.kind === 'location');
@@ -467,7 +470,11 @@ export async function runAiSearch(client, input) {
 
   const results = toCards(confirmed);
   const incompleteResults = toCards(incomplete);
-  const belowThreshold = scored.filter((s) => s.candidate.score < MIN_SCORE).length;
+  // Nur tatsächlich bewertete Kandidaten können "unter Mindestpassung" sein.
+  // Mit Luna: nicht an Luna gesendete bzw. von Luna nicht zurückgegebene
+  // Kandidaten sind UNBEWERTET, nicht "als ungeeignet bewertet".
+  const rated = lunaUsed ? scored.filter((s) => s.rated) : scored;
+  const belowThreshold = rated.filter((s) => s.candidate.score < MIN_SCORE).length;
 
   return {
     criteria: {
@@ -485,7 +492,11 @@ export async function runAiSearch(client, input) {
     stats: {
       candidates: candidateIds.length,
       excludedByMust,
+      // Bewertet = von Luna (bzw. ohne Luna: von der Textpassung) beurteilt.
+      rated: rated.length,
       belowThreshold,
+      notRated: scored.length - rated.length,
+      sentToLuna: lunaUsed ? lunaSent : 0,
     },
     method: {
       retrieval: semanticUsed
