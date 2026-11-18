@@ -86,6 +86,18 @@ Textabschnitte mit zusammen rund 921'000 Zeichen, also etwa 230'000 Tokens.
 Die Preise sind vor der Beschaffung zu bestätigen. Steuern und Währungsumrechnung sind
 nicht enthalten.
 
+## 3b. Nachtrag 12: kürzere Texte und Antwortzeit (Stand 18.11.2026)
+
+- Begründung normal 25–40 Wörter, höchstens 50 **einschliesslich** Serverhinweisen
+  (ersetzt 40–70/100 unten). Zwei kurze Sätze: Lerninhalt und Passung.
+- Luna bewertet die 30 ausgewählten Kandidaten in **drei parallelen Teilaufrufen à 10**
+  (`AI_SEARCH_LUNA_BATCH=10`) mit Denkstufe `none` (`AI_SEARCH_LUNA_EFFORT=none`), beides
+  nur in der Preview gesetzt; Code-Standard bleibt `low`. Abdeckung, lexikalischer Abruf und
+  Bedeutungssuche laufen parallel. Kandidatenlimit, Mindestpassung und Paketregeln unverändert.
+- Vergleich an festen Fällen (GitHub-Runner, ohne Browser/Auth): 1×30 low 7–20 s;
+  3×10 low 4–10 s; 3×10 none 4–10 s bei gleichwertigen Texten; 5×6 none kaum schneller und
+  einmal ohne gültige strukturierte Antwort. Kein pauschaler Fünf-Sekunden-Abbruch.
+
 ## 3a. Begründungen durch Luna (Anforderung für die Anbindung)
 
 Stand 18.11.2026, nach Nachtrag 10. Die heutige simulierte Begründung reiht Zitate

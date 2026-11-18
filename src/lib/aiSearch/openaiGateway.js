@@ -245,7 +245,11 @@ export function createOpenAiGateway(options) {
       ?? (body.output ?? []).flatMap((item) => item.content ?? []).find((part) => part.type === 'output_text')?.text;
     let parsed = null;
     try { parsed = JSON.parse(text ?? 'null'); } catch { parsed = null; }
-    if (!parsed || !Array.isArray(parsed.results)) throw new Error('Luna: keine gültige strukturierte Antwort');
+    if (!parsed || !Array.isArray(parsed.results)) {
+      // Inhaltsfreie Diagnose: nur Status, Teiltypen und Längen (keine Texte).
+      const parts = (body.output ?? []).flatMap((item) => [item.type, ...(item.content ?? []).map((part) => part.type)]);
+      throw new Error(`Luna: keine gültige strukturierte Antwort (status=${body.status ?? '-'}, teile=${parts.join('/') || '-'}, textlänge=${String(text ?? '').length}, json=${parsed ? 'ohne results' : 'nicht lesbar'})`);
+    }
     return { results: parsed.results, usage: callUsage };
   }
 
