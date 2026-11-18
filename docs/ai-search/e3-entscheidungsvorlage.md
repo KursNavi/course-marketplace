@@ -1,6 +1,6 @@
 # KI-Suche: Entscheidungsvorlage E3 (Modellzugang, Embeddings, Testbudget)
 
-Stand 17.11.2026. Luna (OpenAI `gpt-6-luna`) ist als Sprachmodell entschieden (Nachtrag 08).
+Stand 18.11.2026 (Ergänzung 3a und Entscheidungstabelle). Luna (OpenAI `gpt-6-luna`) ist als Sprachmodell entschieden (Nachtrag 08).
 Diese Vorlage benennt, was für die ersten **echten** Modellaufrufe noch freizugeben ist.
 Bis zur Freigabe finden **keine kostenpflichtigen Aufrufe** statt; der Code ist dafür
 vorbereitet und standardmässig ausgeschaltet.
@@ -73,6 +73,39 @@ Textabschnitte mit zusammen rund 921'000 Zeichen, also etwa 230'000 Tokens.
 
 Die Preise sind vor der Beschaffung zu bestätigen. Steuern und Währungsumrechnung sind
 nicht enthalten.
+
+## 3a. Begründungen durch Luna (Anforderung für die Anbindung)
+
+Stand 18.11.2026, nach Nachtrag 10. Die heutige simulierte Begründung reiht Zitate
+aneinander. Mit Luna soll je Karte ein Fliesstext die **Eignung** erklären.
+
+- Luna liefert je Kurs zusätzlich zu Punktzahl und Belegzitaten einen Text
+  `explanation`: 40–70 Wörter, höchstens 100. Er beantwortet, warum der Kurs zum
+  Lernwunsch passt, zum Beispiel Inhalt, Niveau, Format oder Zeitpunkt, und nicht,
+  welche Wörter vorkommen.
+- Jede Aussage im Text muss durch ein mitgeliefertes Zitat aus der Evidenz gedeckt
+  sein. Die Zitate werden wie heute serverseitig wörtlich geprüft, und ein Text ohne
+  gültiges Zitat wird verworfen. Die Wortgrenze wird serverseitig hart erzwungen.
+- Verboten sind erfundene Lernziele, persönliche Eignungszusagen, Abschlüsse, Preise
+  oder Verfügbarkeiten sowie Paket- oder Prio-Angaben.
+- Abweichungen vom Ortswunsch und nicht bestätigte Muss-Vorgaben fügt weiterhin der
+  Server aus den Kursdaten an, nicht das Modell. So können sie nicht wegformuliert
+  werden.
+- Kosten: zehn Texte zu je rund 70 Wörtern ergeben etwa 1'000 Ausgabetokens. Das passt
+  in die bestehende Grenze von 2'000 Ausgabetokens je Suche, und der Kostenrahmen unter
+  3 ändert sich nicht.
+- Fällt Luna aus oder fehlt ein gültiger Text, erscheint die heutige belegte Begründung,
+  zusammen mit dem Simulationshinweis.
+
+## Zu entscheiden (E3)
+
+| # | Entscheidung | Vorschlag |
+|---|---|---|
+| E3.1 | API-Zugang | OpenAI-API-Projekt „KursNavi KI-Suche Test“, projektgebundener Schlüssel; nur als Vercel-Preview-Secret (Branch `feature/ki-suche-worker`) und als GitHub-Secret `OPENAI_API_KEY_TEST`. Den Schlüssel legen Sie selbst ab. |
+| E3.2 | Datenschutz im OpenAI-Projekt | Aufbewahrung und Logging so knapp wie möglich; die Einstellungen werden vor dem ersten Aufruf dokumentiert. |
+| E3.3 | Embedding-Modell | `text-embedding-3-small` mit 1024 Dimensionen (Modellversion `text-embedding-3-small@1024`). |
+| E3.4 | Testbudget | Harte Monatsgrenze USD 20, Warnung ab USD 5, Laufgrenze USD 1 für die Ersteinbettung. |
+| E3.5 | Umfang der Freigabe | Nur TESTumgebung und Preview: Ersteinbettung des Testindex und Luna-Bewertung der Preview-Suchen. Keine Produktion, kein Merge. |
 
 ## 4. Ablauf nach Freigabe
 

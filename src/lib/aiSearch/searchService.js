@@ -30,6 +30,7 @@ import { fuseRankedLists } from './retrieval.js';
 import { rankWithPaidPriority, MIN_SCORE } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
 import { buildExplanation } from './explanation.js';
+import { isPlaceholderCourseImage } from '../courseImageDefaults.js';
 
 export const CANDIDATE_LIMIT = 100;
 export const RESULT_LIMIT = 10;
@@ -278,12 +279,16 @@ function categoryLabel(rows) {
   return [primary.level2_label_de, primary.level3_label_de].filter(Boolean).join(' › ') || null;
 }
 
-/** Nur ein dem Kurs zugeordnetes offizielles Bild (http/https), sonst keins. */
+/**
+ * Nur das dem Kurs zugeordnete eigene Bild (dieselbe Quelle wie die klassische
+ * Suche: courses.image_url). Platzhalterbilder gelten als "kein eigenes Bild".
+ */
 export function officialImageUrl(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
+  if (isPlaceholderCourseImage(value)) return null;
   try {
     const url = new URL(value.trim());
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+    return url.protocol === 'https:' ? url.href : null;
   } catch {
     return null;
   }

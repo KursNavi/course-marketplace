@@ -113,8 +113,12 @@ function ResultCard({ card }) {
         </a>
       </div>
       {showImage && (
-        <img src={card.imageUrl} alt="" loading="lazy" decoding="async" onError={() => setImageFailed(true)}
-          className="w-full h-40 sm:w-44 sm:h-32 object-cover rounded-lg flex-shrink-0 bg-gray-100" />
+        // Gleiche Bildquelle (courses.image_url) und Behandlung wie die klassische
+        // Suche (16:9, object-cover, feste Masse), aber ohne Platzhalter-Ersatz.
+        <div className="w-full sm:w-48 aspect-video shrink-0 self-start overflow-hidden rounded-lg bg-gray-100" data-testid="ai-card-image">
+          <img src={card.imageUrl} alt={card.title} loading="lazy" decoding="async" width="600" height="338"
+            onError={() => setImageFailed(true)} className="w-full h-full object-cover" />
+        </div>
       )}
     </article>
   );

@@ -200,11 +200,13 @@ describe('runAiSearch', () => {
     const courses = [
       course(1, { title: 'Fotografie Grundkurs', image_url: 'https://example.org/bild.jpg', canton: 'Bern', course_events: [{ start_date: '2026-12-05', canton: 'Bern', location: 'Bern' }] }),
       course(2, { title: 'Fotografie am Abend', image_url: 'javascript:alert(1)' }),
+      course(3, { title: 'Fotografie Platzhalter', image_url: 'https://nplxmpfasgpumpiddjfl.supabase.co/storage/v1/object/public/course-images/a0e887f57107603aaf4327ad40de2ab7.jpg' }),
     ];
     const chunks = [
       { course_id: 1, section: 'description', chunk_index: 0, text: longText },
       { course_id: 1, section: 'objectives', chunk_index: 1, text: longText },
       { course_id: 2, section: 'description', chunk_index: 0, text: 'Fotografie mit dem Smartphone in Zürich.' },
+      { course_id: 3, section: 'description', chunk_index: 0, text: 'Fotografie für alle in Zürich.' },
     ];
     const { client } = createFakeSupabase(searchScenario({ courses, chunks }));
     const result = await runAiSearch(client, { query: 'Fotografie in Zürich', now: NOW });
@@ -212,6 +214,8 @@ describe('runAiSearch', () => {
     const byId = Object.fromEntries(result.results.map((c) => [c.courseId, c]));
     expect(byId[1].imageUrl).toBe('https://example.org/bild.jpg');
     expect(byId[2].imageUrl).toBeNull();
+    // Platzhalterbild der klassischen Suche ist kein eigenes Kursbild.
+    expect(byId[3].imageUrl).toBeNull();
     for (const card of result.results) {
       expect(countWords(card.explanation)).toBeGreaterThan(0);
       expect(countWords(card.explanation)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
