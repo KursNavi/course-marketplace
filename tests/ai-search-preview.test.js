@@ -413,8 +413,7 @@ describe('Such-API /api/ai-search', () => {
 // Modellanbindung (vorbereitet, standardmässig aus)
 // ---------------------------------------------------------------------------
 
-const { readModelConfig, createOpenAiGateway, keepGroundedReasons, EMBEDDING_DIMENSIONS } = await import('../src/lib/aiSearch/openaiGateway.js');
-
+const { readModelConfig, createOpenAiGateway, keepGroundedReasons, validateExplanation, EMBEDDING_DIMENSIONS } = await import('../src/lib/aiSearch/openaiGateway.js');
 describe('openaiGateway – Freischaltung', () => {
   const base = { VERCEL_ENV: 'preview', SUPABASE_URL: TEST_URL, VITE_SUPABASE_URL: TEST_URL };
   it('ist ohne ausdrückliche Freischaltung aus', () => {
@@ -434,14 +433,41 @@ describe('openaiGateway – Freischaltung', () => {
 });
 
 describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
-  it('Embedding-Anfrage nutzt Modell und Dimension', async () => {
-    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }) }));
+  it('Embedding-Anfrage nutzt Modell und Dimension und zählt Tokens', async () => {
+    const vector = Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0.01);
+    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ data: [{ index: 0, embedding: vector }], usage: { prompt_tokens: 3, total_tokens: 3 } }) }));
     const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
     const vectors = await gateway.embed('Yoga');
-    expect(vectors).toEqual([[0.1, 0.2]]);
+    expect(vectors).toEqual([vector]);
+    expect(gateway.usage).toMatchObject({ embeddingCalls: 1, embeddingTokens: 3 });
     const [url, init] = fetchImpl.mock.calls[0];
     expect(url).toBe('https://api.openai.com/v1/embeddings');
     expect(JSON.parse(init.body)).toMatchObject({ model: 'text-embedding-3-small', dimensions: 1024 });
+  });
+
+  it('Embedding mit falscher Dimension wird abgelehnt', async () => {
+    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }) }));
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    await expect(gateway.embed('Yoga')).rejects.toThrow(/Antwortform/);
+  });
+
+  it('Luna-Anfrage setzt store:false, keine Tools und erfasst den Verbrauch', async () => {
+    const answer = { results: [{ courseId: '1', score: 80, explanation: '', reasons: [] }] };
+    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify(answer), usage: { input_tokens: 1200, output_tokens: 300, output_tokens_details: { reasoning_tokens: 50 } } }) }));
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }]);
+    const sent = JSON.parse(fetchImpl.mock.calls[0][1].body);
+    expect(sent.store).toBe(false);
+    expect(sent.tools).toEqual([]);
+    expect(sent.text.format.schema.properties.results.items.required).toContain('explanation');
+    expect(gateway.usage).toMatchObject({ lunaCalls: 1, lunaInputTokens: 1200, lunaOutputTokens: 300, lunaReasoningTokens: 50 });
+  });
+
+  it('Unvollständige Luna-Antwort (Tokenlimit) schlägt ehrlich fehl', async () => {
+    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' }, output_text: '{"results":[' }) }));
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    await expect(gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }])).rejects.toThrow(/incomplete.*max_output_tokens/);
+    expect(gateway.usage.lunaCalls).toBe(1);
   });
 
   it('Luna: unbekannte IDs und nicht belegte Zitate werden verworfen', async () => {
@@ -455,7 +481,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ output_text: JSON.stringify(answer) }) }));
     const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
     const result = await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga', description: 'Sanftes Yoga am Abend.', contact_email: 'x@y' } }]);
-    expect(result.accepted).toEqual([{ courseId: '1', score: 91, reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }]);
+    expect(result.accepted).toEqual([{ courseId: '1', score: 91, explanation: null, reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }]);
     expect(result.rejected.some((r) => r.courseId === '999')).toBe(true);
     const sent = JSON.parse(fetchImpl.mock.calls[0][1].body);
     expect(sent.model).toBe('gpt-6-luna');
@@ -466,6 +492,39 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
   it('Providerfehler wird als Fehler gemeldet (Reservierung wird dann freigegeben)', async () => {
     const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl: async () => ({ ok: false, status: 500 }) });
     await expect(gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }])).rejects.toThrow(/HTTP 500/);
+  });
+
+  it('Luna-Begründungstext: belegt → übernommen, unbelegt/unzulässig → verworfen', async () => {
+    const good = 'Der Kurs führt ruhig in sanftes Yoga am Abend ein und eignet sich, wenn du nach dem Arbeitstag entspannt beginnen willst.';
+    const answer = { results: [
+      { courseId: '1', score: 90, explanation: good, reasons: [{ field: 'description', quote: 'Sanftes Yoga am Abend' }] },
+      { courseId: '2', score: 85, explanation: 'Für nur CHF 20 mit Zertifikat.', reasons: [{ field: 'description', quote: 'Kraftvolles Yoga' }] },
+      { courseId: '3', score: 80, explanation: 'Ein schöner Kurs.', reasons: [{ field: 'description', quote: 'erfundenes Zitat' }] },
+      { courseId: '4', score: 78, explanation: 'Der Kurs dauert 12 Wochen.', reasons: [{ field: 'title', quote: 'Pilates' }] },
+    ] };
+    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify(answer) }) }));
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const result = await gateway.rerank('Yoga', [
+      { courseId: 1, evidence: { title: 'Yoga', description: 'Sanftes Yoga am Abend.' } },
+      { courseId: 2, evidence: { title: 'Yoga', description: 'Kraftvolles Yoga am Morgen.' } },
+      { courseId: 3, evidence: { title: 'Yoga', description: 'Yoga für alle.' } },
+      { courseId: 4, evidence: { title: 'Pilates', description: 'Acht Wochen Pilates.' } },
+    ]);
+    const byId = Object.fromEntries(result.accepted.map((a) => [a.courseId, a.explanation]));
+    expect(byId['1']).toBe(good);
+    expect(byId['2']).toBeNull(); // Preis/Zertifikat nie aus Modelltext
+    expect(byId['3']).toBeNull(); // kein belegtes Zitat
+    expect(byId['4']).toBeNull(); // Zahl ohne Beleg
+    expect(result.rejected.filter((r) => /Begründungstext verworfen/.test(r.reason))).toHaveLength(3);
+  });
+
+  it('validateExplanation kürzt zu lange Texte an Satzgrenzen auf höchstens 100 Wörter', () => {
+    const sentence = 'Dieser Kurs vermittelt die Grundlagen ruhig und verständlich für Einsteiger ohne Vorkenntnisse im Thema.'; // 15 Wörter
+    const long = Array.from({ length: 8 }, () => sentence).join(' '); // 120 Wörter
+    const check = validateExplanation(long, { description: 'x' }, [{ field: 'description', quote: 'x' }]);
+    expect(check.rejectedBecause).toBeNull();
+    expect(countWords(check.text)).toBeLessThanOrEqual(100);
+    expect(check.text.endsWith('.')).toBe(true);
   });
 
   it('keepGroundedReasons verlangt wörtliche Belege', () => {
@@ -615,5 +674,47 @@ describe('Begründungstext (Nachtrag 10)', () => {
   it('füllt bei knapper Evidenz nicht auf', () => {
     const text = buildExplanation({ reasons: [{ kind: 'text', section: 'title', sectionLabel: 'Titel', term: 'yoga', quote: 'Yoga' }] });
     expect(text).toBe('Schon der Kurstitel greift „yoga“ auf.');
+  });
+
+  it('Luna-Text ersetzt Zitatsätze; Einschränkungen hängt der Server an und kürzt nie weg', () => {
+    const lead = Array.from({ length: 7 }, (_, i) => `Satz ${i} erklärt ruhig und genau, warum dieser Kurs zum Lernwunsch passt.`).join(' '); // 77 Wörter
+    const text = buildExplanation({
+      lead,
+      reasons: [{ kind: 'luna', section: 'description', sectionLabel: 'Beschreibung', quote: 'Zitat' }],
+      wishes: [{ type: 'location', label: 'Zürich', value: 'Zürich' }],
+      musts: { location: 'Zürich' },
+      mustUnknowns: ['event'],
+      place: 'Bern',
+    });
+    expect(text).not.toMatch(/steht: „Zitat“/);
+    expect(text).toMatch(/^Satz 0/);
+    expect(text).toMatch(/Abweichung von deinem Wunsch „Zürich“: Als Ort ist Bern angegeben\./);
+    expect(text).toMatch(/Nicht bestätigt: Ob ein Termin/);
+    expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
+  });
+});
+
+describe('runAiSearch – Luna-Begründung auf der Karte (gemockt)', () => {
+  it('übernimmt den geprüften Luna-Text und meldet den Verbrauch', async () => {
+    const courses = [course(1, { title: 'Yoga sanft' })];
+    const chunks = [{ course_id: 1, section: 'description', chunk_index: 0, text: 'Sanftes Yoga am Abend.' }];
+    const inner = searchScenario({ courses, chunks });
+    const { client } = createFakeSupabase((call) => (call.table === 'ai_search_config' ? { data: { active_model_version: null }, error: null } : inner(call)));
+    const gateway = {
+      usage: { lunaCalls: 1, lunaInputTokens: 900, lunaOutputTokens: 120 },
+      embed: vi.fn(),
+      rerank: vi.fn(async () => ({ accepted: [{ courseId: '1', score: 88, explanation: 'Der Kurs passt, weil er sanftes Yoga für den Abend anbietet.', reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }], rejected: [] })),
+    };
+    const result = await runAiSearch(client, { query: 'Yoga', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
+    expect(result.results[0].explanation).toMatch(/^Der Kurs passt, weil er sanftes Yoga/);
+    expect(result.method).toMatchObject({ luna: true, usage: { lunaCalls: 1, lunaInputTokens: 900 } });
+  });
+
+  it('Modellfehler wird nicht als simuliertes Ergebnis ausgegeben', async () => {
+    const courses = [course(1, { title: 'Yoga sanft' })];
+    const inner = searchScenario({ courses, chunks: [{ course_id: 1, section: 'description', chunk_index: 0, text: 'Sanftes Yoga am Abend.' }] });
+    const { client } = createFakeSupabase((call) => (call.table === 'ai_search_config' ? { data: { active_model_version: null }, error: null } : inner(call)));
+    const gateway = { usage: {}, embed: vi.fn(), rerank: vi.fn(async () => { throw new Error('OpenAI /responses HTTP 429'); }) };
+    await expect(runAiSearch(client, { query: 'Yoga', now: NOW, models: { gateway, embeddingVersion: 'v1' } })).rejects.toThrow(/429/);
   });
 });

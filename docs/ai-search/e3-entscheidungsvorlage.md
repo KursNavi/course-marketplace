@@ -1,9 +1,21 @@
 # KI-Suche: Entscheidungsvorlage E3 (Modellzugang, Embeddings, Testbudget)
 
 Stand 18.11.2026 (Ergänzung 3a und Entscheidungstabelle). Luna (OpenAI `gpt-6-luna`) ist als Sprachmodell entschieden (Nachtrag 08).
-Diese Vorlage benennt, was für die ersten **echten** Modellaufrufe noch freizugeben ist.
-Bis zur Freigabe finden **keine kostenpflichtigen Aufrufe** statt; der Code ist dafür
-vorbereitet und standardmässig ausgeschaltet.
+
+> **Freigegeben am 18.11.2026 (Nachtrag 11):** E3-Teststufe für die TESTumgebung und die
+> Preview des Branches `feature/ki-suche-worker`. Verbindliches Budget: **insgesamt USD 10
+> pro Monat** im OpenAI-Projekt „KursNavi KI-Test“ für Luna, Embeddings und Wiederholungen
+> zusammen, „Limit enforced“, Warnung ab USD 5. Das ersetzt den früheren USD-20-Vorschlag
+> unten. Keine Freigabe für Merge oder Produktion.
+>
+> Umsetzung dazu: Luna-Aufrufe senden `store: false` (keine Speicherung der Antwort beim
+> Anbieter für spätere Abrufe; **keine** Zero-Data-Retention-Zusage). Die Ersteinbettung
+> läuft nur über den Label-Workflow `ki-embedding-trocken` / `ki-embedding-ausfuehren`,
+> nie in der allgemeinen CI. Fehlschläge von Luna oder Embeddings führen zu einer
+> Fehlermeldung ohne Ergebnisse (Kontingent wird freigegeben), **nicht** zu simulierten
+> Ergebnissen.
+
+Diese Vorlage benannte, was für die ersten **echten** Modellaufrufe freizugeben war.
 
 ## Was bereits vorbereitet ist (ohne Kosten)
 
@@ -91,11 +103,16 @@ aneinander. Mit Luna soll je Karte ein Fliesstext die **Eignung** erklären.
 - Abweichungen vom Ortswunsch und nicht bestätigte Muss-Vorgaben fügt weiterhin der
   Server aus den Kursdaten an, nicht das Modell. So können sie nicht wegformuliert
   werden.
-- Kosten: zehn Texte zu je rund 70 Wörtern ergeben etwa 1'000 Ausgabetokens. Das passt
-  in die bestehende Grenze von 2'000 Ausgabetokens je Suche, und der Kostenrahmen unter
-  3 ändert sich nicht.
-- Fällt Luna aus oder fehlt ein gültiger Text, erscheint die heutige belegte Begründung,
-  zusammen mit dem Simulationshinweis.
+- Kosten: zehn Texte zu je rund 70 Wörtern ergeben etwa 1'000 Ausgabetokens. Die Grenze
+  je Suche ist mit der Umsetzung auf 4'000 Ausgabetokens angehoben (Reserve für internes
+  Abwägen des Modells); eine wegen des Limits unvollständige Antwort gilt als Fehler.
+- Serverseitige Textprüfung: verworfen werden Texte ohne wörtlich belegtes Zitat, mit
+  Zahlen, die nicht in der Evidenz stehen, oder mit Preis-, Abschluss-, Paket-, Garantie-
+  oder Linkangaben; zu lange Texte werden an Satzgrenzen auf höchstens 100 Wörter gekürzt.
+  Diese Regeln fangen typische unbelegte Aussagen ab, ersetzen aber keine Abnahme.
+- Fällt Luna als Ganzes aus, gibt es keine Ergebnisse, sondern eine Fehlermeldung (keine
+  simulierte Antwort als Luna-Ergebnis). Wird nur der Text einer einzelnen Karte
+  verworfen, erscheint dort die belegte Zitat-Begründung aus Lunas geprüften Zitaten.
 
 ## Zu entscheiden (E3)
 

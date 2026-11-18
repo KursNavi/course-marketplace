@@ -131,19 +131,23 @@ export default async function handler(req, res) {
 
     // 5. Suche
     let result;
+    // Modellaufrufe (Luna, Embeddings) nur nach Freigabe E3 — sonst null.
+    const modelConfig = readModelConfig(process.env);
+    const models = modelConfig.enabled
+      ? { gateway: createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: modelConfig.embeddingModel }), embeddingVersion: modelConfig.embeddingVersion }
+      : null;
     try {
-      // Modellaufrufe (Luna, Embeddings) nur nach Freigabe E3 — sonst null.
-      const modelConfig = readModelConfig(process.env);
-      const models = modelConfig.enabled
-        ? { gateway: createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: modelConfig.embeddingModel }), embeddingVersion: modelConfig.embeddingVersion }
-        : null;
       result = await runAiSearch(service, { query: body.query, musts, models });
     } catch (searchError) {
-      // Echter Systemfehler: Reservierung freigeben, nichts wird belastet.
+      // Echter Systemfehler (auch Modellfehler): Reservierung freigeben, die
+      // Suche zählt nicht. Kein stiller Rückfall auf simulierte Ergebnisse.
       await service.rpc('ai_search_quota_release', { p_request_id: body.requestId });
       console.error('ai-search: Suche fehlgeschlagen:', searchError?.message);
-      return res.status(502).json({ error: 'search_failed', quota: await quotaStatus(service, user.id) });
+      if (models) console.log('ai-search usage (fehlgeschlagen):', JSON.stringify(models.gateway.usage));
+      return res.status(502).json({ error: 'search_failed', modelsEnabled: Boolean(models), quota: await quotaStatus(service, user.id) });
     }
+    // Nur Zahlen, keine Suchtexte.
+    if (models) console.log('ai-search usage:', JSON.stringify({ ...models.gateway.usage, luna: result.method.luna, semantic: result.method.semantic }));
 
     // 6. Abschluss — nur 'completed' gibt das Ergebnis frei.
     const { data: finalized, error: finalizeError } = await service.rpc('ai_search_quota_finalize', {

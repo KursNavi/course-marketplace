@@ -72,12 +72,16 @@ function capitalize(text) {
  * @param {string} input.price   Preisdarstellung laut Kursangaben
  * @returns {string}
  */
-export function buildExplanation({ reasons = [], wishes = [], musts = {}, mustUnknowns = [], place = null, event = null, price = '' }) {
+export function buildExplanation({ lead = null, reasons = [], wishes = [], musts = {}, mustUnknowns = [], place = null, event = null, price = '' }) {
   // priority: 0 = nie kürzen (Einschränkungen), höhere Zahl = zuerst weglassen
   const parts = [];
-  const add = (order, priority, text) => { if (text) parts.push({ order, priority, text }); };
+  const add = (order, priority, text) => { if (text) parts.push({ order, priority, text, lead: false }); };
 
-  const evidence = reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');
+  // Serverseitig geprüfter Luna-Fliesstext ersetzt die Zitatsätze. Fehlt er,
+  // bleibt die bisherige belegte Zusammenstellung.
+  const leadText = typeof lead === 'string' && lead.trim() ? lead.trim() : null;
+  if (leadText) parts.push({ order: 10, priority: 1, text: leadText, lead: true });
+  const evidence = leadText ? [] : reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');
   evidence.forEach((reason, index) => {
     const where = IN_SECTION[reason.section] ?? `bei „${reason.sectionLabel ?? reason.section}“`;
     let sentence;
@@ -121,9 +125,22 @@ export function buildExplanation({ reasons = [], wishes = [], musts = {}, mustUn
   const kept = [...parts];
   const total = () => kept.reduce((sum, p) => sum + countWords(p.text), 0);
   while (total() > MAX_EXPLANATION_WORDS) {
-    const droppable = kept.filter((p) => p.priority > 0).sort((a, b) => b.priority - a.priority)[0];
-    if (!droppable) break;
-    kept.splice(kept.indexOf(droppable), 1);
+    const droppable = kept.filter((p) => p.priority > 0 && !p.lead).sort((a, b) => b.priority - a.priority)[0];
+    if (droppable) { kept.splice(kept.indexOf(droppable), 1); continue; }
+    // Nur noch Lead + Einschränkungen: Lead an Satzgrenzen kürzen.
+    const leadPart = kept.find((p) => p.lead);
+    if (!leadPart) break;
+    const budget = MAX_EXPLANATION_WORDS - (total() - countWords(leadPart.text));
+    const sentences = leadPart.text.match(/[^.!?]+[.!?]+/g) ?? [leadPart.text];
+    let shortened = '';
+    for (const sentence of sentences) {
+      const next = `${shortened} ${sentence.trim()}`.trim();
+      if (countWords(next) > budget) break;
+      shortened = next;
+    }
+    if (shortened) leadPart.text = shortened;
+    else kept.splice(kept.indexOf(leadPart), 1);
+    break;
   }
   let text = kept.sort((a, b) => a.order - b.order).map((p) => p.text).join(' ');
   if (countWords(text) > MAX_EXPLANATION_WORDS) {

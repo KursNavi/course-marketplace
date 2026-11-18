@@ -32,6 +32,7 @@ const ERROR_TEXT = {
   query_too_short: 'Bitte beschreibe deinen Wunsch etwas genauer (mindestens 3 Zeichen). Es wurde nichts verbraucht.',
   query_too_long: 'Deine Beschreibung ist zu lang (höchstens 500 Zeichen). Es wurde nichts verbraucht.',
   search_failed: 'Die Suche ist wegen eines technischen Fehlers fehlgeschlagen. Dein Kontingent wurde dafür nicht belastet.',
+  model_failed: 'Die KI-Bewertung (Luna) ist gerade fehlgeschlagen, deshalb zeigen wir keine Ergebnisse. Dein Kontingent wurde dafür nicht belastet.',
   result_not_stored: 'Diese Suche wurde bereits abgeschlossen, das Ergebnis ist aber nicht mehr verfügbar. Du kannst eine neue Suche starten (zählt als neue KI-Suche).',
   in_progress: 'Diese Suche läuft bereits. Bitte warte einen Moment.',
   request_mismatch: 'Die Anfrage passte nicht zum laufenden Suchvorgang. Bitte starte die Suche neu.',
@@ -213,7 +214,8 @@ export default function AiSearchView({ user, setView }) {
         writeSession(RESULT_KEY, JSON.stringify({ userId: user.id, result: body }));
       } else {
         if (body.error !== 'network') pendingRef.current = null;
-        setError(body.error || 'server_error');
+        // Modellfehler eigens benennen (kein stiller Simulationsersatz).
+        setError(body.error === 'search_failed' && body.modelsEnabled ? 'model_failed' : (body.error || 'server_error'));
       }
     } catch {
       // Antwort verloren: derselbe Vorgang darf mit derselben Kennung wiederholt werden.
@@ -321,7 +323,7 @@ export default function AiSearchView({ user, setView }) {
               {error === 'network' && (
                 <button type="button" onClick={() => submit(true)} className="mt-2 text-sm font-semibold underline">Erneut versuchen</button>
               )}
-              {(error === 'search_failed' || error === 'server_error') && <ClassicAlternatives />}
+              {(error === 'search_failed' || error === 'model_failed' || error === 'server_error') && <ClassicAlternatives />}
             </div>
           )}
 

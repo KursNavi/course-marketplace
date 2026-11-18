@@ -317,6 +317,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
 
   const cardEvent = event ? { startDate: event.start_date, endDate: event.end_date ?? null, location: event.location ?? null, canton: event.canton ?? null } : null;
   const explanation = buildExplanation({
+    lead: ranked.lunaExplanation ?? null,
     reasons: ranked.reasons,
     wishes: request.wishes,
     musts: request.musts,
@@ -443,6 +444,7 @@ export async function runAiSearch(client, input) {
       // damit Abweichungen vom Ortswunsch korrekt benannt werden.
       const locationReasons = entry.candidate.reasons.filter((r) => r.kind === 'location');
       entry.candidate.score = judged ? judged.score : 0;
+      entry.candidate.lunaExplanation = judged?.explanation ?? null;
       entry.candidate.reasons = judged
         ? [...judged.reasons.slice(0, 3).map((r) => ({ kind: 'luna', section: r.field, sectionLabel: EVIDENCE_LABELS[r.field] ?? r.field, quote: r.quote })), ...locationReasons]
         : [];
@@ -492,6 +494,8 @@ export async function runAiSearch(client, input) {
       semantic: semanticUsed,
       ranking: lunaUsed ? 'Luna-Bewertung mit belegten Zitaten' : 'Textpassung (Ersatz bis zur Luna-Freigabe)',
       luna: lunaUsed,
+      // Nur Zahlen (keine Inhalte): Grundlage für den Kostenbericht.
+      usage: models?.gateway?.usage ? { ...models.gateway.usage } : null,
     },
   };
 }

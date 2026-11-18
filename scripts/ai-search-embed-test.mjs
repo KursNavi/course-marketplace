@@ -85,6 +85,8 @@ async function main() {
     }
     console.log(`Eingebettet: ${done}/${pending.length}`);
   }
+  const actualUsd = (gateway.usage.embeddingTokens / 1_000_000) * PRICE_USD_PER_MILLION;
+  console.log(`Tatsächlich laut Anbieter: ${gateway.usage.embeddingTokens} Tokens in ${gateway.usage.embeddingCalls} Aufrufen ≈ USD ${actualUsd.toFixed(4)} (Preis ${PRICE_USD_PER_MILLION} USD/Mio.)`);
 
   if (arg('activate')) {
     const remaining = await fetchPendingChunks(service, config.embeddingVersion);
