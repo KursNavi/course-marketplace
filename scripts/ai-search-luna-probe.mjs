@@ -21,13 +21,13 @@ const CASES = [
   { id: 'zielgruppe', query: 'Programmieren lernen für Einsteiger' },
   { id: 'nulltreffer', query: 'Unterwasserschweissen für Tiefseetaucher mit Kranschein' },
 ];
+// Lauf 1 (18.11.2026): A low/1×30, B low/3×10, C none/3×10 verglichen.
+// Lauf 2: Zusatzvergleich mit kleineren parallelen Teilaufrufen.
 const CONFIGS = [
-  { id: 'A low/1×30', effort: 'low', batchSize: 30 },
-  { id: 'B low/3×10', effort: 'low', batchSize: 10 },
-  { id: 'C none/3×10', effort: 'none', batchSize: 10 },
+  { id: 'D none/5×6', effort: 'none', batchSize: 6 },
 ];
 // Wiederholte (gleiche) Suche je Einstellung B/C — es gibt keinen Ergebniscache.
-const REPEATS = [{ config: 'B low/3×10', caseId: 'normal' }, { config: 'C none/3×10', caseId: 'normal' }];
+const REPEATS = [{ config: 'D none/5×6', caseId: 'ort-muss' }];
 
 async function runOne(service, config, testCase, label) {
   const modelConfig = readModelConfig({ ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST });
