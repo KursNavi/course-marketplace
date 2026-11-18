@@ -340,10 +340,21 @@ export function createOpenAiGateway(options) {
       // als eine abgeschnittene Bewertung zeigen.
       throw new Error(`Luna: Antwort ${body.status}${body.incomplete_details?.reason ? ` (${body.incomplete_details.reason})` : ''}`);
     }
-    const text = body.output_text
-      ?? (body.output ?? []).flatMap((item) => item.content ?? []).find((part) => part.type === 'output_text')?.text;
+    // Beobachtet (18.11.2026): gelegentlich zwei Antwortteile hintereinander;
+    // zusammengefügt sind sie kein gültiges JSON. Daher jeden Teil einzeln
+    // lesen und den ersten gültigen verwenden (danach strikte Validierung).
+    const partTexts = (body.output ?? []).flatMap((item) => item.content ?? [])
+      .filter((part) => part.type === 'output_text' && typeof part.text === 'string')
+      .map((part) => part.text);
+    const text = partTexts.length > 0 ? partTexts.join('') : body.output_text;
     let parsed = null;
-    try { parsed = JSON.parse(text ?? 'null'); } catch { parsed = null; }
+    for (const candidate of partTexts.length > 0 ? partTexts : [body.output_text]) {
+      try {
+        const value = JSON.parse(candidate ?? 'null');
+        if (value && Array.isArray(value.results)) { parsed = value; break; }
+      } catch { /* nächsten Teil prüfen */ }
+    }
+    if (partTexts.length > 1) usage.lunaMultiPartAnswers = (usage.lunaMultiPartAnswers ?? 0) + 1;
     if (!parsed || !Array.isArray(parsed.results)) {
       // Inhaltsfreie Diagnose: nur Status, Teiltypen und Längen (keine Texte).
       const parts = (body.output ?? []).flatMap((item) => [item.type, ...(item.content ?? []).map((part) => part.type)]);

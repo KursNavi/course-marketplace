@@ -20,16 +20,14 @@ const CASES = [
   { id: 'zielgruppe', query: 'Programmieren lernen für Einsteiger' },
   { id: 'nulltreffer', query: 'Unterwasserschweissen für Tiefseetaucher mit Kranschein' },
 ];
-// Lauf 3 (Nachtrag 12, Folgeauftrag): Verteilung und Zweistufigkeit,
-// alle mit Denkstufe none und 30 Kandidaten an Luna.
+// Lauf 3 (18.11.2026): S1 Block / S2 Reihum / S3 Zweistufig verglichen →
+// S2 gewählt (schneller im Orts-Muss-Fall, 0 Fehler; S3 2 Fehler in 9 Läufen).
+// Lauf 4: Bestätigung S2 nach Korrektur der Mehrteil-Antworten.
 const CONFIGS = [
-  { id: 'S1 Block 3×10', effort: 'none', batchSize: 10, distribution: 'block', mode: 'single' },
   { id: 'S2 Reihum 3×10', effort: 'none', batchSize: 10, distribution: 'stripe', mode: 'single' },
-  { id: 'S3 Zweistufig', effort: 'none', batchSize: 10, distribution: 'stripe', mode: 'twoStage' },
 ];
 const ROUNDS = 2;
-const EXTRA = [{ caseId: 'ort-muss' }]; // dritte Wiederholung des langsamen Falls je Einstellung
-
+const EXTRA = [];
 const summary = {};
 
 async function runOne(service, config, testCase, round) {

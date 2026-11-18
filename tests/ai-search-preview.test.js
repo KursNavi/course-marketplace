@@ -567,6 +567,22 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     expect(gateway.usage).toMatchObject({ lunaCalls: 3, lunaInputTokens: 30, lunaOutputTokens: 15 });
   });
 
+  it('Zwei Antwortteile: der erste gültige Teil wird verwendet', async () => {
+    const valid = JSON.stringify({ results: [{ courseId: '1', score: 80, explanation: '', reasons: [] }] });
+    const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({
+      status: 'completed',
+      output_text: `${valid}${valid}`,
+      output: [
+        { type: 'message', content: [{ type: 'output_text', text: valid }] },
+        { type: 'message', content: [{ type: 'output_text', text: valid }] },
+      ],
+    }) }));
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const result = await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }]);
+    expect(result.accepted).toHaveLength(1);
+    expect(gateway.usage.lunaMultiPartAnswers).toBe(1);
+  });
+
   it('Verteilung: reihum gleich gross, Block in Abrufreihenfolge; keine Kandidaten gehen verloren', async () => {
     const { distributeCandidates } = await import('../src/lib/aiSearch/openaiGateway.js');
     const list = Array.from({ length: 25 }, (_, i) => i + 1);
