@@ -49,6 +49,9 @@ jobs:
         run: node scripts/ai-search-model-check.mjs
 
       - name: Trockenlauf (keine Modellaufrufe)
+        # Laeuft auch bei fehlgeschlagener Zugriffspruefung (kostenfrei);
+        # der echte Lauf unten nur, wenn alle vorherigen Schritte gruen sind.
+        if: ${{ !cancelled() }}
         run: npm run embed:ai-test
 
       - name: Echter Lauf (max. USD 1, nur TESTumgebung)
