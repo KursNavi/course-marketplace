@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { AI_SEARCH_TEST_REF, supabaseRefOf } from '../lib/aiSearch/previewGuard';
 import { writeStored, readSession, writeSession, removeSession } from '../lib/safeStorage';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
+import { AI_SEARCH_DRAFT_KEY } from '../lib/aiSearch/draft';
+import { coverageWarning, coverageFootnote } from '../lib/aiSearch/coverageText';
 
 /**
  * KI-Suche (Preview). Dritter Einstieg neben Kategorien und klassischer
@@ -20,7 +22,7 @@ import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 const BROWSER_DB_REF = supabaseRefOf(import.meta.env.VITE_SUPABASE_URL);
 const BROWSER_ON_TEST_DB = BROWSER_DB_REF === AI_SEARCH_TEST_REF;
 
-const DRAFT_KEY = 'kn_ai_search_draft';
+const DRAFT_KEY = AI_SEARCH_DRAFT_KEY;
 const RESULT_KEY = 'kn_ai_search_last_result';
 export const POST_LOGIN_AI_SEARCH_KEY = 'postLoginAiSearch';
 
@@ -74,20 +76,6 @@ function navigate(path) {
   window.history.pushState({}, '', path);
 }
 
-// Nachweislich unvollständiger Index = sichtbare Warnung über den Ergebnissen.
-function coverageWarning(coverage) {
-  if (!coverage || coverage.complete) return null;
-  return `Suchindex unvollständig: ${coverage.missingCount ?? '?'} von ${coverage.publishedCount} veröffentlichten Kursen fehlen im Index. Passende Kurse können hier fehlen.`;
-}
-
-// Vollständiger Abgleich (ggf. mit Aktualisierungsrückstand) = ruhige Fussnote.
-function coverageFootnote(coverage) {
-  if (!coverage || !coverage.complete) return null;
-  const base = `Indexabgleich vor dieser Suche: Alle ${coverage.publishedCount} aktuell veröffentlichten Kurse sind im Suchindex enthalten.`;
-  return coverage.pendingUpdates > 0
-    ? `${base} ${coverage.pendingUpdates} Kursänderungen sind noch nicht eingearbeitet; einzelne Angaben können veraltet sein.`
-    : base;
-}
 
 function QuotaBadge({ quota }) {
   if (!quota) return null;
@@ -154,6 +142,9 @@ export default function AiSearchView({ user, setView }) {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const pendingRef = useRef(null); // { requestId, payload } für idempotenten Wiederholversuch
+  // Synchrone Sperre gegen Doppelklick/Enter: `loading` greift erst nach dem
+  // nächsten Rendern, die Sperre sofort (kein zweiter Suchauftrag).
+  const inFlightRef = useRef(false);
   // Testmessung (Nachtrag 12): Klick bis fertig gerenderte Vorschläge.
   const clickStartedRef = useRef(null);
   const [clientMs, setClientMs] = useState(null);
@@ -205,6 +196,16 @@ export default function AiSearchView({ user, setView }) {
   useEffect(() => { if (user) loadStatus(); }, [user, loadStatus]);
 
   const submit = async (retry = false) => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+    try {
+      await runSubmit(retry);
+    } finally {
+      inFlightRef.current = false;
+    }
+  };
+
+  const runSubmit = async (retry) => {
     clickStartedRef.current = performance.now();
     setClientMs(null);
     setError(null);
@@ -317,13 +318,22 @@ export default function AiSearchView({ user, setView }) {
               </div>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <button type="submit" disabled={loading || !BROWSER_ON_TEST_DB || limitReached || statusError === 'wrong_environment' || statusError === 'not_available'} className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-bold disabled:opacity-50">
-                {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <button type="submit" disabled={loading || !BROWSER_ON_TEST_DB || limitReached || statusError === 'wrong_environment' || statusError === 'not_available'} aria-describedby="ai-wait-hint" className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-bold disabled:opacity-50" data-testid="ai-submit">
+                {loading ? <Loader className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Sparkles className="w-4 h-4" aria-hidden="true" />}
                 KI-Suche starten
               </button>
-              <span className="text-xs text-gray-500">Zählt als 1 von 10 Suchen dieses Monats.</span>
+              <div className="text-sm leading-snug">
+                {/* Nachtrag 13: dauerhaft sichtbar, keine Zeitgarantie. */}
+                <p id="ai-wait-hint" className="font-medium text-gray-700" data-testid="ai-wait-hint">Die KI-Suche kann einige Sekunden dauern.</p>
+                <p className="text-xs text-gray-500">Zählt als 1 von 10 Suchen dieses Monats.</p>
+              </div>
             </div>
+            {/* Aktiver Status: Region bleibt immer im DOM, damit Screenreader den
+                Wechsel einmal höflich ansagen; kein erfundener Fortschritt. */}
+            <p role="status" aria-live="polite" className={loading ? 'mt-3 inline-flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 text-sm font-semibold text-dark' : 'sr-only'} data-testid="ai-search-status">
+              {loading ? <><Loader className="w-4 h-4 animate-spin text-primary" aria-hidden="true" />Passende Kurse werden gesucht …</> : ''}
+            </p>
           </form>
 
           {statusError && statusError !== 'network' && (
@@ -403,7 +413,8 @@ export default function AiSearchView({ user, setView }) {
                 {result.results.length > 0 && result.results.length < 10 && (
                   <p>Gezeigt werden nur Kurse mit ausreichender Passung; diesmal {result.results.length === 1 ? 'einer' : result.results.length}.</p>
                 )}
-                {coverageNote && <p data-testid="ai-coverage">{coverageNote}</p>}
+                {/* Betrieblich wesentlich (Aktualität): grösser und kontrastreicher als die übrigen Fussnoten. */}
+                {coverageNote && <p className="text-sm text-gray-700" data-testid="ai-coverage">{coverageNote}</p>}
                 <details className="group" data-testid="ai-ranking-info">
                   <summary className="cursor-pointer select-none underline decoration-dotted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
                     Wie entsteht die Reihenfolge? Passung und gebuchte Pakete

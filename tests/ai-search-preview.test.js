@@ -817,7 +817,7 @@ describe('Regression 19.11.2026: unbestätigte Wünsche nie als positive Passung
     const text = buildExplanation({ lead: observed, wishChecks: checks, reasons: [{ kind: 'luna', section: 'description', quote: 'praktische Übungen' }] });
     expect(text).not.toMatch(/selbstständigem Lernen/);
     expect(text).toMatch(/^Du lernst Kamerabedienung/);
-    expect(text).toMatch(/Abweichung vom Wunsch „Selbststudium“: Lernform ist Präsenz\./);
+    expect(text).toMatch(/Wunsch „Selbststudium“ nicht bestätigt: Die Kursangaben nennen als Lernform nur Präsenz\./);
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
   });
 
@@ -825,23 +825,23 @@ describe('Regression 19.11.2026: unbestätigte Wünsche nie als positive Passung
     const checks = checkWishes({ delivery_types: [] }, [selfStudy]);
     const text = buildExplanation({ lead: observed, wishChecks: checks });
     expect(text).not.toMatch(/selbstständigem Lernen/);
-    expect(text).toMatch(/Nicht bestätigt: Lernform „Selbststudium“\./);
+    expect(text).toMatch(/Wunsch „Selbststudium“ nicht bestätigt: Die Kursangaben nennen keine Lernform\./);
   });
 
-  it('Verneinte Abweichung bleibt stehen; bestätigte Lernform darf positiv genannt werden', () => {
+  it('Verneinte Modellaussage wird mit dem Serverhinweis zusammengeführt (Satzteil entfernt, Inhalt bleibt); bestätigte Lernform darf positiv genannt werden', () => {
     const negated = 'Du lernst Blende und ISO. Der Kurs passt inhaltlich, bietet aber kein Selbststudium.';
-    expect(removeUnbackedWishClaims(negated, checkWishes({ delivery_types: ['presence'] }, [selfStudy]))).toBe(negated);
+    expect(removeUnbackedWishClaims(negated, checkWishes({ delivery_types: ['presence'] }, [selfStudy]))).toBe('Du lernst Blende und ISO. Der Kurs passt inhaltlich.');
     const positive = 'Du lernst Grundlagen. Du arbeitest selbstständig im eigenen Tempo.';
     expect(removeUnbackedWishClaims(positive, checkWishes({ delivery_types: ['self_study'] }, [selfStudy]))).toBe(positive);
     const text = buildExplanation({ lead: positive, wishChecks: checkWishes({ delivery_types: ['self_study'] }, [selfStudy]) });
-    expect(text).not.toMatch(/Abweichung|Nicht bestätigt/);
+    expect(text).not.toMatch(/nicht bestätigt/);
   });
 
   it('„ohne Vorkenntnisse“ zählt nicht als Verneinung: Einsteiger-Behauptung bei Fortgeschrittenen-Kurs entfernt', () => {
     const level = { type: 'level', value: 'beginner', label: 'Für Einsteiger' };
     const text = buildExplanation({ lead: 'Du lernst Python. Der Kurs ist ohne Vorkenntnisse für Einsteiger geeignet.', wishChecks: checkWishes({ level: 'advanced' }, [level]) });
     expect(text).not.toMatch(/für Einsteiger geeignet/);
-    expect(text).toMatch(/Abweichung vom Wunsch „Für Einsteiger“: Niveau ist Fortgeschrittene\./);
+    expect(text).toMatch(/Wunsch „Für Einsteiger“ nicht bestätigt: Die Kursangaben nennen als Niveau Fortgeschrittene\./);
   });
 
   it('Ende-zu-Ende (gemockt): Luna-Text mit unbelegter Lernform wird auf der Karte korrigiert; Lernform geht als Evidenz an Luna', async () => {
@@ -866,11 +866,98 @@ describe('Regression 19.11.2026: unbestätigte Wünsche nie als positive Passung
     const result = await runAiSearch(client, { query: 'Fotografie lernen im Selbststudium', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
     const byId = Object.fromEntries(result.results.map((r) => [r.courseId, r.explanation]));
     expect(byId[1]).not.toMatch(/selbstständigem Lernen/);
-    expect(byId[1]).toMatch(/Abweichung vom Wunsch „Selbststudium“: Lernform ist Präsenz\./);
+    expect(byId[1]).toMatch(/Wunsch „Selbststudium“ nicht bestätigt: Die Kursangaben nennen als Lernform nur Präsenz\./);
     expect(byId[2]).toMatch(/selbstständig im eigenen Tempo/);
-    expect(byId[2]).not.toMatch(/Abweichung|Nicht bestätigt: Lernform/);
+    expect(byId[2]).not.toMatch(/nicht bestätigt/);
     const evidence = gateway.rerank.mock.calls[0][1];
     expect(evidence.find((c) => String(c.courseId) === '1').evidence.delivery_types).toBe('Präsenz');
+  });
+});
+
+describe('Nachtrag 13: Lernform-Abweichung genau einmal und evidenzgerecht', async () => {
+  const { checkWishes } = await import('../src/lib/aiSearch/wishCheck.js');
+  const { removeUnbackedWishClaims, wishCheckSentence } = await import('../src/lib/aiSearch/explanation.js');
+  const selfStudy = { type: 'format', label: 'Selbststudium', value: 'self_study' };
+  const presence = { delivery_types: ['presence'] };
+  const occurrences = (text, word) => (text.match(new RegExp(word, 'gi')) ?? []).length;
+
+  // Muster der Preview-Karten (Screenshots 19.11.): Modelltext klärt die
+  // Lernform schon selbst, der Server hängte zusätzlich einen Hinweis an.
+  const screenshotLeads = [
+    'Du lernst Kamera, Belichtung und Bildgestaltung in einem Workshop. Der Kurs findet vor Ort statt und nicht im Selbststudium.',
+    'Du lernst die Grundlagen deiner Kamera praxisnah. Für Anfänger geeignet, allerdings als Präsenzkurs und nicht im Selbststudium.',
+    'Du übst Motive und Licht mit dem Smartphone. Passt thematisch gut, findet aber vor Ort statt – kein Selbststudium.',
+    'Du lernst fotografische Grundlagen an fünf Abenden, ein Präsenzkurs ohne Selbststudium-Anteil.',
+  ];
+
+  it.each(screenshotLeads)('Karte nennt die Lernform-Abweichung genau einmal und bleibt ≤50 Wörter: %s', (lead) => {
+    const text = buildExplanation({ lead, wishChecks: checkWishes(presence, [selfStudy]) });
+    expect(occurrences(text, 'Selbststudium')).toBe(1);
+    expect(occurrences(text, 'Präsenz')).toBe(1);
+    expect(text).toMatch(/Wunsch „Selbststudium“ nicht bestätigt: Die Kursangaben nennen als Lernform nur Präsenz\.$/);
+    expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
+  });
+
+  it('Präsenz allein beweist keinen Ausschluss: weder Modell- noch Servertext behauptet „kein/nicht im Selbststudium“', () => {
+    for (const lead of screenshotLeads) {
+      const text = buildExplanation({ lead, wishChecks: checkWishes(presence, [selfStudy]) });
+      expect(text).not.toMatch(/(kein|nicht im|ohne)\s+Selbststudium/i);
+      expect(text).not.toMatch(/ausgeschlossen|Abweichung vom Wunsch „Selbststudium“/);
+    }
+  });
+
+  it('entfernt nur den betroffenen Satzteil; der fachliche Inhalt bleibt', () => {
+    const checks = checkWishes(presence, [selfStudy]);
+    expect(removeUnbackedWishClaims('Du übst Bildgestaltung und Belichtung, allerdings vor Ort statt im Selbststudium.', checks))
+      .toBe('Du übst Bildgestaltung und Belichtung.');
+    expect(removeUnbackedWishClaims('Du lernst Blende, ISO und Verschlusszeit.', checks))
+      .toBe('Du lernst Blende, ISO und Verschlusszeit.');
+  });
+
+  it('keine neue Erfüllungsbehauptung und keine pauschale Entfernung anderer Einschränkungen', () => {
+    const text = buildExplanation({
+      lead: 'Du lernst Kamera und Licht. Passt zu deinem Wunsch nach Lernen im eigenen Tempo.',
+      wishes: [{ type: 'location', label: 'Zürich', value: 'Zürich' }],
+      wishChecks: checkWishes(presence, [selfStudy]),
+      place: 'Bern',
+    });
+    expect(text).not.toMatch(/eigenen Tempo/);
+    expect(text).toMatch(/Abweichung vom Wunsch „Zürich“: Ort ist Bern\./);
+    expect(text).toMatch(/Wunsch „Selbststudium“ nicht bestätigt/);
+  });
+
+  it('gleicher Wunsch doppelt erkannt → trotzdem nur ein Hinweis', () => {
+    const text = buildExplanation({ lead: 'Du lernst Fotografie.', wishChecks: checkWishes(presence, [selfStudy, selfStudy]) });
+    expect(occurrences(text, 'nicht bestätigt')).toBe(1);
+  });
+
+  it('Serveraussagen geben nur die Kursangaben wieder', () => {
+    const [online] = checkWishes({ delivery_types: ['self_study'] }, [{ type: 'online', value: true, label: 'Online' }]);
+    expect(wishCheckSentence(online)).toBe('Wunsch „Online“ nicht bestätigt: Die Kursangaben nennen als Lernform nur Selbststudium.');
+    const [unknown] = checkWishes({ delivery_types: [] }, [selfStudy]);
+    expect(wishCheckSentence(unknown)).toBe('Wunsch „Selbststudium“ nicht bestätigt: Die Kursangaben nennen keine Lernform.');
+    const [confirmed] = checkWishes({ delivery_types: ['self_study'] }, [selfStudy]);
+    expect(wishCheckSentence(confirmed)).toBeNull();
+  });
+});
+
+describe('Nachtrag 13: Indexstand – Aufträge statt „Kursänderungen“, Abdeckung ≠ Aktualität', async () => {
+  const { coverageFootnote, coverageWarning } = await import('../src/lib/aiSearch/coverageText.js');
+
+  it('benennt offene Jobzeilen als Aufträge und behauptet keine Aktualität', () => {
+    const text = coverageFootnote({ complete: true, publishedCount: 803, pendingUpdates: 13154 });
+    expect(text).toMatch(/Alle 803 veröffentlichten Kurse haben einen Eintrag im Suchindex\./);
+    expect(text).toMatch(/13’154 offene Aktualisierungsaufträge|13'154 offene Aktualisierungsaufträge/);
+    expect(text).toMatch(/mehrere können denselben Kurs betreffen/);
+    expect(text).toMatch(/Das bestätigt nicht, dass jeder Eintrag aktuell ist/);
+    expect(text).not.toMatch(/Kursänderungen|aktuell veröffentlichten Kurse sind im Suchindex/);
+  });
+
+  it('Einzahl und leere Warteschlange korrekt', () => {
+    expect(coverageFootnote({ complete: true, publishedCount: 803, pendingUpdates: 1 })).toMatch(/1 offener Aktualisierungsauftrag ist noch nicht verarbeitet/);
+    expect(coverageFootnote({ complete: true, publishedCount: 803, pendingUpdates: 0 })).toMatch(/Keine offenen Aktualisierungsaufträge\.$/);
+    expect(coverageFootnote({ complete: false, publishedCount: 803, missingCount: 3 })).toBeNull();
+    expect(coverageWarning({ complete: false, publishedCount: 803, missingCount: 3 })).toMatch(/3 von 803/);
   });
 });
 

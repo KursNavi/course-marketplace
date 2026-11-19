@@ -396,18 +396,25 @@ export async function runAiSearch(client, input) {
     ? timed('semantic', async () => {
       // Bedeutungssuche nur, wenn der Index für genau diese Modellversion
       // vollständig eingebettet und aktiv geschaltet ist (ai_search_config).
+      // Bewusst NACHEINANDER: kein kostenpflichtiges Query-Embedding, solange
+      // die Indexversion nicht aktiv ist. Teilzeiten (Nachtrag 13) trennen
+      // Konfiguration, Embedding und Datenbankabruf für die Ursachenanalyse.
+      const configStarted = Date.now();
       const { data: config, error: configError } = await client
         .from('ai_search_config').select('active_model_version').eq('id', 1).maybeSingle();
+      timings.semanticConfig = Date.now() - configStarted;
       if (configError) throw new Error(`Konfiguration: ${configError.message}`);
       if (!config?.active_model_version || config.active_model_version !== models.embeddingVersion) return null;
       const embedStarted = Date.now();
       const [vector] = await models.gateway.embed(parsed.normalized);
       timings.queryEmbedding = Date.now() - embedStarted;
+      const rpcStarted = Date.now();
       const { data, error } = await client.rpc('ai_search_semantic', {
         p_embedding: JSON.stringify(vector),
         p_model_version: models.embeddingVersion,
         p_limit: CANDIDATE_LIMIT,
       });
+      timings.semanticRpc = Date.now() - rpcStarted;
       if (error) throw new Error(`Abruf (Bedeutung): ${error.message}`);
       return (data ?? []).map((row) => ({ courseId: row.course_id }));
     })

@@ -61,30 +61,64 @@ function formatDay(value) {
   return date.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Zurich' });
 }
 
-// Satz verneint/relativiert die Erfüllung („kein Selbststudium“, „statt“, „aber“).
-const NEGATION = /\b(kein|keine|keinen|keiner|nicht|statt|anstatt|aber|jedoch|allerdings|weniger|nur bedingt)\b/i;
+// Wortfelder je Aspekt: Ein Satzteil, der den Aspekt überhaupt anspricht
+// (positiv ODER verneinend), wird durch den einen Serverhinweis ersetzt.
+const ASPECT_PATTERNS = {
+  Lernform: [WISH_CLAIM_PATTERNS.self_study, WISH_CLAIM_PATTERNS.presence, WISH_CLAIM_PATTERNS.online],
+  Niveau: [WISH_CLAIM_PATTERNS.beginner, /fortgeschritten|mittelstufe|\bniveau\b/i],
+};
+
+function mentionsAny(text, patterns) {
+  return patterns.some((pattern) => pattern.test(text));
+}
 
 /**
- * Entfernt aus dem Modelltext Sätze, die einen nicht bestätigten Wunsch
- * (Lernform, Online, Niveau) positiv als erfüllt darstellen. Sätze, die die
- * Abweichung selbst benennen (Verneinung), bleiben erhalten. Der Server fügt
- * den massgeblichen Hinweis ohnehin selbst an (buildExplanation).
+ * Nachtrag 13 (19.11.2026): Ist ein Wunsch zu Lernform/Online/Niveau NICHT
+ * durch die strukturierten Kursangaben bestätigt, gibt der Server genau EINE
+ * datenbasierte Aussage dazu aus (buildExplanation). Aus dem Modelltext
+ * werden deshalb alle Satzteile entfernt, die diesen Aspekt ansprechen:
+ * - positive Erfüllungsbehauptungen („passt zu deinem Wunsch nach
+ *   selbstständigem Lernen“) – unbelegt;
+ * - Ausschlussbehauptungen („nicht im Selbststudium“) – Präsenz allein
+ *   belegt keinen Ausschluss, und der Sachverhalt stünde sonst doppelt.
+ * Entfernt wird möglichst nur der betroffene Satzteil (Komma/Semikolon/
+ * Gedankenstrich); spricht schon der Satzanfang den Aspekt an, der ganze Satz.
+ * Bestätigte Wünsche bleiben unverändert.
  */
 export function removeUnbackedWishClaims(lead, wishChecks = []) {
   const text = typeof lead === 'string' ? lead.trim() : '';
   if (!text) return null;
-  const open = wishChecks.filter((check) => check.status !== 'confirmed' && WISH_CLAIM_PATTERNS[check.claimKey]);
+  const open = wishChecks.filter((check) => check.status !== 'confirmed');
   if (open.length === 0) return text;
+  const patterns = [...new Set(open.flatMap((check) => ASPECT_PATTERNS[check.aspect]
+    ?? (WISH_CLAIM_PATTERNS[check.claimKey] ? [WISH_CLAIM_PATTERNS[check.claimKey]] : [])))];
+  if (patterns.length === 0) return text;
   const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [text];
-  const kept = sentences.filter((sentence) => {
-    const claims = open.some((check) => WISH_CLAIM_PATTERNS[check.claimKey].test(sentence));
-    if (!claims) return true;
-    // „ohne Vorkenntnisse“ ist eine Niveau-Aussage, keine Verneinung.
-    const withoutPhrase = sentence.replace(/ohne vorkenntnisse|keine vorkenntnisse/gi, '');
-    return NEGATION.test(withoutPhrase);
-  });
-  const result = kept.map((s) => s.trim()).join(' ').trim();
+  const kept = sentences.map((raw) => {
+    const sentence = raw.trim();
+    if (!mentionsAny(sentence, patterns)) return sentence;
+    const end = /[.!?]+$/.exec(sentence)?.[0] ?? '.';
+    const clauses = sentence.replace(/[.!?]+$/, '').split(/\s*[,;]\s+|\s+[–—]\s+/);
+    if (mentionsAny(clauses[0], patterns)) return null;
+    const rest = clauses.filter((clause) => !mentionsAny(clause, patterns)).join(', ');
+    return countWords(rest) >= 4 ? `${rest}${end}` : null;
+  }).filter(Boolean);
+  const result = kept.join(' ').trim();
   return result || null;
+}
+
+/**
+ * Eine evidenzgerechte Aussage je nicht bestätigtem Wunsch. Sie gibt nur
+ * wieder, was die Kursangaben nennen; aus „Präsenz“ wird kein Ausschluss von
+ * Selbststudium gefolgert.
+ */
+export function wishCheckSentence(check) {
+  if (!check || check.status === 'confirmed') return null;
+  const field = check.aspect === 'Niveau' ? 'Niveau' : 'Lernform';
+  const detail = check.actual
+    ? (field === 'Niveau' ? `als Niveau ${check.actual}` : `als Lernform nur ${check.actual}`)
+    : (field === 'Niveau' ? 'kein Niveau' : 'keine Lernform');
+  return `Wunsch „${check.wishLabel}“ nicht bestätigt: Die Kursangaben nennen ${detail}.`;
 }
 
 function capitalize(text) {
@@ -139,12 +173,13 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   }
 
   // Wünsche zu Lernform/Niveau: nur strukturierte Kursangaben entscheiden.
+  // Genau eine Aussage je Wunsch (Nachtrag 13); doppelte Wünsche zusammenfassen.
+  const seenWishes = new Set();
   wishChecks.forEach((check, index) => {
-    if (check.status === 'deviating') {
-      add(25 + index, 0, `Abweichung vom Wunsch „${check.wishLabel}“: ${check.aspect} ist ${check.actual}.`);
-    } else if (check.status === 'unknown') {
-      add(25 + index, 0, `Nicht bestätigt: ${check.aspect} „${check.wishLabel}“.`);
-    }
+    const key = `${check.aspect}|${check.wishLabel}`;
+    if (seenWishes.has(key)) return;
+    seenWishes.add(key);
+    add(25 + index, 0, wishCheckSentence(check));
   });
 
   for (const unknown of mustUnknowns) {
