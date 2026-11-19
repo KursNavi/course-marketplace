@@ -30,7 +30,32 @@ der Rückstand.
 `instructor_name` gehört nicht zur Indexprojektion. Der Worker beendet solche
 Aufträge als `refreshed` (Inhalt gleich, Embeddings bleiben erhalten).
 
-## Vorschlag (NICHT angewendet, eigene Freigabe nötig)
+## Ergebnis des Abarbeitens (19.11.2026, Label `ki-befuellung-test`, Lauf 44611223217)
+
+Vor dem Lauf 13'976 offene Aufträge (13'154 plus 822 aus dem CI-Lauf zum
+neuen Commit). Drei Runden, kein Kontingent-Cleanup, kein Mailversand, keine
+Modellaufrufe:
+
+- 802 Kurse `updated`, 12'848 Kursgruppen `refreshed`, 104 Löschaufträge, 0 Fehler.
+- Nachweis danach: 803 veröffentlichte Kurse = 803 Indexdokumente, 0 fehlend,
+  0 verwaist, 0 ohne Abschnitte, Abschnittsvergleich 803/803 ohne Abweichung,
+  **0 offene und 0 fehlgeschlagene Aufträge**.
+
+**Zusatzbefund (Mangel):** Der Inhaltshash eines Indexdokuments umfasst auch
+die öffentlichen Profilfelder des Anbieters (`facts.provider`: Ort,
+Kurzbeschreibung usw.). Ändern die App-Tests das Testanbieter-Profil, ändert
+sich der Hash aller 802 Kurse dieses Anbieters. `ai_search_apply_upsert`
+löscht und schreibt dann alle Abschnitte neu – **die Embeddings gehen
+verloren, obwohl der Abschnittstext gleich bleibt** (danach 2'768 von 2'771
+Abschnitten ohne Embedding). Behoben durch einen gezielten Embedding-Lauf nur
+für die fehlenden Abschnitte.
+
+Vorschlag (NICHT angewendet): `ai_search_apply_upsert` übernimmt Embedding und
+model_version für Abschnitte mit identischem `(section, chunk_index, text)`;
+nur geänderte Abschnitte verlieren ihr Embedding. Das braucht eine neue
+Migration und eine eigene Freigabe.
+
+## Vorschlag Trigger (NICHT angewendet, eigene Freigabe nötig)
 
 ```sql
 -- ENTWURF – nur nach ausdrücklicher Freigabe, zuerst als Migrationsdatei.
