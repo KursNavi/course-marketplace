@@ -110,6 +110,14 @@ export function parseQuery(query) {
     }
   }
 
+  // Lernform-Wünsche (werden serverseitig gegen delivery_types geprüft, wishCheck.js).
+  if (/selbststudium|selbstlern|im eigenen tempo|e-learning|videokurs|on.?demand/u.test(lower)) {
+    wishes.push({ type: 'format', label: 'Selbststudium', value: 'self_study' });
+  }
+  if (/\bvor ort\b|präsenz/u.test(lower)) {
+    wishes.push({ type: 'format', label: 'vor Ort', value: 'presence' });
+  }
+
   if (BEGINNER_WORDS.some((word) => lower.includes(word))) {
     wishes.push({ type: 'level', label: 'Für Einsteiger', value: 'beginner' });
   }

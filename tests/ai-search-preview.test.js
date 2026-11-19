@@ -792,6 +792,88 @@ describe('Begründungstext (Nachtrag 10)', () => {
   });
 });
 
+describe('Regression 19.11.2026: unbestätigte Wünsche nie als positive Passung', async () => {
+  const { checkWish, checkWishes } = await import('../src/lib/aiSearch/wishCheck.js');
+  const { removeUnbackedWishClaims } = await import('../src/lib/aiSearch/explanation.js');
+  const selfStudy = { type: 'format', label: 'Selbststudium', value: 'self_study' };
+  // Wörtlich beobachteter Luna-Text zu „Privat Coaching Fotografie“ (Präsenz):
+  const observed = 'Du lernst Kamerabedienung und fotografische Themen durch praktische Übungen und persönliches Feedback. Das individuell abgestimmte Coaching eignet sich ausdrücklich für Anfängerinnen und passt zu deinem Wunsch nach selbstständigem Lernen.';
+
+  it('Vorinterpretation erkennt den Lernform-Wunsch Selbststudium', () => {
+    expect(parseQuery('Ich möchte als Anfänger fotografieren lernen, gerne im Selbststudium').wishes)
+      .toEqual(expect.arrayContaining([selfStudy, expect.objectContaining({ type: 'level', value: 'beginner' })]));
+  });
+
+  it('Lernform nur aus delivery_types: bestätigt / abweichend / unbestätigt', () => {
+    expect(checkWish({ delivery_types: ['self_study'] }, selfStudy)).toMatchObject({ status: 'confirmed' });
+    expect(checkWish({ delivery_types: ['presence'] }, selfStudy)).toMatchObject({ status: 'deviating', actual: 'Präsenz' });
+    expect(checkWish({ delivery_types: [] }, selfStudy)).toMatchObject({ status: 'unknown' });
+    expect(checkWish({ level: 'advanced' }, { type: 'level', value: 'beginner', label: 'Für Einsteiger' })).toMatchObject({ status: 'deviating', aspect: 'Niveau' });
+    expect(checkWish({ delivery_types: ['self_study'] }, { type: 'online', value: true, label: 'Online' })).toMatchObject({ status: 'unknown' });
+  });
+
+  it('Privatcoaching (Präsenz): positive Selbststudium-Behauptung wird entfernt, Abweichung benannt', () => {
+    const checks = checkWishes({ delivery_types: ['presence'] }, [selfStudy]);
+    const text = buildExplanation({ lead: observed, wishChecks: checks, reasons: [{ kind: 'luna', section: 'description', quote: 'praktische Übungen' }] });
+    expect(text).not.toMatch(/selbstständigem Lernen/);
+    expect(text).toMatch(/^Du lernst Kamerabedienung/);
+    expect(text).toMatch(/Abweichung vom Wunsch „Selbststudium“: Lernform ist Präsenz\./);
+    expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
+  });
+
+  it('Lernform unbekannt: Behauptung entfernt, als nicht bestätigt markiert', () => {
+    const checks = checkWishes({ delivery_types: [] }, [selfStudy]);
+    const text = buildExplanation({ lead: observed, wishChecks: checks });
+    expect(text).not.toMatch(/selbstständigem Lernen/);
+    expect(text).toMatch(/Nicht bestätigt: Lernform „Selbststudium“\./);
+  });
+
+  it('Verneinte Abweichung bleibt stehen; bestätigte Lernform darf positiv genannt werden', () => {
+    const negated = 'Du lernst Blende und ISO. Der Kurs passt inhaltlich, bietet aber kein Selbststudium.';
+    expect(removeUnbackedWishClaims(negated, checkWishes({ delivery_types: ['presence'] }, [selfStudy]))).toBe(negated);
+    const positive = 'Du lernst Grundlagen. Du arbeitest selbstständig im eigenen Tempo.';
+    expect(removeUnbackedWishClaims(positive, checkWishes({ delivery_types: ['self_study'] }, [selfStudy]))).toBe(positive);
+    const text = buildExplanation({ lead: positive, wishChecks: checkWishes({ delivery_types: ['self_study'] }, [selfStudy]) });
+    expect(text).not.toMatch(/Abweichung|Nicht bestätigt/);
+  });
+
+  it('„ohne Vorkenntnisse“ zählt nicht als Verneinung: Einsteiger-Behauptung bei Fortgeschrittenen-Kurs entfernt', () => {
+    const level = { type: 'level', value: 'beginner', label: 'Für Einsteiger' };
+    const text = buildExplanation({ lead: 'Du lernst Python. Der Kurs ist ohne Vorkenntnisse für Einsteiger geeignet.', wishChecks: checkWishes({ level: 'advanced' }, [level]) });
+    expect(text).not.toMatch(/für Einsteiger geeignet/);
+    expect(text).toMatch(/Abweichung vom Wunsch „Für Einsteiger“: Niveau ist Fortgeschrittene\./);
+  });
+
+  it('Ende-zu-Ende (gemockt): Luna-Text mit unbelegter Lernform wird auf der Karte korrigiert; Lernform geht als Evidenz an Luna', async () => {
+    const courses = [
+      course(1, { title: 'Privat Coaching Fotografie', delivery_types: ['presence'] }),
+      course(2, { title: 'Fotografie im Selbststudium', delivery_types: ['self_study'] }),
+    ];
+    const chunks = [
+      { course_id: 1, section: 'description', chunk_index: 0, text: 'Fotografie mit praktische Übungen und persönliches Feedback.' },
+      { course_id: 2, section: 'description', chunk_index: 0, text: 'Fotografie selbstständig im eigenen Tempo lernen.' },
+    ];
+    const inner = searchScenario({ courses, chunks });
+    const { client } = createFakeSupabase((call) => (call.table === 'ai_search_config' ? { data: { active_model_version: null }, error: null } : inner(call)));
+    const gateway = {
+      usage: {},
+      embed: vi.fn(),
+      rerank: vi.fn(async () => ({ accepted: [
+        { courseId: '1', score: 85, explanation: observed, reasons: [{ field: 'description', quote: 'praktische Übungen' }] },
+        { courseId: '2', score: 90, explanation: 'Du lernst Fotografie. Du arbeitest selbstständig im eigenen Tempo.', reasons: [{ field: 'description', quote: 'im eigenen Tempo' }] },
+      ], rejected: [] })),
+    };
+    const result = await runAiSearch(client, { query: 'Fotografie lernen im Selbststudium', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
+    const byId = Object.fromEntries(result.results.map((r) => [r.courseId, r.explanation]));
+    expect(byId[1]).not.toMatch(/selbstständigem Lernen/);
+    expect(byId[1]).toMatch(/Abweichung vom Wunsch „Selbststudium“: Lernform ist Präsenz\./);
+    expect(byId[2]).toMatch(/selbstständig im eigenen Tempo/);
+    expect(byId[2]).not.toMatch(/Abweichung|Nicht bestätigt: Lernform/);
+    const evidence = gateway.rerank.mock.calls[0][1];
+    expect(evidence.find((c) => String(c.courseId) === '1').evidence.delivery_types).toBe('Präsenz');
+  });
+});
+
 describe('runAiSearch – Luna-Begründung auf der Karte (gemockt)', () => {
   it('übernimmt den geprüften Luna-Text und meldet den Verbrauch', async () => {
     const courses = [course(1, { title: 'Yoga sanft' })];

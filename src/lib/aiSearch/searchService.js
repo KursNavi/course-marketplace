@@ -30,6 +30,7 @@ import { fuseRankedLists } from './retrieval.js';
 import { rankWithPaidPriority, MIN_SCORE } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
 import { buildExplanation } from './explanation.js';
+import { checkWishes, deliveryEvidence } from './wishCheck.js';
 export const CANDIDATE_LIMIT = 100;
 export const RESULT_LIMIT = 10;
 
@@ -246,6 +247,7 @@ const EVIDENCE_LABELS = {
   price_status: 'Preis',
   level: 'Niveau',
   languages: 'Sprache',
+  delivery_types: 'Lernform',
 };
 
 /**
@@ -267,6 +269,8 @@ export function buildEvidence(course, context) {
     location: [course.canton, ...(course.course_locations ?? []).map((l) => l.city)].filter(Boolean).join(', ') || undefined,
     price_status: describePrice(priceStatus).text,
     level: course.level ?? undefined,
+    // Strukturierte Lernform, damit Luna sie nicht aus dem Thema ableitet.
+    delivery_types: deliveryEvidence(course),
   };
   return Object.fromEntries(Object.entries(evidence).filter(([, value]) => value !== undefined && value !== ''));
 }
@@ -315,11 +319,14 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     category_focus: row.level4_slug || null, category_focus_label: row.level4_label_de || null, is_primary: row.is_primary,
   })) };
 
+  // Lernform-/Niveau-Wünsche nur aus strukturierten Kursangaben bestätigen.
+  const wishChecks = checkWishes(course, request.wishes);
   const cardEvent = event ? { startDate: event.start_date, endDate: event.end_date ?? null, location: event.location ?? null, canton: event.canton ?? null } : null;
   const explanation = buildExplanation({
     lead: ranked.lunaExplanation ?? null,
     reasons: ranked.reasons,
     wishes: request.wishes,
+    wishChecks,
     musts: request.musts,
     mustUnknowns: mustResult.unknowns ?? [],
     place,
@@ -344,6 +351,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     event: cardEvent,
     gaps: [...new Set(gaps)],
     mustStatus: mustResult.result,
+    wishChecks,
   };
 }
 

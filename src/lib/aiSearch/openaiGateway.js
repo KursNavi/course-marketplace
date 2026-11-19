@@ -132,6 +132,7 @@ const SYSTEM_INSTRUCTIONS = [
   'Für Kurse mit Score ab 70: explanation mit 20 bis 35 Wörtern in zwei kurzen Sätzen, Du-Form, Schweizer Rechtschreibung (immer ss, nie Eszett).',
   'Satz 1: was man konkret lernt. Satz 2: warum das zum Wunsch passt (Niveau, Format, Zielgruppe).',
   'Wiederhole den Suchwunsch nicht, keine Einleitung, keine Füllwörter.',
+  'Wünsche zu Lernform (z. B. Selbststudium, online, vor Ort), Niveau oder Zeit gelten nur als erfüllt, wenn die Felder delivery_types bzw. level oder ein wörtliches Zitat sie ausdrücklich belegen; thematische Passung belegt keine Lernform. Sonst benenne sie als abweichend oder nicht belegt, nie als passend.',
   'Belege den Text mit ein bis zwei kurzen wörtlichen Zitaten (höchstens 10 Wörter) in reasons.',
   'Nenne im Text keine Preise, Daten, Zahlen, Orte, Abschlüsse, Zertifikate, Pakete oder Garantien; Ort, Preis und Termin ergänzt das System selbst.',
   'Für Kurse unter Score 70: explanation leer und reasons leer.',
@@ -191,6 +192,7 @@ const EXPLAIN_INSTRUCTIONS = [
   'explanation: 20 bis 35 Wörter in zwei kurzen Sätzen, Du-Form, Schweizer Rechtschreibung (immer ss, nie Eszett).',
   'Satz 1: was man konkret lernt. Satz 2: warum das zum Wunsch passt (Niveau, Format, Zielgruppe).',
   'Wiederhole den Suchwunsch nicht, keine Einleitung, keine Füllwörter.',
+  'Wünsche zu Lernform (z. B. Selbststudium, online, vor Ort), Niveau oder Zeit gelten nur als erfüllt, wenn die Felder delivery_types bzw. level oder ein wörtliches Zitat sie ausdrücklich belegen; thematische Passung belegt keine Lernform. Sonst benenne sie als abweichend oder nicht belegt, nie als passend.',
   'Belege den Text mit ein bis zwei kurzen wörtlichen Zitaten (höchstens 10 Wörter) in reasons; jedes quote ist ein wörtlicher Ausschnitt aus genau diesem Feld.',
   'Nenne im Text keine Preise, Daten, Zahlen, Orte, Abschlüsse, Zertifikate, Pakete oder Garantien.',
 ].join(' ');

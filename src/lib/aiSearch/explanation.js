@@ -11,6 +11,8 @@
  * - Paket-/Prio-Daten fliessen nie ein.
  */
 
+import { WISH_CLAIM_PATTERNS } from './wishCheck.js';
+
 // Nachtrag 12 (18.11.2026): normal 25–40 Wörter, höchstens 50 einschliesslich
 // serverseitiger Hinweise (ersetzt 40–70/100 aus Nachtrag 10).
 export const MAX_EXPLANATION_WORDS = 50;
@@ -59,6 +61,32 @@ function formatDay(value) {
   return date.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Zurich' });
 }
 
+// Satz verneint/relativiert die Erfüllung („kein Selbststudium“, „statt“, „aber“).
+const NEGATION = /\b(kein|keine|keinen|keiner|nicht|statt|anstatt|aber|jedoch|allerdings|weniger|nur bedingt)\b/i;
+
+/**
+ * Entfernt aus dem Modelltext Sätze, die einen nicht bestätigten Wunsch
+ * (Lernform, Online, Niveau) positiv als erfüllt darstellen. Sätze, die die
+ * Abweichung selbst benennen (Verneinung), bleiben erhalten. Der Server fügt
+ * den massgeblichen Hinweis ohnehin selbst an (buildExplanation).
+ */
+export function removeUnbackedWishClaims(lead, wishChecks = []) {
+  const text = typeof lead === 'string' ? lead.trim() : '';
+  if (!text) return null;
+  const open = wishChecks.filter((check) => check.status !== 'confirmed' && WISH_CLAIM_PATTERNS[check.claimKey]);
+  if (open.length === 0) return text;
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [text];
+  const kept = sentences.filter((sentence) => {
+    const claims = open.some((check) => WISH_CLAIM_PATTERNS[check.claimKey].test(sentence));
+    if (!claims) return true;
+    // „ohne Vorkenntnisse“ ist eine Niveau-Aussage, keine Verneinung.
+    const withoutPhrase = sentence.replace(/ohne vorkenntnisse|keine vorkenntnisse/gi, '');
+    return NEGATION.test(withoutPhrase);
+  });
+  const result = kept.map((s) => s.trim()).join(' ').trim();
+  return result || null;
+}
+
 function capitalize(text) {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
@@ -74,14 +102,15 @@ function capitalize(text) {
  * @param {string} input.price   Preisdarstellung laut Kursangaben
  * @returns {string}
  */
-export function buildExplanation({ lead = null, reasons = [], wishes = [], musts = {}, mustUnknowns = [], place = null, event = null, price = '' }) {
+export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, event = null, price = '' }) {
   // priority: 0 = nie kürzen (Einschränkungen), höhere Zahl = zuerst weglassen
   const parts = [];
   const add = (order, priority, text) => { if (text) parts.push({ order, priority, text, lead: false }); };
 
   // Serverseitig geprüfter Luna-Fliesstext ersetzt die Zitatsätze. Fehlt er,
-  // bleibt die bisherige belegte Zusammenstellung.
-  const leadText = typeof lead === 'string' && lead.trim() ? lead.trim() : null;
+  // bleibt die bisherige belegte Zusammenstellung. Sätze, die einen NICHT
+  // bestätigten Wunsch als erfüllt darstellen, werden vorher entfernt.
+  const leadText = removeUnbackedWishClaims(lead, wishChecks);
   if (leadText) parts.push({ order: 10, priority: 1, text: leadText, lead: true });
   const evidence = leadText ? [] : reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');
   evidence.forEach((reason, index) => {
@@ -108,6 +137,15 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], musts
       ? `Abweichung vom Wunsch „${wish}“: Ort ist ${place}.`
       : `Offen, ob in ${wish}: kein Ort angegeben.`);
   }
+
+  // Wünsche zu Lernform/Niveau: nur strukturierte Kursangaben entscheiden.
+  wishChecks.forEach((check, index) => {
+    if (check.status === 'deviating') {
+      add(25 + index, 0, `Abweichung vom Wunsch „${check.wishLabel}“: ${check.aspect} ist ${check.actual}.`);
+    } else if (check.status === 'unknown') {
+      add(25 + index, 0, `Nicht bestätigt: ${check.aspect} „${check.wishLabel}“.`);
+    }
+  });
 
   for (const unknown of mustUnknowns) {
     if (unknown === 'event') add(30, 0, `Nicht bestätigt: ein Termin${musts.location ? ` in ${musts.location}` : ' passend zur Ortsvorgabe'}.`);
