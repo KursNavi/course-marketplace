@@ -29,6 +29,14 @@ describe('Profiltest isoliert', () => {
       expect(m[1]).toMatch(/\.eq\('(id|course_id|provider_id)', created\.(courseId|userId)\)/);
     }
     expect(helper).toMatch(/auth\.admin\.deleteUser\(created\.userId\)/);
+    // Restprüfung umfasst eigenes Authkonto und eigene Indexzustände.
+    expect(helper).toMatch(/auth\.admin\.getUserById\(created\.userId\)/);
+    for (const table of ['ai_search_jobs', 'ai_search_chunks', 'ai_search_documents', 'ai_search_index_state', 'profiles', 'provider_package_history', 'courses']) {
+      expect(helper).toMatch(new RegExp(`count\\('${table}'`));
+    }
+    // Bereinigungsfehler werden nicht verschluckt.
+    expect(helper).not.toMatch(/cleanup\(\)\.catch\(\(\) => \{\}\)/);
+    expect(helper).toMatch(/zusätzlich: \$\{cleanupError\.message\}/);
     expect(helper).toMatch(/Bereinigung des eigenen Testprofils unvollständig/);
     expect(helper).toMatch(/email_confirm: true/);
     expect(helper).toMatch(/checkTestTarget/);

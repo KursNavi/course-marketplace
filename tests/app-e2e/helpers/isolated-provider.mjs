@@ -57,6 +57,9 @@ export async function createIsolatedProvider(env = process.env) {
       await step('Kurs löschen', () => service.from('courses').delete().eq('id', created.courseId));
       // Danach: auch der durch das Löschen eingereihte Auftrag gehört zum eigenen Kurs.
       await step('Indexaufträge löschen', () => service.from('ai_search_jobs').delete().eq('course_id', created.courseId));
+      // Indexzustände nur des eigenen Kurses (entstehen nur, falls ein Worker lief).
+      await step('Indexabschnitte löschen', () => service.from('ai_search_chunks').delete().eq('course_id', created.courseId));
+      await step('Indexdokument löschen', () => service.from('ai_search_documents').delete().eq('course_id', created.courseId));
       await step('Indexstand löschen', () => service.from('ai_search_index_state').delete().eq('course_id', created.courseId));
     }
     if (created.userId) {
@@ -74,8 +77,17 @@ export async function createIsolatedProvider(env = process.env) {
     };
     await count('courses', 'id', created.courseId);
     await count('ai_search_jobs', 'course_id', created.courseId);
+    await count('ai_search_chunks', 'course_id', created.courseId);
+    await count('ai_search_documents', 'course_id', created.courseId);
+    await count('ai_search_index_state', 'course_id', created.courseId);
     await count('profiles', 'id', created.userId);
     await count('provider_package_history', 'provider_id', created.userId);
+    if (created.userId) {
+      // Eigenes Authkonto muss weg sein (Admin-API meldet dann „nicht gefunden“).
+      const { data, error } = await service.auth.admin.getUserById(created.userId);
+      if (data?.user) left.push('auth.users: Konto besteht noch');
+      else if (error && !/not.?found|404/i.test(`${error.status ?? ''} ${error.message}`)) left.push(`auth.users: Prüfung fehlgeschlagen (${error.message})`);
+    }
     if (problems.length || left.length) {
       throw new Error(`Bereinigung des eigenen Testprofils unvollständig: ${[...problems, ...left].join('; ')}`);
     }
@@ -111,7 +123,12 @@ export async function createIsolatedProvider(env = process.env) {
     }).select('id').single(), 'Kurs anlegen');
     created.courseId = course.id;
   } catch (error) {
-    await cleanup().catch(() => {});
+    // Bereinigungsfehler NICHT verschlucken: beide Ursachen sichtbar melden.
+    try {
+      await cleanup();
+    } catch (cleanupError) {
+      throw new Error(`${error.message} | zusätzlich: ${cleanupError.message}`);
+    }
     throw error;
   }
 

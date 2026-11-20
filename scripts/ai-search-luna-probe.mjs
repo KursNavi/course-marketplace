@@ -23,12 +23,16 @@ const CASES = [
   { id: 'fotografie-ort-muss', query: 'Ich möchte als Anfänger fotografieren lernen', musts: { canton: 'Zürich', onlineAllowed: false } },
   { id: 'programmierung', query: 'Programmieren lernen für Einsteiger' },
 ];
-// Gleiche Denkstufe, Teilgrösse und Verteilung; nur der Ablauf unterscheidet sich.
+// Vergleich vom 20.11.2026 (A einstufig vs. B zweistufig): kein Wechsel,
+// siehe docs/ai-search/vergleich-a-b-20261120.md.
+// Nachtrag 14b (20.11.2026): einstufig 3 × 10 gegen einstufig 6 × 5. Gleiche
+// Denkstufe, Kandidaten (30), Verteilung und Anweisungen; nur die Teilgrösse
+// unterscheidet sich. Zwei Runden, abwechselnd → 3 Fälle × 2 × 2 = 12 Suchen.
 const CONFIGS = [
-  { id: 'A einstufig', effort: 'none', batchSize: 10, distribution: 'stripe', mode: 'single' },
-  { id: 'B zweistufig', effort: 'none', batchSize: 10, distribution: 'stripe', mode: 'twoStage' },
+  { id: 'A 3×10', effort: 'none', batchSize: 10, distribution: 'stripe', mode: 'single' },
+  { id: 'A 6×5', effort: 'none', batchSize: 5, distribution: 'stripe', mode: 'single' },
 ];
-const ROUNDS = 1;
+const ROUNDS = 2;
 const EXTRA = [];
 const summary = {};
 // Gesendete Kandidaten je Fall und Variante (Nachweis „dieselben Kandidaten“).
@@ -40,14 +44,16 @@ async function runOne(service, config, testCase, round) {
   // Gesendete Kandidaten und gültig zurückgegebene Bewertungen mitschreiben
   // (nur IDs), ohne die Produktlogik zu ändern. Gesendet = was der Gateway
   // tatsächlich an Luna gibt (sentIds), nicht was abgerufen wurde.
-  const record = { sent: null, valid: null };
+  const record = { sent: null, valid: null, scores: null };
   for (const method of ['rerank', 'scoreCandidates']) {
     const original = gateway[method];
     gateway[method] = async (query, candidates) => {
       const response = await original(query, candidates);
       record.sent = (response.sentIds ?? candidates.map((c) => c.courseId)).map(String);
       record.valid = (response.accepted ?? []).filter((a) => Number.isFinite(Number(a.score))).map((a) => String(a.courseId));
-      (sentByCase[testCase.id] ??= {})[config.id] = record.sent;
+      // Sämtliche Bewertungen (ID:Score), absteigend.
+      record.scores = (response.accepted ?? []).map((a) => [String(a.courseId), Number(a.score)]).sort((x, y) => y[1] - x[1]);
+      (sentByCase[testCase.id] ??= {})[`${config.id}#${round}`] = record.sent;
       return response;
     };
   }
@@ -82,6 +88,12 @@ async function runOne(service, config, testCase, round) {
     for (const call of gateway.usage.lunaCallDetails) console.log(`  Teilaufruf ${call.stage}: ${call.candidates} Kand., ${call.ms} ms, ${call.in ?? '?'} ein / ${call.out ?? '?'} aus${call.failed ? ' FEHLGESCHLAGEN' : ''}`);
     console.log(`an Luna ${s.sentToLuna}, bewertet ${s.rated} (unter Mindestpassung ${s.belowThreshold}), unbewertet ${s.notRated}, ungültig ${s.lunaDiscarded}, Texte verworfen ${s.explanationsRejected} | Treffer ${result.results.length}, unvollständig ${result.incompleteResults.length}`);
     console.log(`Qualität ${JSON.stringify(quality)}`);
+    const rankCalls = gateway.usage.lunaCallDetails.filter((c) => !c.failed);
+    const slowest = rankCalls.reduce((max, c) => (c.ms > (max?.ms ?? -1) ? c : max), null);
+    console.log(`Langsamster Teilaufruf ${slowest?.ms ?? '-'} ms mit ${slowest?.out ?? '-'} Ausgabetokens | max. Ausgabetokens je Teilaufruf ${Math.max(0, ...rankCalls.map((c) => c.out ?? 0))}`);
+    console.log(`Alle Bewertungen (ID:Score) ${(record.scores ?? []).map(([id, sc]) => `${id}:${sc}`).join(' ')}`);
+    summary[key].slowestOut = [...(summary[key].slowestOut ?? []), slowest?.out ?? null];
+    summary[key].runs = [...(summary[key].runs ?? []), { round, hits: shown.map((c) => String(c.courseId)) }];
     for (const card of shown.slice(0, 10)) {
       console.log(`- ${result.incompleteResults.includes(card) ? '(unvollst.) ' : ''}[${card.score}] #${card.courseId} ${card.title} — ${countWords(card.explanation)} W.`);
     }
@@ -134,8 +146,10 @@ async function main() {
   const service = createClient(process.env.SUPABASE_URL_TEST, process.env.SUPABASE_SECRET_KEY_TEST, { auth: { persistSession: false } });
 
   for (let round = 1; round <= ROUNDS; round += 1) {
+    // Abwechselnd: in geraden Runden umgekehrte Reihenfolge (Reihenfolgeeffekt ausgleichen).
+    const order = round % 2 === 1 ? CONFIGS : [...CONFIGS].reverse();
     for (const testCase of CASES) {
-      for (const cfg of CONFIGS) await runOne(service, cfg, testCase, round);
+      for (const cfg of order) await runOne(service, cfg, testCase, round);
     }
   }
   for (const extra of EXTRA) {
@@ -144,15 +158,25 @@ async function main() {
 
   console.log('\n##### Zusammenfassung');
   for (const [key, value] of Object.entries(summary)) {
-    console.log(`${key}: Gesamt ms ${JSON.stringify(value.totals)} | Luna ms ${JSON.stringify(value.luna)} | Trefferzahl ${JSON.stringify(value.hits.map((h) => h.length))} | ${overlap(value.hits)} | Fehler ${value.errors} | Tokens ${value.tokensIn} ein / ${value.tokensOut} aus | Qualität ${JSON.stringify(value.quality)}`);
+    console.log(`${key}: Gesamt ms ${JSON.stringify(value.totals)} | Luna ms ${JSON.stringify(value.luna)} | langsamster Teilaufruf Ausgabetokens ${JSON.stringify(value.slowestOut ?? [])} | Trefferzahl ${JSON.stringify(value.hits.map((h) => h.length))} | ${overlap(value.hits)} | Fehler ${value.errors} | Tokens ${value.tokensIn} ein / ${value.tokensOut} aus | Qualität ${JSON.stringify(value.quality)}`);
   }
-  console.log('\n##### Vergleich A/B je Fall');
+  console.log('\n##### Vergleich je Fall (Trefferlisten vollständig, auch bei < 10 Treffern)');
   for (const testCase of CASES) {
     const sent = sentByCase[testCase.id] ?? {};
-    const [a, b] = CONFIGS.map((c) => sent[c.id]);
-    const same = a && b && a.length === b.length && a.every((id) => b.includes(id));
-    const hits = CONFIGS.map((c) => summary[`${c.id} | ${testCase.id}`]?.hits?.[0] ?? null);
-    console.log(`${testCase.id}: Kandidaten identisch ${same ? 'JA' : 'NEIN'} (${a?.length ?? '-'} / ${b?.length ?? '-'}) | Treffer ${hits.map((h) => h?.length ?? 'Fehler').join(' / ')} | ${hits.every(Boolean) ? overlap(hits) : 'kein Vergleich (Fehler)'}`);
+    console.log(`${testCase.id}:`);
+    for (let round = 1; round <= ROUNDS; round += 1) {
+      const [a, b] = CONFIGS.map((c) => sent[`${c.id}#${round}`]);
+      const same = a && b && a.length === b.length && a.every((id) => b.includes(id));
+      console.log(`  Runde ${round}: gesendete Kandidaten identisch ${same ? 'JA' : 'NEIN'} (${a?.length ?? '-'} / ${b?.length ?? '-'})`);
+      const lists = CONFIGS.map((c) => (summary[`${c.id} | ${testCase.id}`]?.runs ?? []).find((r) => r.round === round)?.hits ?? null);
+      CONFIGS.forEach((c, i) => console.log(`  Runde ${round} ${c.id}: ${lists[i] ? `${lists[i].length} Treffer [${lists[i].join(', ')}]` : 'FEHLER'}`));
+      if (lists.every(Boolean)) {
+        const [x, y] = lists;
+        const onlyX = x.filter((id) => !y.includes(id));
+        const onlyY = y.filter((id) => !x.includes(id));
+        console.log(`  Runde ${round}: gemeinsam ${x.filter((id) => y.includes(id)).length} | nur ${CONFIGS[0].id}: [${onlyX.join(', ')}] | nur ${CONFIGS[1].id}: [${onlyY.join(', ')}]`);
+      }
+    }
   }
 }
 
