@@ -55,7 +55,22 @@ model_version für Abschnitte mit identischem `(section, chunk_index, text)`;
 nur geänderte Abschnitte verlieren ihr Embedding. Das braucht eine neue
 Migration und eine eigene Freigabe.
 
-## Vorschlag Trigger (NICHT angewendet, eigene Freigabe nötig)
+## Umsetzung (20.11.2026, nur TESTumgebung)
+
+Beide Vorschläge (Embeddings erhalten, keine Aufträge bei wertgleichen
+UPDATEs) samt Profil-Trigger sind als
+`supabase/drafts/20261120090000_ai_search_keep_embeddings_skip_noop_jobs.sql`
+umgesetzt, mit Rollback-Test geprüft (KNT00, 16/16) und am 20.11.2026 um
+21:58 Uhr Schweizer Zeit auf der TESTumgebung angewendet (Migration
+`20261120205856 ai_search_keep_embeddings_skip_noop_jobs`). Nachkontrolle:
+neue Funktionen/Trigger und Rechte vorhanden; Kurse, Profile, Termine, Orte,
+Kategorien, Aufträge (0 offen, 0 fehlgeschlagen), Indexdokumente, Indexstand
+und alle 2'771 Embeddings (Version und Vektoren) prüfsummengleich mit dem
+Stand vorher; keine Testdaten. Produktion: nicht angewendet.
+
+Der folgende ursprüngliche Vorschlag ist damit überholt.
+
+## Vorschlag Trigger (ursprünglich, überholt)
 
 ```sql
 -- ENTWURF – nur nach ausdrücklicher Freigabe, zuerst als Migrationsdatei.
