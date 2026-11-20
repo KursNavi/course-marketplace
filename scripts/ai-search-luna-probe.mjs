@@ -9,6 +9,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { pathToFileURL } from 'node:url';
 import { checkTestTarget } from './ai-search-db-tests.mjs';
 import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openaiGateway.js';
 import { runAiSearch } from '../src/lib/aiSearch/searchService.js';
@@ -36,12 +37,18 @@ const sentByCase = {};
 async function runOne(service, config, testCase, round) {
   const modelConfig = readModelConfig({ ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST });
   const gateway = createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: modelConfig.embeddingModel, reasoningEffort: config.effort, batchSize: config.batchSize, distribution: config.distribution, mode: config.mode });
-  // Gesendete Kandidaten mitschreiben (nur IDs), ohne die Produktlogik zu ändern.
+  // Gesendete Kandidaten und gültig zurückgegebene Bewertungen mitschreiben
+  // (nur IDs), ohne die Produktlogik zu ändern. Gesendet = was der Gateway
+  // tatsächlich an Luna gibt (sentIds), nicht was abgerufen wurde.
+  const record = { sent: null, valid: null };
   for (const method of ['rerank', 'scoreCandidates']) {
     const original = gateway[method];
     gateway[method] = async (query, candidates) => {
-      (sentByCase[testCase.id] ??= {})[config.id] = candidates.slice(0, 30).map((c) => String(c.courseId));
-      return original(query, candidates);
+      const response = await original(query, candidates);
+      record.sent = (response.sentIds ?? candidates.map((c) => c.courseId)).map(String);
+      record.valid = (response.accepted ?? []).filter((a) => Number.isFinite(Number(a.score))).map((a) => String(a.courseId));
+      (sentByCase[testCase.id] ??= {})[config.id] = record.sent;
+      return response;
     };
   }
   const started = Date.now();
@@ -59,8 +66,9 @@ async function runOne(service, config, testCase, round) {
     // Qualität: vollständige Bewertung, Belege, Textlänge (inkl. Serverhinweise).
     const words = shown.map((c) => countWords(c.explanation));
     const withLunaQuote = shown.filter((c) => (c.reasons ?? []).some((r) => r.kind === 'luna')).length;
+    const completeness = ratingCompleteness(record.sent, record.valid, s);
     const quality = {
-      vollstaendigBewertet: s.rated === s.sentToLuna && s.notRated === 0,
+      ...completeness,
       karten: shown.length,
       mitLunaBeleg: withLunaQuote,
       texteVerworfen: s.explanationsRejected,
@@ -84,6 +92,30 @@ async function runOne(service, config, testCase, round) {
   }
   summary[key].tokensIn += gateway.usage.lunaInputTokens;
   summary[key].tokensOut += gateway.usage.lunaOutputTokens;
+}
+
+/**
+ * Vollständigkeit der Bewertung (Nachtrag 14, Korrektur 20.11.2026):
+ * „alle gesendeten Kandidaten bewertet“ vergleicht die tatsächlich an Luna
+ * gesendeten IDs mit den gültig zurückgegebenen Bewertungen. Abgerufene, aber
+ * nicht gesendete Kandidaten (Kappung auf 30) werden getrennt ausgewiesen;
+ * stats.notRated enthält beide Gruppen und muss daher nicht 0 sein.
+ */
+export function ratingCompleteness(sentIds, validIds, stats) {
+  const sent = new Set((sentIds ?? []).map(String));
+  const valid = new Set((validIds ?? []).map(String));
+  const sentNotRated = [...sent].filter((id) => !valid.has(id)).length;
+  const foreign = [...valid].filter((id) => !sent.has(id)).length;
+  const afterMusts = (stats?.rated ?? 0) + (stats?.notRated ?? 0); // nach Muss-Ausschluss
+  return {
+    alleGesendetenBewertet: sent.size > 0 && sentNotRated === 0 && foreign === 0,
+    abgerufen: stats?.candidates ?? null,
+    nachMussAusschluss: afterMusts,
+    gesendet: sent.size,
+    gueltigBewertet: [...sent].filter((id) => valid.has(id)).length,
+    gesendetOhneBewertung: sentNotRated,
+    nichtGesendet: Math.max(0, afterMusts - sent.size),
+  };
 }
 
 function overlap(lists) {
@@ -124,4 +156,6 @@ async function main() {
   }
 }
 
-main().catch((error) => { console.error('Unerwarteter Fehler:', error?.message ?? error); process.exit(1); });
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => { console.error('Unerwarteter Fehler:', error?.message ?? error); process.exit(1); });
+}
