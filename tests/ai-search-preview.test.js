@@ -275,7 +275,19 @@ function apiScenario(overrides = {}) {
       if (overrides.user === null) return { data: { user: null }, error: { message: 'invalid' } };
       return { data: { user: overrides.user ?? USER }, error: null };
     }
+    if (call.table === 'ai_search_usage' && call.op === 'select') {
+      if (overrides.guardError) return { data: null, error: { message: 'down' } };
+      return { data: overrides.guardRows ?? [], error: null };
+    }
     if (call.op === 'rpc') {
+      if (call.table === 'ai_search_result_store') {
+        if (overrides.storeMissing) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
+        return { data: overrides.storeResult ?? true, error: null };
+      }
+      if (call.table === 'ai_search_result_fetch') {
+        if (overrides.fetchMissing) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
+        return { data: overrides.stored ?? null, error: null };
+      }
       if (call.table === 'ai_search_quota_remaining') return { data: overrides.remaining ?? 7, error: null };
       if (call.table === 'ai_search_quota_reserve') return { data: overrides.reserve ?? 'reserved', error: null };
       if (call.table === 'ai_search_quota_finalize') return { data: overrides.finalize ?? 'completed', error: null };
@@ -365,13 +377,125 @@ describe('Such-API /api/ai-search', () => {
     expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
   });
 
-  it('bereits abgeschlossene Kennung: kein stiller kostenloser Neulauf', async () => {
-    const calls = apiScenario({ reserve: 'already_completed' });
+  it('bereits abgeschlossene Kennung ohne gespeichertes Ergebnis: kein stiller kostenloser Neulauf', async () => {
+    for (const overrides of [{ stored: null }, { fetchMissing: true }]) {
+      const calls = apiScenario({ reserve: 'already_completed', ...overrides });
+      const res = mockRes();
+      await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+      expect(res.statusCode).toBe(409);
+      expect(res.body.error).toBe('result_not_stored');
+      expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
+    }
+  });
+
+  // Plan 14, Schritt 3: geschützter Ergebniswiederabruf.
+  it('Wiederabruf: gleiche Kennung nach Reload/verlorener Antwort liefert das gespeicherte Ergebnis ohne Inferenz und ohne Belastung', async () => {
+    const stored = { criteria: { terms: ['yoga'], wishes: [], musts: {} }, results: [{ courseId: 1, title: 'Yoga sanft' }], incompleteResults: [] };
+    const calls = apiScenario({ reserve: 'already_completed', stored, remaining: 7 });
+    const res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ requestId: REQUEST_ID, restored: true, results: stored.results, quota: { remaining: 7 } });
+    // Keine Suche, kein Modellaufruf, kein neuer Abschluss.
+    expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
+    expect(calls.some((c) => c.table === 'ai_search_quota_finalize')).toBe(false);
+    // Abruf an Konto UND Suchinhalt gebunden.
+    const fetchCall = calls.find((c) => c.table === 'ai_search_result_fetch');
+    expect(fetchCall.payload ?? fetchCall.args).toMatchObject({ p_request_id: REQUEST_ID, p_user_id: USER.id, p_query_hash: buildQueryHash('Yoga', {}) });
+  });
+
+  it('Erfolg: Ergebnis wird nach dem Abschluss privat gespeichert (ohne Kontingent-/Zeitangaben); fehlender Speicher bricht nichts', async () => {
+    let calls = apiScenario();
+    let res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.restorable).toBe(true);
+    const order = calls.filter((c) => c.op === 'rpc').map((c) => c.table);
+    expect(order.indexOf('ai_search_result_store')).toBeGreaterThan(order.indexOf('ai_search_quota_finalize'));
+    const storeCall = calls.find((c) => c.table === 'ai_search_result_store');
+    const args = storeCall.payload ?? storeCall.args;
+    expect(args).toMatchObject({ p_request_id: REQUEST_ID, p_user_id: USER.id });
+    expect(args.p_payload).not.toHaveProperty('quota');
+    expect(args.p_payload).not.toHaveProperty('serverTimings');
+    expect(args.p_payload).toHaveProperty('results');
+
+    calls = apiScenario({ storeMissing: true });
+    res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.restorable).toBe(false);
+
+    // Nicht abgeschlossen → nichts gespeichert, nichts ausgeliefert.
+    calls = apiScenario({ finalize: 'rejected_expired' });
+    res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(409);
+    expect(calls.some((c) => c.table === 'ai_search_result_store')).toBe(false);
+  });
+
+  // Plan 14, Schritt 3: Missbrauchs-/Parallelitätsbremse vor kostenverursachenden Aufrufen.
+  it('Bremse: laufende Suche, zu viele Versuche oder Fehlschläge → 429 ohne Reservierung und ohne Suche', async () => {
+    const now = Date.now();
+    const iso = (msAgo) => new Date(now - msAgo).toISOString();
+    const cases = [
+      { rows: [{ request_id: 'a', state: 'reserved', created_at: iso(5_000), reserved_until: iso(-600_000) }], code: 'too_many_parallel' },
+      { rows: [1, 2, 3].map((i) => ({ request_id: `r${i}`, state: 'completed', created_at: iso(i * 10_000) })), code: 'rate_limited' },
+      { rows: [1, 2, 3, 4, 5].map((i) => ({ request_id: `f${i}`, state: 'released', created_at: iso(i * 300_000) })), code: 'cooldown' },
+    ];
+    for (const { rows, code } of cases) {
+      const calls = apiScenario({ guardRows: rows });
+      const res = mockRes();
+      await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+      expect(res.statusCode).toBe(429);
+      expect(res.body.error).toBe(code);
+      expect(Number(res.headers['Retry-After'])).toBeGreaterThan(0);
+      expect(calls.some((c) => c.table === 'ai_search_quota_reserve')).toBe(false);
+      expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
+    }
+  });
+
+  it('Bremse: Wiederholung DERSELBEN Kennung wird nie gebremst (Wiederabruf bleibt möglich)', async () => {
+    const rows = [{ request_id: REQUEST_ID, state: 'reserved', created_at: new Date().toISOString(), reserved_until: new Date(Date.now() + 600_000).toISOString() }];
+    const calls = apiScenario({ guardRows: rows, reserve: 'already_reserved' });
     const res = mockRes();
     await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
     expect(res.statusCode).toBe(409);
-    expect(res.body.error).toBe('result_not_stored');
-    expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
+    expect(res.body.error).toBe('in_progress');
+    expect(calls.some((c) => c.table === 'ai_search_quota_reserve')).toBe(true);
+  });
+
+  it('Bremse nicht prüfbar → 503, nichts reserviert (fail closed); atomare Bremse der DB → 429', async () => {
+    let calls = apiScenario({ guardError: true });
+    let res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(503);
+    expect(res.body.error).toBe('guard_unavailable');
+    expect(calls.some((c) => c.table === 'ai_search_quota_reserve')).toBe(false);
+
+    for (const code of ['too_many_parallel', 'rate_limited', 'cooldown']) {
+      calls = apiScenario({ reserve: code });
+      res = mockRes();
+      await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+      expect(res.statusCode).toBe(429);
+      expect(res.body.error).toBe(code);
+      expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
+    }
+  });
+
+  it('Wiederabruf durch fremdes oder anonymes Konto: abgewiesen bzw. nur mit eigener Kennung', async () => {
+    // Anonym: vor jedem Datenzugriff abgewiesen.
+    let calls = apiScenario({ user: { id: USER.id, is_anonymous: true } });
+    let res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(403);
+    expect(calls.some((c) => c.table === 'ai_search_result_fetch')).toBe(false);
+    // Fremdes Konto: Kennung gehört nicht ihm → request_mismatch, kein Abruf.
+    calls = apiScenario({ user: { id: '99999999-2222-4333-8444-555555555555', is_anonymous: false }, reserve: 'request_mismatch' });
+    res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(409);
+    expect(res.body.error).toBe('request_mismatch');
+    expect(calls.some((c) => c.table === 'ai_search_result_fetch')).toBe(false);
   });
 
   it('Systemfehler: Reservierung wird freigegeben, kein Abschluss', async () => {

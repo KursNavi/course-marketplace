@@ -24,6 +24,9 @@ const BROWSER_ON_TEST_DB = BROWSER_DB_REF === AI_SEARCH_TEST_REF;
 
 const DRAFT_KEY = AI_SEARCH_DRAFT_KEY;
 const RESULT_KEY = 'kn_ai_search_last_result';
+// Laufender Vorgang (Kennung + Inhalt) überlebt ein Neuladen, damit dasselbe
+// Ergebnis ohne zweite Belastung abgerufen werden kann (Plan 14, Schritt 3).
+const PENDING_KEY = 'kn_ai_search_pending';
 export const POST_LOGIN_AI_SEARCH_KEY = 'postLoginAiSearch';
 
 const CANTONS = ['Aargau', 'Appenzell AI', 'Appenzell AR', 'Basel-Landschaft', 'Basel-Stadt', 'Bern', 'Fribourg', 'Genève', 'Glarus', 'Graubünden', 'Jura', 'Luzern', 'Neuchâtel', 'Nidwalden', 'Obwalden', 'Schaffhausen', 'Schwyz', 'Solothurn', 'St. Gallen', 'Thurgau', 'Ticino', 'Uri', 'Valais', 'Vaud', 'Zug', 'Zürich'];
@@ -36,6 +39,10 @@ const ERROR_TEXT = {
   search_failed: 'Die Suche ist wegen eines technischen Fehlers fehlgeschlagen. Dein Kontingent wurde dafür nicht belastet.',
   model_failed: 'Die KI-Bewertung (Luna) ist gerade fehlgeschlagen, deshalb zeigen wir keine Ergebnisse. Dein Kontingent wurde dafür nicht belastet.',
   result_not_stored: 'Diese Suche wurde bereits abgeschlossen, das Ergebnis ist aber nicht mehr verfügbar. Du kannst eine neue Suche starten (zählt als neue KI-Suche).',
+  too_many_parallel: 'Es läuft bereits eine KI-Suche mit deinem Konto. Bitte warte, bis sie fertig ist. Es wurde nichts verbraucht.',
+  rate_limited: 'Bitte warte einen Moment vor der nächsten KI-Suche (höchstens drei pro Minute). Es wurde nichts verbraucht.',
+  cooldown: 'Mehrere KI-Suchen sind zuletzt technisch fehlgeschlagen. Bitte versuche es etwas später erneut. Es wurde nichts verbraucht.',
+  guard_unavailable: 'Die KI-Suche ist gerade nicht verfügbar. Es wurde nichts verbraucht.',
   in_progress: 'Diese Suche läuft bereits. Bitte warte einen Moment.',
   request_mismatch: 'Die Anfrage passte nicht zum laufenden Suchvorgang. Bitte starte die Suche neu.',
   not_released: 'Das Ergebnis konnte nicht freigegeben werden, weil dein Monatskontingent inzwischen aufgebraucht ist.',
@@ -142,6 +149,8 @@ export default function AiSearchView({ user, setView }) {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
   const pendingRef = useRef(null); // { requestId, payload } für idempotenten Wiederholversuch
+  // Nach Neuladen: unterbrochener Vorgang dieses Kontos (nur Hinweis, keine automatische Suche).
+  const [interrupted, setInterrupted] = useState(false);
   // Synchrone Sperre gegen Doppelklick/Enter: `loading` greift erst nach dem
   // nächsten Rendern, die Sperre sofort (kein zweiter Suchauftrag).
   const inFlightRef = useRef(false);
@@ -167,6 +176,9 @@ export default function AiSearchView({ user, setView }) {
   useEffect(() => {
     if (!user) {
       removeSession(RESULT_KEY);
+      removeSession(PENDING_KEY);
+      pendingRef.current = null;
+      setInterrupted(false);
       setResult(null);
       setQuota(null);
       return;
@@ -177,6 +189,17 @@ export default function AiSearchView({ user, setView }) {
       else removeSession(RESULT_KEY);
     } catch {
       removeSession(RESULT_KEY);
+    }
+    try {
+      const pending = JSON.parse(readSession(PENDING_KEY) || 'null');
+      if (pending && pending.userId === user.id && pending.requestId && pending.payload) {
+        pendingRef.current = { requestId: pending.requestId, payload: pending.payload };
+        setInterrupted(true);
+      } else {
+        removeSession(PENDING_KEY);
+      }
+    } catch {
+      removeSession(PENDING_KEY);
     }
   }, [user]);
 
@@ -218,6 +241,8 @@ export default function AiSearchView({ user, setView }) {
       pending = { requestId: newRequestId(), payload: { query, musts } };
       pendingRef.current = pending;
     }
+    setInterrupted(false);
+    writeSession(PENDING_KEY, JSON.stringify({ userId: user?.id, ...pending }));
     const headers = await authHeader();
     if (!headers) { setError('login_required'); return; }
     setLoading(true);
@@ -231,11 +256,16 @@ export default function AiSearchView({ user, setView }) {
       if (body.quota) setQuota(body.quota);
       if (response.ok) {
         pendingRef.current = null;
+        removeSession(PENDING_KEY);
         setResult(body);
         writeSession(RESULT_KEY, JSON.stringify({ userId: user.id, result: body }));
       } else {
         clickStartedRef.current = null;
-        if (body.error !== 'network') pendingRef.current = null;
+        // Laufende Suche (in_progress) bleibt abrufbar; sonst ist der Vorgang beendet.
+        if (body.error !== 'network' && body.error !== 'in_progress') {
+          pendingRef.current = null;
+          removeSession(PENDING_KEY);
+        }
         // Modellfehler eigens benennen (kein stiller Simulationsersatz).
         setError(body.error === 'search_failed' && body.modelsEnabled ? 'model_failed' : (body.error || 'server_error'));
       }
@@ -336,6 +366,13 @@ export default function AiSearchView({ user, setView }) {
             </p>
           </form>
 
+          {interrupted && !loading && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 text-blue-900 rounded-lg px-4 py-3 text-sm" role="status" data-testid="ai-interrupted">
+              <p>Eine KI-Suche wurde unterbrochen (z. B. durch Neuladen). Du kannst ihr Ergebnis abrufen – dieselbe Suche wird höchstens einmal gezählt.</p>
+              <button type="button" onClick={() => submit(true)} className="mt-2 text-sm font-semibold underline" data-testid="ai-resume">Ergebnis abrufen</button>
+            </div>
+          )}
+
           {statusError && statusError !== 'network' && (
             <div className="mt-4 bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm" role="alert">{ERROR_TEXT[statusError] || ERROR_TEXT.server_error}</div>
           )}
@@ -351,7 +388,7 @@ export default function AiSearchView({ user, setView }) {
           {error && error !== 'limit_reached' && (
             <div className="mt-4 bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm" role="alert">
               <p className="flex items-center gap-2"><AlertTriangle className="w-4 h-4" />{ERROR_TEXT[error] || ERROR_TEXT.server_error}</p>
-              {error === 'network' && (
+              {(error === 'network' || error === 'in_progress') && (
                 <button type="button" onClick={() => submit(true)} className="mt-2 text-sm font-semibold underline">Erneut versuchen</button>
               )}
               {(error === 'search_failed' || error === 'model_failed' || error === 'server_error') && <ClassicAlternatives />}
@@ -367,6 +404,10 @@ export default function AiSearchView({ user, setView }) {
                 {result.criteria.musts.canton && <span className="bg-petrol/10 text-petrol px-2 py-1 rounded-full">Muss: {result.criteria.musts.canton}{result.criteria.musts.onlineAllowed ? ' oder online' : ''}</span>}
                 {result.criteria.musts.maxBudget && <span className="bg-petrol/10 text-petrol px-2 py-1 rounded-full">Muss: bis CHF {result.criteria.musts.maxBudget}</span>}
               </div>
+
+              {result.restored && (
+                <p className="mt-3 text-sm text-gray-600" data-testid="ai-restored">Wiederhergestelltes Ergebnis dieser Suche – nicht erneut gezählt.</p>
+              )}
 
               {coverageAlert && (
                 <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm" role="alert" data-testid="ai-coverage-alert">

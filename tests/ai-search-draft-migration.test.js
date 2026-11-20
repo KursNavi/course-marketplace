@@ -52,8 +52,8 @@ describe('Migration 20261120205856: Ablage, Historie und Rückweg', () => {
       && /CREATE (OR REPLACE )?FUNCTION public\.ai_search_ignored_course_columns|CREATE TRIGGER ai_search_profiles_outbox/
         .test(read(`supabase/migrations/${f}`)));
     expect(defining).toEqual([path.basename(MIGRATION_FILE)]);
-    // Entwurfsordner enthält keine anwendbare Kopie mehr.
-    expect(readdirSync(path.join(ROOT, 'supabase/drafts')).filter((f) => f.endsWith('.sql'))).toEqual([]);
+    // Entwurfsordner enthält keine Kopie dieser Migration mehr (andere Entwürfe erlaubt).
+    expect(readdirSync(path.join(ROOT, 'supabase/drafts')).filter((f) => /keep_embeddings|20261120090000/.test(f))).toEqual([]);
   });
 
   it('Rückweg liegt getrennt im Rückwegordner, nicht im Migrationsbestand', () => {

@@ -29,8 +29,9 @@ würde abbrechen oder Objekte doppelt anlegen wollen.
 
 ## Zu klären (vor der Übernahme)
 
-1. Inhalt prüfen: Stimmt jede Datei mit den verbuchten Anweisungen überein
-   (Spalte `statements` der Historie, nur lesend)? Abweichungen dokumentieren.
+1. ~~Inhalt prüfen~~ **Erledigt 21.11.2026 (nur lesend):** Alle vier Dateien
+   stimmen ohne Kommentare/Leerraum exakt mit den verbuchten Anweisungen
+   überein (md5-Vergleich, Details in `migrationsuebersicht.md`).
 2. Weg festlegen – eine der beiden Varianten, nicht beide:
    - **Dateien umbenennen** auf die verbuchten Versionen (wie bei
      20261120205856), sofern der Inhalt übereinstimmt; oder

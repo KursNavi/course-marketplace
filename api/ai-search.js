@@ -11,11 +11,17 @@
  *  2. Konto: verifizierte Supabase-Sitzung; fehlend/ungültig/abgelaufen/
  *     anonym → 401/403. Nutzerkennung nur aus der verifizierten Sitzung.
  *  3. Eingabe validieren (verbraucht nichts).
+ *  3b. Missbrauchs-/Parallelitätsbremse (abuseGuard.js) vor jeder
+ *     Reservierung und damit vor jedem kostenpflichtigen Aufruf.
  *  4. Atomare Reservierung (ai_search_quota_reserve, Advisory-Lock).
+ *     'already_completed' → geschützter Wiederabruf des gespeicherten
+ *     Ergebnisses (gleiches Konto + Inhalt, ohne Inferenz/Belastung).
  *  5. Suche (searchService.js). Luna/Embeddings nur, wenn openaiGateway
  *     readModelConfig() freigibt (Standard: aus, keine kostenpflichtigen Aufrufe).
  *  6. Abschluss (ai_search_quota_finalize); NUR 'completed' gibt das
  *     Ergebnis frei. Echter Systemfehler → Reservierung freigeben.
+ *  6b. Ergebnis privat und befristet speichern (ai_search_result_store,
+ *     Migrationsentwurf 20261121090000; fehlt er, ohne Wiederabruf).
  *
  * Rohsuchtexte werden nicht protokolliert.
  */
@@ -27,6 +33,7 @@ import { runAiSearch } from '../src/lib/aiSearch/searchService.js';
 import { normalizeQuery, validateQuery } from '../src/lib/aiSearch/queryParse.js';
 import { QUOTA_LIMIT, quotaResetDate } from '../src/lib/aiSearch/quota.js';
 import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openaiGateway.js';
+import { GUARD_LIMITS, evaluateGuard, storablePayload, isMissingFunction } from '../src/lib/aiSearch/abuseGuard.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -50,6 +57,40 @@ export function buildQueryHash(query, musts) {
   return createHash('sha256')
     .update(JSON.stringify({ q: normalizeQuery(query).toLowerCase(), m: musts }))
     .digest('hex');
+}
+
+// Rückgabewerte der atomaren Bremse im Migrationsentwurf (ai_search_quota_reserve v2).
+const GUARD_RESERVE_CODES = new Set(['too_many_parallel', 'rate_limited', 'cooldown']);
+
+/**
+ * Speichert das freigegebene Ergebnis (Datenbankfunktion prüft selbst, dass
+ * die Kennung diesem Konto gehört, denselben Suchinhalt trägt und
+ * 'completed' ist). Fehlt der Speicher (Migration noch nicht angewendet),
+ * wird das Ergebnis trotzdem ausgeliefert, nur nicht wiederabrufbar.
+ * @returns {Promise<boolean>} gespeichert ja/nein
+ */
+async function storeResult(service, requestId, userId, queryHash, payload) {
+  if (!payload) return false;
+  const { data, error } = await service.rpc('ai_search_result_store', {
+    p_request_id: requestId, p_user_id: userId, p_query_hash: queryHash, p_payload: payload,
+  });
+  if (error) {
+    if (!isMissingFunction(error)) console.error('ai-search: Ergebnis nicht gespeichert:', error.message);
+    return false;
+  }
+  return data === true;
+}
+
+/** Holt ein gespeichertes Ergebnis desselben Kontos/Suchinhalts, sonst null. */
+async function fetchStoredResult(service, requestId, userId, queryHash) {
+  const { data, error } = await service.rpc('ai_search_result_fetch', {
+    p_request_id: requestId, p_user_id: userId, p_query_hash: queryHash,
+  });
+  if (error) {
+    if (!isMissingFunction(error)) console.error('ai-search: Wiederabruf fehlgeschlagen:', error.message);
+    return null;
+  }
+  return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
 }
 
 async function quotaStatus(service, userId) {
@@ -106,6 +147,28 @@ export default async function handler(req, res) {
     const musts = sanitizeMusts(body.musts);
     const queryHash = buildQueryHash(body.query, musts);
 
+    // 3b. Missbrauchs-/Parallelitätsbremse VOR jeder Reservierung und damit
+    // vor jedem kostenpflichtigen Aufruf (Plan 14, Schritt 3). Fällt die
+    // Prüfung selbst aus, wird nicht gesucht (fail closed, nichts belastet).
+    const guardStarted = Date.now();
+    const { data: recentRows, error: guardError } = await service
+      .from('ai_search_usage')
+      .select('request_id, state, created_at, reserved_until')
+      .eq('user_id', user.id)
+      .gte('created_at', new Date(Date.now() - GUARD_LIMITS.hourWindowMs).toISOString())
+      .order('created_at', { ascending: false })
+      .limit(50);
+    serverTimings.guard = Date.now() - guardStarted;
+    if (guardError) {
+      console.error('ai-search: Bremse nicht prüfbar:', guardError.message);
+      return res.status(503).json({ error: 'guard_unavailable' });
+    }
+    const guard = evaluateGuard(recentRows, body.requestId, new Date());
+    if (!guard.ok) {
+      res.setHeader('Retry-After', String(guard.retryAfterSec));
+      return res.status(429).json({ error: guard.code, retryAfterSec: guard.retryAfterSec, quota: await quotaStatus(service, user.id) });
+    }
+
     // 4. Atomare Reservierung
     const reserveStarted = Date.now();
     const { data: reservation, error: reserveError } = await service.rpc('ai_search_quota_reserve', {
@@ -123,9 +186,19 @@ export default async function handler(req, res) {
     if (reservation === 'request_mismatch') {
       return res.status(409).json({ error: 'request_mismatch' });
     }
+    if (GUARD_RESERVE_CODES.has(reservation)) {
+      // Atomare Bremse im Datenbankentwurf (gleiche Grenzwerte wie oben).
+      return res.status(429).json({ error: reservation, quota: await quotaStatus(service, user.id) });
+    }
     if (reservation === 'already_completed') {
-      // Ergebnisse werden in der Preview nicht serverseitig gespeichert:
-      // kein stiller kostenloser Neulauf — neue (zählende) Suche anbieten.
+      // Geschützter Wiederabruf (Plan 14, Schritt 3): dasselbe Konto, dieselbe
+      // Kennung und derselbe Suchinhalt erhalten das gespeicherte Ergebnis –
+      // ohne neue Inferenz und ohne neue Belastung. Fehlt es (abgelaufen oder
+      // Speicher noch nicht eingerichtet), kein stiller kostenloser Neulauf.
+      const restored = await fetchStoredResult(service, body.requestId, user.id, queryHash);
+      if (restored) {
+        return res.status(200).json({ ...restored, requestId: body.requestId, restored: true, quota: await quotaStatus(service, user.id) });
+      }
       return res.status(409).json({ error: 'result_not_stored', quota: await quotaStatus(service, user.id) });
     }
     if (reservation === 'already_reserved') {
@@ -176,6 +249,12 @@ export default async function handler(req, res) {
       return res.status(409).json({ error: 'not_released', quota: await quotaStatus(service, user.id) });
     }
 
+    // 6b. Ergebnis privat und befristet speichern (nur nach 'completed'),
+    // damit Reload oder verlorene Antwort es ohne zweite Belastung abrufen.
+    const storeStarted = Date.now();
+    const stored = await storeResult(service, body.requestId, user.id, queryHash, storablePayload(result));
+    serverTimings.store = Date.now() - storeStarted;
+
     const quotaStarted = Date.now();
     const quota = await quotaStatus(service, user.id);
     serverTimings.quota = Date.now() - quotaStarted;
@@ -194,7 +273,7 @@ export default async function handler(req, res) {
       stats: result.stats,
     }));
     res.setHeader('Server-Timing', Object.entries(serverTimings).map(([name, ms]) => `${name};dur=${ms}`).join(', '));
-    return res.status(200).json({ requestId: body.requestId, ...result, serverTimings, quota });
+    return res.status(200).json({ requestId: body.requestId, ...result, serverTimings, quota, restorable: stored });
   } catch (error) {
     console.error('ai-search error:', error?.message);
     return res.status(500).json({ error: 'server_error' });

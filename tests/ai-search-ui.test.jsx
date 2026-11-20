@@ -84,6 +84,41 @@ describe('KI-Suche: Wartehinweis, Status und Doppelklickschutz', () => {
   });
 });
 
+describe('KI-Suche: unterbrochene Suche nach Neuladen (Plan 14, Schritt 3)', () => {
+  const RID = '2b1f7c1e-5d3a-4c8e-9f00-1a2b3c4d5e6f';
+  afterEach(() => { cleanup(); window.sessionStorage.clear(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+  it('zeigt Hinweis statt automatischer Suche; „Ergebnis abrufen“ nutzt dieselbe Kennung; Wiederherstellung wird benannt', async () => {
+    window.sessionStorage.setItem('kn_ai_search_pending', JSON.stringify({ userId: USER.id, requestId: RID, payload: { query: 'Fotografie lernen', musts: {} } }));
+    const posts = [];
+    vi.stubGlobal('fetch', vi.fn(async (url, init = {}) => {
+      if (init.method === 'POST') {
+        posts.push(JSON.parse(init.body));
+        return { ok: true, json: async () => ({ requestId: RID, restored: true, criteria: { terms: ['fotografie'], wishes: [], musts: {} }, results: [], incompleteResults: [], quota: { remaining: 2, limit: 10 } }) };
+      }
+      return { ok: true, json: async () => ({ quota: { remaining: 2, limit: 10 } }) };
+    }));
+    const AiSearchView = await loadView();
+    await act(async () => { render(<AiSearchView user={USER} setView={() => {}} />); });
+    expect(screen.getByTestId('ai-interrupted')).toBeTruthy();
+    expect(posts).toHaveLength(0); // keine automatische (zählende) Suche
+    await act(async () => { fireEvent.click(screen.getByTestId('ai-resume')); await new Promise((r) => setTimeout(r, 0)); });
+    expect(posts).toEqual([{ requestId: RID, query: 'Fotografie lernen', musts: {} }]);
+    expect(screen.getByTestId('ai-restored').textContent).toMatch(/nicht erneut gezählt/);
+    expect(window.sessionStorage.getItem('kn_ai_search_pending')).toBeNull();
+    expect(screen.queryByTestId('ai-interrupted')).toBeNull();
+  });
+
+  it('fremdes Konto sieht den unterbrochenen Vorgang nicht; Abmelden verwirft ihn', async () => {
+    window.sessionStorage.setItem('kn_ai_search_pending', JSON.stringify({ userId: 'jemand-anders', requestId: RID, payload: { query: 'x y z', musts: {} } }));
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ quota: { remaining: 2, limit: 10 } }) })));
+    const AiSearchView = await loadView();
+    await act(async () => { render(<AiSearchView user={USER} setView={() => {}} />); });
+    expect(screen.queryByTestId('ai-interrupted')).toBeNull();
+    expect(window.sessionStorage.getItem('kn_ai_search_pending')).toBeNull();
+  });
+});
+
 describe('Startseite: KI-Einstieg unter der Suchkarte', () => {
   afterEach(() => { cleanup(); window.sessionStorage.clear(); });
 
