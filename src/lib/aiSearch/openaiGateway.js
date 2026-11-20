@@ -21,7 +21,6 @@
 import { LUNA_MODEL_ID, buildRerankRequest, validateRerankResponse } from './lunaAdapter.js';
 import { checkAiSearchEnvironment } from './previewGuard.js';
 import { MAX_EXPLANATION_WORDS, countWords } from './explanation.js';
-import { MIN_SCORE } from './paidRanking.js';
 
 export const EMBEDDING_MODEL_DEFAULT = 'text-embedding-3-small';
 // Passt zur vorhandenen Spalte vector(1024) (Migration 20261113180100);
@@ -202,6 +201,52 @@ export const EXPLAIN_MAX_COURSES = 20;
 export const EXPLAIN_BATCH_SIZE = 4;
 
 /**
+ * Antwortschema je Teilaufruf mit fester Kandidatenmenge (Nachtrag 14).
+ * Ursachen der früheren Zweistufen-Fehler (18.11.2026):
+ *  1. „incomplete (max_output_tokens)“: Das offene Array erlaubte beliebig
+ *     viele Einträge; das Modell konnte in eine Wiederholungsschleife laufen.
+ *     → courseId nur aus den gelieferten IDs (enum) und genau so viele
+ *       Einträge wie Kandidaten (minItems = maxItems). Die Tokengrenze bleibt
+ *       unverändert (nicht blind verkleinert).
+ *  2. Antwortverarbeitung: fehlende/doppelte/fremde Einträge wurden still
+ *     übergangen. → Jede Teilantwort muss jede gelieferte ID genau einmal
+ *     enthalten (assertComplete), sonst schlägt der Aufruf ehrlich fehl.
+ */
+export function boundedSchema(stageName, ids) {
+  const courseId = { type: 'string', enum: ids.map(String) };
+  const count = { minItems: ids.length, maxItems: ids.length };
+  const item = stageName === 'score'
+    ? { type: 'object', additionalProperties: false, required: ['courseId', 'score'], properties: { courseId, score: { type: 'number' } } }
+    : {
+      type: 'object',
+      additionalProperties: false,
+      required: ['courseId', 'explanation', 'reasons'],
+      properties: {
+        courseId,
+        explanation: { type: 'string' },
+        reasons: { ...RERANK_SCHEMA.properties.results.items.properties.reasons, maxItems: 2 },
+      },
+    };
+  return { type: 'object', additionalProperties: false, required: ['results'], properties: { results: { type: 'array', ...count, items: item } } };
+}
+
+/** Wirft, wenn eine Teilantwort nicht jede gelieferte ID genau einmal enthält. */
+export function assertComplete(results, ids, stageName) {
+  const expected = new Set(ids.map(String));
+  const seen = new Map();
+  for (const entry of Array.isArray(results) ? results : []) {
+    const id = String(entry?.courseId ?? '');
+    seen.set(id, (seen.get(id) ?? 0) + 1);
+  }
+  const missing = [...expected].filter((id) => !seen.has(id)).length;
+  const foreign = [...seen.keys()].filter((id) => !expected.has(id)).length;
+  const duplicate = [...seen.values()].filter((n) => n > 1).length;
+  if (missing || foreign || duplicate) {
+    throw new Error(`Luna ${stageName}: unvollständige Antwort (fehlend ${missing}, fremd ${foreign}, doppelt ${duplicate})`);
+  }
+}
+
+/**
  * Verteilt Kandidaten auf Teilaufrufe. 'block' = in Abrufreihenfolge
  * hintereinander (die besten landen gemeinsam im ersten Aufruf);
  * 'stripe' = reihum (gleichmässige Last, gleich grosse Teilaufrufe).
@@ -310,6 +355,9 @@ export function createOpenAiGateway(options) {
   async function callLuna(query, batch, stageName = 'rank') {
     const stage = STAGES[stageName];
     const request = buildRerankRequest(query, batch);
+    const ids = batch.map((c) => String(c.courseId));
+    // Zweistufig: Schema an genau diese Kandidaten gebunden (siehe boundedSchema).
+    const schema = stageName === 'rank' ? stage.schema : boundedSchema(stageName, ids);
     usage.lunaCalls += 1; // Versuche, auch abgebrochene
     const started = Date.now();
     const body = await postJson(fetchImpl, '/responses', apiKey, {
@@ -324,7 +372,7 @@ export function createOpenAiGateway(options) {
       // nicht verkleinert, damit Begründungen nicht abgeschnitten werden.
       reasoning: { effort: reasoningEffort },
       max_output_tokens: RERANK_MAX_OUTPUT_TOKENS,
-      text: { format: { type: 'json_schema', name: stageName, strict: true, schema: stage.schema } },
+      text: { format: { type: 'json_schema', name: stageName, strict: true, schema } },
     }, LUNA_TIMEOUT_MS).catch((error) => {
       // Abgebrochene/fehlgeschlagene Aufrufe können trotzdem Kosten
       // verursachen; ihre Tokens sind dann unbekannt.
@@ -362,11 +410,22 @@ export function createOpenAiGateway(options) {
       const parts = (body.output ?? []).flatMap((item) => [item.type, ...(item.content ?? []).map((part) => part.type)]);
       throw new Error(`Luna: keine gültige strukturierte Antwort (status=${body.status ?? '-'}, teile=${parts.join('/') || '-'}, textlänge=${String(text ?? '').length}, json=${parsed ? 'ohne results' : 'nicht lesbar'})`);
     }
+    if (stageName !== 'rank') assertComplete(parsed.results, ids, stageName);
     return { results: parsed.results, usage: callUsage };
+  }
+
+  function groundExplanations(entries, candidates, rejected) {
+    const evidenceById = new Map(candidates.map((c) => [String(c.courseId), c.evidence ?? {}]));
+    return keepGroundedReasons(entries, candidates).map((entry) => {
+      const check = validateExplanation(entry.explanation, evidenceById.get(entry.courseId), entry.reasons);
+      if (check.rejectedBecause && check.rejectedBecause !== 'leer') rejected.push({ courseId: entry.courseId, reason: `Begründungstext verworfen (${check.rejectedBecause})` });
+      return { ...entry, explanation: check.text };
+    });
   }
 
   return {
     usage,
+    mode,
 
     async embed(texts) {
       const input = (Array.isArray(texts) ? texts : [texts]).map((t) => String(t ?? '').slice(0, 8000));
@@ -393,42 +452,40 @@ export function createOpenAiGateway(options) {
       // Alle ausgewählten Kandidaten werden bewertet; bei batchSize < Anzahl
       // in parallelen Teilaufrufen (gleiche Anweisungen, absolute Skala).
       const batches = distributeCandidates(limited, batchSize, distribution);
-      let parsed;
-      if (mode === 'twoStage') {
-        // Stufe 1: nur Scores für ALLE Kandidaten (parallel).
-        const scored = (await Promise.all(batches.map((batch) => callLuna(query, batch, 'score')))).flatMap((p) => p.results ?? []);
-        // Stufe 2: Begründungen nur für geeignete Kurse (parallel, je wenige).
-        const allowed = new Set(limited.map((c) => String(c.courseId)));
-        const suitable = scored
-          .filter((r) => allowed.has(String(r.courseId)) && Number(r.score) >= MIN_SCORE)
-          .sort((a, b) => Number(b.score) - Number(a.score))
-          .slice(0, EXPLAIN_MAX_COURSES)
-          .map((r) => String(r.courseId));
-        const suitableCandidates = limited.filter((c) => suitable.includes(String(c.courseId)));
-        const explained = new Map();
-        if (suitableCandidates.length > 0) {
-          const explainBatches = distributeCandidates(suitableCandidates, EXPLAIN_BATCH_SIZE, 'stripe');
-          for (const p of await Promise.all(explainBatches.map((batch) => callLuna(query, batch, 'explain')))) {
-            for (const r of p.results ?? []) explained.set(String(r.courseId), r);
-          }
-        }
-        parsed = { results: scored.map((r) => ({
-          ...r,
-          explanation: explained.get(String(r.courseId))?.explanation ?? '',
-          reasons: explained.get(String(r.courseId))?.reasons ?? [],
-        })) };
-      } else {
-        parsed = { results: (await Promise.all(batches.map((batch) => callLuna(query, batch, 'rank')))).flatMap((p) => p.results ?? []) };
-      }
+      const parsed = { results: (await Promise.all(batches.map((batch) => callLuna(query, batch, 'rank')))).flatMap((p) => p.results ?? []) };
       const callUsage = { inputTokens: usage.lunaInputTokens, outputTokens: usage.lunaOutputTokens, reasoningTokens: usage.lunaReasoningTokens };
       const { accepted, rejected } = validateRerankResponse(parsed, limited.map((c) => c.courseId));
-      const evidenceById = new Map(limited.map((c) => [String(c.courseId), c.evidence ?? {}]));
-      const grounded = keepGroundedReasons(accepted, limited).map((entry) => {
-        const check = validateExplanation(entry.explanation, evidenceById.get(entry.courseId), entry.reasons);
-        if (check.rejectedBecause && check.rejectedBecause !== 'leer') rejected.push({ courseId: entry.courseId, reason: `Begründungstext verworfen (${check.rejectedBecause})` });
-        return { ...entry, explanation: check.text };
-      });
+      const grounded = groundExplanations(accepted, limited, rejected);
       return { accepted: grounded, rejected, usage: callUsage, sentIds: limited.map((c) => String(c.courseId)) };
+    },
+
+    /**
+     * Variante B, Stufe 1 (Nachtrag 14): kurze, VOLLSTÄNDIGE Bewertung aller
+     * Kandidaten (nur Score, parallel). Jede Teilantwort muss jede ID genau
+     * einmal enthalten, sonst Fehler (keine stille Lücke).
+     */
+    async scoreCandidates(query, candidates) {
+      const limited = candidates.slice(0, RERANK_MAX_CANDIDATES);
+      const batches = distributeCandidates(limited, batchSize, distribution);
+      const results = (await Promise.all(batches.map((batch) => callLuna(query, batch, 'score')))).flatMap((p) => p.results ?? []);
+      const { accepted, rejected } = validateRerankResponse({ results: results.map((r) => ({ ...r, reasons: [] })) }, limited.map((c) => c.courseId));
+      return { accepted: accepted.map(({ courseId, score }) => ({ courseId, score })), rejected, sentIds: limited.map((c) => String(c.courseId)) };
+    },
+
+    /**
+     * Variante B, Stufe 2: Begründungen NUR für die final ausgewählten Kurse
+     * (nach Mindestpassung, Muss-Vorgaben und Paketregeln; höchstens
+     * EXPLAIN_MAX_COURSES). Gleiche Beleg- und Textprüfung wie einstufig.
+     */
+    async explainCandidates(query, candidates) {
+      const limited = candidates.slice(0, EXPLAIN_MAX_COURSES);
+      if (limited.length === 0) return { accepted: [], rejected: [] };
+      const batches = distributeCandidates(limited, EXPLAIN_BATCH_SIZE, 'stripe');
+      const results = (await Promise.all(batches.map((batch) => callLuna(query, batch, 'explain')))).flatMap((p) => p.results ?? []);
+      // Score wird hier nicht neu vergeben: Platzhalter nur für die Validierung.
+      const { accepted, rejected } = validateRerankResponse({ results: results.map((r) => ({ ...r, score: 0 })) }, limited.map((c) => c.courseId));
+      const grounded = groundExplanations(accepted, limited, rejected);
+      return { accepted: grounded.map(({ courseId, explanation, reasons }) => ({ courseId, explanation, reasons })), rejected };
     },
   };
 }

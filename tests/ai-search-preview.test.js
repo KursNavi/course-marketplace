@@ -593,28 +593,71 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     expect(stripe.flat().sort((a, b) => a - b)).toEqual(list);
   });
 
-  it('Zweistufig: Stufe 1 bewertet alle, Stufe 2 begründet nur geeignete; je Teilaufruf Tokens/Dauer erfasst', async () => {
+  // Nachtrag 14: Variante B – Bewerten und Begründen getrennt.
+  const lunaReply = (results, extra = {}) => ({ ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify({ results }), usage: { input_tokens: 100, output_tokens: 20 }, ...extra }) });
+  const yogaText = 'Du lernst sanftes Yoga am Abend. Das passt, weil der Kurs ruhig beginnt.';
+
+  it('Variante B Stufe 1: bewertet ALLE Kandidaten; Schema an genau diese IDs gebunden (enum, feste Anzahl)', async () => {
     const fetchImpl = vi.fn(async (url, init) => {
-      const sent = JSON.parse(init.body);
-      const input = JSON.parse(sent.input);
-      const results = sent.text.format.name === 'score'
-        ? input.candidates.map((c) => ({ courseId: c.courseId, score: c.courseId === '2' ? 90 : 40 }))
-        : input.candidates.map((c) => ({ courseId: c.courseId, explanation: 'Du lernst sanftes Yoga am Abend. Das passt, weil der Kurs ruhig beginnt.', reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }));
-      return { ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify({ results }), usage: { input_tokens: 100, output_tokens: 20 } }) };
+      const input = JSON.parse(JSON.parse(init.body).input);
+      return lunaReply(input.candidates.map((c) => ({ courseId: c.courseId, score: c.courseId === '2' ? 90 : 40 })));
     });
     const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, mode: 'twoStage', batchSize: 2, distribution: 'stripe' });
-    const candidates = [1, 2, 3].map((id) => ({ courseId: id, evidence: { title: `Kurs ${id}`, description: 'Sanftes Yoga am Abend.' } }));
-    const result = await gateway.rerank('Yoga', candidates);
-    const stages = fetchImpl.mock.calls.map(([, init]) => JSON.parse(init.body).text.format.name);
-    expect(stages.filter((s) => s === 'score')).toHaveLength(2);
-    expect(stages.filter((s) => s === 'explain')).toHaveLength(1);
-    const explainInput = JSON.parse(JSON.parse(fetchImpl.mock.calls.find(([, i]) => JSON.parse(i.body).text.format.name === 'explain')[1].body).input);
-    expect(explainInput.candidates.map((c) => c.courseId)).toEqual(['2']);
-    expect(result.accepted).toHaveLength(3);
-    expect(result.accepted.find((a) => a.courseId === '2').explanation).toMatch(/^Du lernst sanftes Yoga/);
-    expect(result.accepted.find((a) => a.courseId === '1').explanation).toBeNull();
-    expect(gateway.usage.lunaCallDetails).toHaveLength(3);
+    expect(gateway.mode).toBe('twoStage');
+    const candidates = [1, 2, 3].map((id) => ({ courseId: id, evidence: { title: `Kurs ${id}` } }));
+    const result = await gateway.scoreCandidates('Yoga', candidates);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(result.accepted.map((a) => [a.courseId, a.score])).toEqual(expect.arrayContaining([['1', 40], ['2', 90], ['3', 40]]));
+    expect(result.sentIds).toEqual(['1', '2', '3']);
+    const body = JSON.parse(fetchImpl.mock.calls[0][1].body);
+    const schema = body.text.format.schema.properties.results;
+    const ids = JSON.parse(body.input).candidates.map((c) => c.courseId);
+    expect(schema.items.properties.courseId.enum).toEqual(ids);
+    expect(schema.minItems).toBe(ids.length);
+    expect(schema.maxItems).toBe(ids.length);
+    expect(schema.items.required).toEqual(['courseId', 'score']);
+    // Tokengrenze nicht blind verkleinert.
+    expect(body.max_output_tokens).toBe(4000);
     expect(gateway.usage.lunaCallDetails[0]).toMatchObject({ stage: 'score', in: 100, out: 20 });
+  });
+
+  it('Variante B: unvollständige oder fehlerhafte Teilantworten sind KEIN Erfolg (Fehler statt stiller Lücke)', async () => {
+    const cases = [
+      (ids) => lunaReply(ids.slice(1).map((id) => ({ courseId: id, score: 80 }))), // fehlender Kandidat
+      (ids) => lunaReply([...ids, ids[0]].map((id) => ({ courseId: id, score: 80 }))), // doppelt
+      (ids) => lunaReply([...ids.slice(1), '999'].map((id) => ({ courseId: id, score: 80 }))), // fremde ID
+      (ids) => lunaReply(ids.map((id) => ({ courseId: id, score: 80 })), { status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' } }),
+      () => ({ ok: true, json: async () => ({ status: 'completed', output_text: '{"results": [' }) }), // nicht lesbar
+    ];
+    for (const reply of cases) {
+      const fetchImpl = vi.fn(async (url, init) => reply(JSON.parse(JSON.parse(init.body).input).candidates.map((c) => c.courseId)));
+      const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, mode: 'twoStage', batchSize: 10 });
+      await expect(gateway.scoreCandidates('Yoga', [1, 2, 3].map((id) => ({ courseId: id, evidence: { title: 'Yoga' } })))).rejects.toThrow(/Luna/);
+    }
+  });
+
+  it('Variante B Stufe 2: begründet nur gelieferte Kurse, prüft Belege und Text wie einstufig', async () => {
+    const fetchImpl = vi.fn(async (url, init) => {
+      const input = JSON.parse(JSON.parse(init.body).input);
+      return lunaReply(input.candidates.map((c) => ({
+        courseId: c.courseId,
+        explanation: c.courseId === '3' ? 'Kostet nur CHF 99 und bringt ein Zertifikat.' : yogaText,
+        reasons: [{ field: 'description', quote: c.courseId === '2' ? 'erfundenes Zitat' : 'Sanftes Yoga' }],
+      })));
+    });
+    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, mode: 'twoStage' });
+    const candidates = [1, 2, 3].map((id) => ({ courseId: id, evidence: { title: `Kurs ${id}`, description: 'Sanftes Yoga am Abend.' } }));
+    const result = await gateway.explainCandidates('Yoga', candidates);
+    const byId = Object.fromEntries(result.accepted.map((a) => [a.courseId, a]));
+    expect(byId['1'].explanation).toBe(yogaText);
+    expect(byId['2'].explanation).toBeNull(); // kein wörtlicher Beleg
+    expect(byId['3'].explanation).toBeNull(); // unzulässige Angabe
+    expect(result.rejected.some((r) => /Begründungstext verworfen/.test(r.reason))).toBe(true);
+    // Je Teilaufruf höchstens EXPLAIN_BATCH_SIZE Kurse, Schema mit fester Anzahl.
+    const schema = JSON.parse(fetchImpl.mock.calls[0][1].body).text.format.schema.properties.results;
+    expect(schema.items.required).toEqual(['courseId', 'explanation', 'reasons']);
+    expect(schema.items.properties.reasons.maxItems).toBe(2);
+    expect(await gateway.explainCandidates('Yoga', [])).toEqual({ accepted: [], rejected: [] });
   });
 
   it('Modellkonfiguration: Denkstufe/Teilgrösse nur aus erlaubten Werten', () => {
@@ -661,6 +704,46 @@ describe('runAiSearch mit Modellen (gemockt)', () => {
     expect(calls.some((c) => c.table === 'ai_search_semantic')).toBe(false);
     const evidence = gateway.rerank.mock.calls[0][1];
     expect(JSON.stringify(evidence)).not.toMatch(/is_prio|package_tier|contact_email/);
+  });
+
+  it('Variante B Ende-zu-Ende: alle bewertet, Begründungen NUR für die final angezeigten Kurse (Mindestpassung, höchstens 10)', async () => {
+    const many = Array.from({ length: 13 }, (_, i) => course(i + 1, { title: `Yoga Kurs ${i + 1}` }));
+    const manyChunks = many.map((c) => ({ course_id: c.id, section: 'description', chunk_index: 0, text: `Sanftes Yoga Nummer ${c.id}.` }));
+    const inner = searchScenario({ courses: many, chunks: manyChunks, published: 13, documents: 13 });
+    const { client } = createFakeSupabase((call) => (call.table === 'ai_search_config' ? { data: { active_model_version: null }, error: null } : inner(call)));
+    // Kurs 13 unter Mindestpassung; 12 geeignet → nur 10 werden angezeigt und begründet.
+    const scoreOf = (id) => (Number(id) === 13 ? 30 : 100 - Number(id));
+    const gateway = {
+      mode: 'twoStage',
+      usage: {},
+      embed: vi.fn(),
+      rerank: vi.fn(),
+      scoreCandidates: vi.fn(async (q, cands) => ({ accepted: cands.map((c) => ({ courseId: String(c.courseId), score: scoreOf(c.courseId) })), rejected: [], sentIds: cands.map((c) => String(c.courseId)) })),
+      explainCandidates: vi.fn(async (q, cands) => ({ accepted: cands.map((c) => ({ courseId: String(c.courseId), explanation: 'Du lernst sanftes Yoga in kleinen Schritten. Das passt zu deinem Wunsch nach ruhiger Bewegung.', reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] })), rejected: [] })),
+    };
+    const result = await runAiSearch(client, { query: 'Yoga', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
+    expect(gateway.rerank).not.toHaveBeenCalled();
+    expect(gateway.scoreCandidates.mock.calls[0][1]).toHaveLength(13); // vollständige Bewertung
+    const explainedIds = gateway.explainCandidates.mock.calls[0][1].map((c) => c.courseId);
+    expect(explainedIds).toHaveLength(10);
+    expect(explainedIds).not.toContain(13);
+    expect(new Set(explainedIds)).toEqual(new Set(result.results.map((r) => r.courseId)));
+    expect(result.results.every((r) => /^Du lernst sanftes Yoga/.test(r.explanation))).toBe(true);
+    expect(result.results[0].reasons[0]).toMatchObject({ kind: 'luna', quote: 'Sanftes Yoga' });
+    expect(result.stats).toMatchObject({ sentToLuna: 13, rated: 13, belowThreshold: 1, explanationsRequested: 10 });
+    expect(result.timings.luna).toBe((result.timings.lunaScore ?? 0) + (result.timings.lunaExplain ?? 0));
+    expect(JSON.stringify(gateway.explainCandidates.mock.calls[0][1])).not.toMatch(/is_prio|package_tier/);
+  });
+
+  it('Variante B: Fehler in Stufe 2 lässt die Suche ehrlich scheitern (kein Erfolg ohne Begründung)', async () => {
+    const { client } = createFakeSupabase(withConfig(null));
+    const gateway = {
+      mode: 'twoStage',
+      embed: vi.fn(),
+      scoreCandidates: vi.fn(async (q, cands) => ({ accepted: cands.map((c) => ({ courseId: String(c.courseId), score: 90 })), rejected: [], sentIds: cands.map((c) => String(c.courseId)) })),
+      explainCandidates: vi.fn(async () => { throw new Error('Luna explain: unvollständige Antwort (fehlend 1, fremd 0, doppelt 0)'); }),
+    };
+    await expect(runAiSearch(client, { query: 'Yoga', now: NOW, models: { gateway, embeddingVersion: 'v1' } })).rejects.toThrow(/unvollständige Antwort/);
   });
 
   it('Bedeutungssuche nur bei aktiver passender Modellversion', async () => {

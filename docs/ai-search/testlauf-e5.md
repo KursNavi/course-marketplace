@@ -65,7 +65,8 @@ FROM pg_available_extensions WHERE name IN ('vector', 'unaccent');
    `20261115190000`, verbucht `20261115200229`). Ein `supabase db push` gegen
    die TESTumgebung würde sie deshalb als neu ansehen. Vor einem solchen Lauf
    die Historie abgleichen (`supabase migration repair`), nicht blind pushen.
-   Für 20261120205856 stimmen Datei und Historie überein.
+   Für 20261120205856 stimmen Datei und Historie überein. Offene Aufgabe:
+   `docs/ai-search/aufgabe-migrationsversionen.md`.
 
 Keine bestehenden Testdaten zurücksetzen; die Migrationen legen ausschliesslich neue
 `ai_search_*`-Objekte und Trigger an. (1–3 sind seit 14.11.2026 auf der TESTumgebung

@@ -467,7 +467,28 @@ export async function runAiSearch(client, input) {
   let lunaSent = 0;
   let lunaDiscarded = 0;
   let explanationsRejected = 0;
-  if (models?.gateway && scored.length > 0) {
+  let explanationsRequested = null;
+  const twoStage = models?.gateway?.mode === 'twoStage' && typeof models.gateway.scoreCandidates === 'function';
+  if (models?.gateway && scored.length > 0 && twoStage) {
+    // Variante B (Nachtrag 14): Stufe 1 bewertet ALLE Kandidaten nur mit
+    // Score; die Begründungen folgen erst nach der finalen Auswahl.
+    const rankIndex = new Map(candidateIds.map((id, index) => [String(id), index]));
+    const ordered = [...scored].sort((a, b) => (rankIndex.get(String(a.course.id)) ?? 1e9) - (rankIndex.get(String(b.course.id)) ?? 1e9));
+    const evidenceCandidates = ordered.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
+    const { accepted, sentIds, rejected = [] } = await timed('lunaScore', () => models.gateway.scoreCandidates(parsed.normalized, evidenceCandidates));
+    lunaSent = Array.isArray(sentIds) ? sentIds.length : evidenceCandidates.length;
+    lunaDiscarded = rejected.filter((r) => /Kurs-ID|doppelt|Score/.test(r.reason)).length;
+    const byId = new Map(accepted.map((a) => [String(a.courseId), a]));
+    for (const entry of scored) {
+      const judged = byId.get(String(entry.course.id));
+      entry.rated = Boolean(judged);
+      entry.candidate.score = judged ? judged.score : 0;
+      entry.candidate.lunaExplanation = null;
+      // Ortsabgleich bleibt (Kursangaben); Luna-Belege kommen aus Stufe 2.
+      entry.candidate.reasons = judged ? entry.candidate.reasons.filter((r) => r.kind === 'location') : [];
+    }
+    lunaUsed = true;
+  } else if (models?.gateway && scored.length > 0) {
     const rankIndex = new Map(candidateIds.map((id, index) => [String(id), index]));
     const ordered = [...scored].sort((a, b) => (rankIndex.get(String(a.course.id)) ?? 1e9) - (rankIndex.get(String(b.course.id)) ?? 1e9));
     const evidenceCandidates = ordered.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
@@ -494,19 +515,41 @@ export async function runAiSearch(client, input) {
   const confirmed = scored.filter((s) => s.mustResult.result === MUST_RESULT.CONFIRMED);
   const incomplete = scored.filter((s) => s.mustResult.result === MUST_RESULT.INCOMPLETE);
 
-  const toCards = (group) => {
+  // Finale Auswahl (Mindestpassung, Paketregeln, höchstens RESULT_LIMIT je Gruppe).
+  const select = (group) => rankWithPaidPriority(group.map((s) => s.candidate)).slice(0, RESULT_LIMIT);
+  const selectedConfirmed = select(confirmed);
+  const selectedIncomplete = select(incomplete);
+
+  if (twoStage && lunaUsed) {
+    // Variante B, Stufe 2: Begründungen NUR für die final angezeigten Kurse.
+    const entryById = new Map(scored.map((s) => [String(s.course.id), s]));
+    const finalEntries = [...selectedConfirmed, ...selectedIncomplete].map((r) => entryById.get(String(r.courseId))).filter(Boolean);
+    explanationsRequested = finalEntries.length;
+    const explainInput = finalEntries.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
+    const { accepted = [], rejected = [] } = await timed('lunaExplain', () => models.gateway.explainCandidates(parsed.normalized, explainInput));
+    explanationsRejected = rejected.filter((r) => /Begründungstext/.test(r.reason)).length;
+    const explainedById = new Map(accepted.map((a) => [String(a.courseId), a]));
+    for (const ranked of [...selectedConfirmed, ...selectedIncomplete]) {
+      const explained = explainedById.get(String(ranked.courseId));
+      if (!explained) continue;
+      const locationReasons = (ranked.reasons ?? []).filter((r) => r.kind === 'location');
+      ranked.lunaExplanation = explained.explanation ?? null;
+      ranked.reasons = [...explained.reasons.slice(0, 3).map((r) => ({ kind: 'luna', section: r.field, sectionLabel: EVIDENCE_LABELS[r.field] ?? r.field, quote: r.quote })), ...locationReasons];
+    }
+    timings.luna = (timings.lunaScore ?? 0) + (timings.lunaExplain ?? 0);
+  }
+
+  const toCards = (selected, group) => {
     const byId = new Map(group.map((s) => [String(s.course.id), s]));
-    return rankWithPaidPriority(group.map((s) => s.candidate))
-      .slice(0, RESULT_LIMIT)
-      .map((ranked) => {
-        const entry = byId.get(String(ranked.courseId));
-        return buildCard(entry.course, ranked, entry.mustResult, context, now, { wishes: parsed.wishes, musts });
-      });
+    return selected.map((ranked) => {
+      const entry = byId.get(String(ranked.courseId));
+      return buildCard(entry.course, ranked, entry.mustResult, context, now, { wishes: parsed.wishes, musts });
+    });
   };
 
   const cardsStarted = Date.now();
-  const results = toCards(confirmed);
-  const incompleteResults = toCards(incomplete);
+  const results = toCards(selectedConfirmed, confirmed);
+  const incompleteResults = toCards(selectedIncomplete, incomplete);
   timings.cards = Date.now() - cardsStarted;
   timings.total = Date.now() - searchStarted;
   // Nur tatsächlich bewertete Kandidaten können "unter Mindestpassung" sein.
@@ -539,6 +582,8 @@ export async function runAiSearch(client, input) {
       // Ungültige Luna-Einträge (fremde ID, doppelt, ohne Score) und verworfene Texte.
       lunaDiscarded,
       explanationsRejected,
+      // Variante B: Anzahl der in Stufe 2 angeforderten Begründungen (sonst null).
+      explanationsRequested,
     },
     timings,
     method: {

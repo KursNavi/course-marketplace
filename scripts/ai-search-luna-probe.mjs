@@ -14,28 +14,39 @@ import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openai
 import { runAiSearch } from '../src/lib/aiSearch/searchService.js';
 import { countWords } from '../src/lib/aiSearch/explanation.js';
 
+// Nachtrag 14 (20.11.2026): gezielter Vergleich A (einstufig) vs. B
+// (zweistufig: vollständige Kurzbewertung, Begründung nur für die finale
+// Auswahl). Drei feste Fälle, je Variante EIN Durchlauf, abwechselnd.
 const CASES = [
-  { id: 'normal', query: 'Ich möchte als Anfänger fotografieren lernen, gerne im Selbststudium' },
-  { id: 'ort-muss', query: 'Entspannung und Stressabbau nach der Arbeit', musts: { canton: 'Zürich', onlineAllowed: true } },
-  { id: 'zielgruppe', query: 'Programmieren lernen für Einsteiger' },
-  { id: 'nulltreffer', query: 'Unterwasserschweissen für Tiefseetaucher mit Kranschein' },
+  { id: 'fotografie', query: 'Ich möchte als Anfänger fotografieren lernen' },
+  { id: 'fotografie-ort-muss', query: 'Ich möchte als Anfänger fotografieren lernen', musts: { canton: 'Zürich', onlineAllowed: false } },
+  { id: 'programmierung', query: 'Programmieren lernen für Einsteiger' },
 ];
-// Lauf 3 (18.11.2026): S1 Block / S2 Reihum / S3 Zweistufig verglichen →
-// S2 gewählt (schneller im Orts-Muss-Fall, 0 Fehler; S3 2 Fehler in 9 Läufen).
-// Lauf 4: Bestätigung S2 nach Korrektur der Mehrteil-Antworten.
+// Gleiche Denkstufe, Teilgrösse und Verteilung; nur der Ablauf unterscheidet sich.
 const CONFIGS = [
-  { id: 'S2 Reihum 3×10', effort: 'none', batchSize: 10, distribution: 'stripe', mode: 'single' },
+  { id: 'A einstufig', effort: 'none', batchSize: 10, distribution: 'stripe', mode: 'single' },
+  { id: 'B zweistufig', effort: 'none', batchSize: 10, distribution: 'stripe', mode: 'twoStage' },
 ];
-const ROUNDS = 2;
+const ROUNDS = 1;
 const EXTRA = [];
 const summary = {};
+// Gesendete Kandidaten je Fall und Variante (Nachweis „dieselben Kandidaten“).
+const sentByCase = {};
 
 async function runOne(service, config, testCase, round) {
   const modelConfig = readModelConfig({ ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST });
   const gateway = createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: modelConfig.embeddingModel, reasoningEffort: config.effort, batchSize: config.batchSize, distribution: config.distribution, mode: config.mode });
+  // Gesendete Kandidaten mitschreiben (nur IDs), ohne die Produktlogik zu ändern.
+  for (const method of ['rerank', 'scoreCandidates']) {
+    const original = gateway[method];
+    gateway[method] = async (query, candidates) => {
+      (sentByCase[testCase.id] ??= {})[config.id] = candidates.slice(0, 30).map((c) => String(c.courseId));
+      return original(query, candidates);
+    };
+  }
   const started = Date.now();
   const key = `${config.id} | ${testCase.id}`;
-  summary[key] ??= { totals: [], luna: [], hits: [], errors: 0, tokensIn: 0, tokensOut: 0 };
+  summary[key] ??= { totals: [], luna: [], hits: [], errors: 0, tokensIn: 0, tokensOut: 0, quality: [] };
   console.log(`\n=== [${config.id}] ${testCase.id} (Lauf ${round})`);
   try {
     const result = await runAiSearch(service, { query: testCase.query, musts: testCase.musts, models: { gateway, embeddingVersion: modelConfig.embeddingVersion } });
@@ -45,9 +56,24 @@ async function runOne(service, config, testCase, round) {
     summary[key].luna.push(result.timings.luna ?? null);
     const shown = [...result.results, ...result.incompleteResults];
     summary[key].hits.push(shown.map((c) => c.courseId));
+    // Qualität: vollständige Bewertung, Belege, Textlänge (inkl. Serverhinweise).
+    const words = shown.map((c) => countWords(c.explanation));
+    const withLunaQuote = shown.filter((c) => (c.reasons ?? []).some((r) => r.kind === 'luna')).length;
+    const quality = {
+      vollstaendigBewertet: s.rated === s.sentToLuna && s.notRated === 0,
+      karten: shown.length,
+      mitLunaBeleg: withLunaQuote,
+      texteVerworfen: s.explanationsRejected,
+      woerterMin: words.length ? Math.min(...words) : null,
+      woerterMax: words.length ? Math.max(...words) : null,
+      woerterSchnitt: words.length ? Math.round(words.reduce((a, b) => a + b, 0) / words.length) : null,
+      begruendungenAngefordert: s.explanationsRequested,
+    };
+    summary[key].quality.push(quality);
     console.log(`Gesamt ${total} ms | Phasen ${JSON.stringify(result.timings)}`);
     for (const call of gateway.usage.lunaCallDetails) console.log(`  Teilaufruf ${call.stage}: ${call.candidates} Kand., ${call.ms} ms, ${call.in ?? '?'} ein / ${call.out ?? '?'} aus${call.failed ? ' FEHLGESCHLAGEN' : ''}`);
     console.log(`an Luna ${s.sentToLuna}, bewertet ${s.rated} (unter Mindestpassung ${s.belowThreshold}), unbewertet ${s.notRated}, ungültig ${s.lunaDiscarded}, Texte verworfen ${s.explanationsRejected} | Treffer ${result.results.length}, unvollständig ${result.incompleteResults.length}`);
+    console.log(`Qualität ${JSON.stringify(quality)}`);
     for (const card of shown.slice(0, 10)) {
       console.log(`- ${result.incompleteResults.includes(card) ? '(unvollst.) ' : ''}[${card.score}] #${card.courseId} ${card.title} — ${countWords(card.explanation)} W.`);
     }
@@ -86,7 +112,15 @@ async function main() {
 
   console.log('\n##### Zusammenfassung');
   for (const [key, value] of Object.entries(summary)) {
-    console.log(`${key}: Gesamt ms ${JSON.stringify(value.totals)} | Luna ms ${JSON.stringify(value.luna)} | Trefferzahl ${JSON.stringify(value.hits.map((h) => h.length))} | ${overlap(value.hits)} | Fehler ${value.errors} | Tokens ${value.tokensIn} ein / ${value.tokensOut} aus`);
+    console.log(`${key}: Gesamt ms ${JSON.stringify(value.totals)} | Luna ms ${JSON.stringify(value.luna)} | Trefferzahl ${JSON.stringify(value.hits.map((h) => h.length))} | ${overlap(value.hits)} | Fehler ${value.errors} | Tokens ${value.tokensIn} ein / ${value.tokensOut} aus | Qualität ${JSON.stringify(value.quality)}`);
+  }
+  console.log('\n##### Vergleich A/B je Fall');
+  for (const testCase of CASES) {
+    const sent = sentByCase[testCase.id] ?? {};
+    const [a, b] = CONFIGS.map((c) => sent[c.id]);
+    const same = a && b && a.length === b.length && a.every((id) => b.includes(id));
+    const hits = CONFIGS.map((c) => summary[`${c.id} | ${testCase.id}`]?.hits?.[0] ?? null);
+    console.log(`${testCase.id}: Kandidaten identisch ${same ? 'JA' : 'NEIN'} (${a?.length ?? '-'} / ${b?.length ?? '-'}) | Treffer ${hits.map((h) => h?.length ?? 'Fehler').join(' / ')} | ${hits.every(Boolean) ? overlap(hits) : 'kein Vergleich (Fehler)'}`);
   }
 }
 
