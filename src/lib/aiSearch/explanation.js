@@ -12,6 +12,7 @@
  */
 
 import { WISH_CLAIM_PATTERNS } from './wishCheck.js';
+import { ADULT_CLAIM, CHILD_MENTION } from './audience.js';
 
 // Nachtrag 12 (18.11.2026): normal 25–40 Wörter, höchstens 50 einschliesslich
 // serverseitiger Hinweise (ersetzt 40–70/100 aus Nachtrag 10).
@@ -93,6 +94,14 @@ export function removeUnbackedWishClaims(lead, wishChecks = []) {
   const patterns = [...new Set(open.flatMap((check) => ASPECT_PATTERNS[check.aspect]
     ?? (WISH_CLAIM_PATTERNS[check.claimKey] ? [WISH_CLAIM_PATTERNS[check.claimKey]] : [])))];
   if (patterns.length === 0) return text;
+  return removeClauses(text, patterns);
+}
+
+/**
+ * Entfernt Satzteile, die eines der Muster enthalten (Komma/Semikolon/
+ * Gedankenstrich); trifft schon der Satzanfang, den ganzen Satz.
+ */
+function removeClauses(text, patterns) {
   const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [text];
   const kept = sentences.map((raw) => {
     const sentence = raw.trim();
@@ -105,6 +114,17 @@ export function removeUnbackedWishClaims(lead, wishChecks = []) {
   }).filter(Boolean);
   const result = kept.join(' ').trim();
   return result || null;
+}
+
+/**
+ * Zielgruppe Kinder/Jugendliche (20.11.2026): unbelegte Erwachsenen-Eignung
+ * aus dem Modelltext entfernen. Gibt den bereinigten Text zurück.
+ */
+export function removeUnbackedAdultClaims(lead, audience) {
+  const text = typeof lead === 'string' ? lead.trim() : '';
+  if (!text) return null;
+  if (!audience?.child || audience.adultsBacked) return text;
+  return removeClauses(text, [ADULT_CLAIM]);
 }
 
 /**
@@ -136,15 +156,16 @@ function capitalize(text) {
  * @param {string} input.price   Preisdarstellung laut Kursangaben
  * @returns {string}
  */
-export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, event = null, price = '' }) {
+export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, event = null, price = '', audience = null }) {
   // priority: 0 = nie kürzen (Einschränkungen), höhere Zahl = zuerst weglassen
   const parts = [];
   const add = (order, priority, text) => { if (text) parts.push({ order, priority, text, lead: false }); };
 
   // Serverseitig geprüfter Luna-Fliesstext ersetzt die Zitatsätze. Fehlt er,
   // bleibt die bisherige belegte Zusammenstellung. Sätze, die einen NICHT
-  // bestätigten Wunsch als erfüllt darstellen, werden vorher entfernt.
-  const leadText = removeUnbackedWishClaims(lead, wishChecks);
+  // bestätigten Wunsch als erfüllt darstellen oder bei Kinderkursen eine
+  // unbelegte Eignung für Erwachsene behaupten, werden vorher entfernt.
+  const leadText = removeUnbackedAdultClaims(removeUnbackedWishClaims(lead, wishChecks), audience);
   if (leadText) parts.push({ order: 10, priority: 1, text: leadText, lead: true });
   const evidence = leadText ? [] : reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');
   evidence.forEach((reason, index) => {
@@ -159,6 +180,13 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
     }
     add(10 + index, index === 0 ? 1 : 3 + index, sentence);
   });
+
+  // Kinder-/Jugendkurs: Zielgruppe muss erkennbar sein. Nennt der Text sie
+  // nicht selbst, ergänzt der Server einen nie gekürzten Hinweis.
+  if (audience?.child && audience.label) {
+    const shown = parts.map((p) => p.text).join(' ');
+    if (!CHILD_MENTION.test(shown)) add(15, 0, `Zielgruppe laut Kursangaben: ${audience.label}.`);
+  }
 
   const locationReason = reasons.find((r) => r.kind === 'location');
   const locationWishes = wishes.filter((w) => w.type === 'location');
@@ -199,23 +227,31 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   // Kürzen: am wenigsten wichtige Bausteine zuerst, Einschränkungen nie.
   const kept = [...parts];
   const total = () => kept.reduce((sum, p) => sum + countWords(p.text), 0);
-  while (total() > MAX_EXPLANATION_WORDS) {
-    const droppable = kept.filter((p) => p.priority > 0 && !p.lead).sort((a, b) => b.priority - a.priority)[0];
-    if (droppable) { kept.splice(kept.indexOf(droppable), 1); continue; }
-    // Nur noch Lead + Einschränkungen: Lead an Satzgrenzen kürzen.
-    const leadPart = kept.find((p) => p.lead);
-    if (!leadPart) break;
-    const budget = MAX_EXPLANATION_WORDS - (total() - countWords(leadPart.text));
-    const sentences = leadPart.text.match(/[^.!?]+[.!?]+/g) ?? [leadPart.text];
-    let shortened = '';
-    for (const sentence of sentences) {
-      const next = `${shortened} ${sentence.trim()}`.trim();
-      if (countWords(next) > budget) break;
-      shortened = next;
+  const shrink = () => {
+    while (total() > MAX_EXPLANATION_WORDS) {
+      const droppable = kept.filter((p) => p.priority > 0 && !p.lead).sort((a, b) => b.priority - a.priority)[0];
+      if (droppable) { kept.splice(kept.indexOf(droppable), 1); continue; }
+      // Nur noch Lead + Einschränkungen: Lead an Satzgrenzen kürzen.
+      const leadPart = kept.find((p) => p.lead);
+      if (!leadPart) break;
+      const budget = MAX_EXPLANATION_WORDS - (total() - countWords(leadPart.text));
+      const sentences = leadPart.text.match(/[^.!?]+[.!?]+/g) ?? [leadPart.text];
+      let shortened = '';
+      for (const sentence of sentences) {
+        const next = `${shortened} ${sentence.trim()}`.trim();
+        if (countWords(next) > budget) break;
+        shortened = next;
+      }
+      if (shortened) leadPart.text = shortened;
+      else kept.splice(kept.indexOf(leadPart), 1);
+      break;
     }
-    if (shortened) leadPart.text = shortened;
-    else kept.splice(kept.indexOf(leadPart), 1);
-    break;
+  };
+  shrink();
+  // Ging die Zielgruppen-Nennung beim Kürzen verloren, Hinweis nachträglich sichern.
+  if (audience?.child && audience.label && !CHILD_MENTION.test(kept.map((p) => p.text).join(' '))) {
+    kept.push({ order: 15, priority: 0, text: `Zielgruppe laut Kursangaben: ${audience.label}.`, lead: false });
+    shrink();
   }
   let text = kept.sort((a, b) => a.order - b.order).map((p) => p.text).join(' ');
   if (countWords(text) > MAX_EXPLANATION_WORDS) {

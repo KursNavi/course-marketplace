@@ -31,6 +31,7 @@ import { rankWithPaidPriority, MIN_SCORE } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
 import { buildExplanation } from './explanation.js';
 import { checkWishes, deliveryEvidence } from './wishCheck.js';
+import { childAudience, adultsBackedByText } from './audience.js';
 export const CANDIDATE_LIMIT = 100;
 export const RESULT_LIMIT = 10;
 
@@ -248,6 +249,7 @@ const EVIDENCE_LABELS = {
   level: 'Niveau',
   languages: 'Sprache',
   delivery_types: 'Lernform',
+  target_group: 'Zielgruppe',
 };
 
 /**
@@ -271,6 +273,9 @@ export function buildEvidence(course, context) {
     level: course.level ?? undefined,
     // Strukturierte Lernform, damit Luna sie nicht aus dem Thema ableitet.
     delivery_types: deliveryEvidence(course),
+    // Zielgruppe nur, wenn belegt Kinder/Jugendliche (target_group „Adults“
+    // ist in den Daten ein Standardwert und kein Beleg → nicht gesendet).
+    target_group: childAudience(course, context.categoriesByCourse.get(String(course.id))).label ?? undefined,
   };
   return Object.fromEntries(Object.entries(evidence).filter(([, value]) => value !== undefined && value !== ''));
 }
@@ -321,6 +326,10 @@ function buildCard(course, ranked, mustResult, context, now, request) {
 
   // Lernform-/Niveau-Wünsche nur aus strukturierten Kursangaben bestätigen.
   const wishChecks = checkWishes(course, request.wishes);
+  const childInfo = childAudience(course, categoryRows);
+  const audience = childInfo.child
+    ? { ...childInfo, adultsBacked: adultsBackedByText(buildEvidence(course, context)) }
+    : null;
   const cardEvent = event ? { startDate: event.start_date, endDate: event.end_date ?? null, location: event.location ?? null, canton: event.canton ?? null } : null;
   const explanation = buildExplanation({
     lead: ranked.lunaExplanation ?? null,
@@ -332,6 +341,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     place,
     event: cardEvent,
     price: price.text,
+    audience,
   });
 
   // Paketeinfluss bewusst NICHT je Karte (Nachtrag 10: keine Einzelbadges);

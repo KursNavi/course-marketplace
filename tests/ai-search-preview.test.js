@@ -1044,6 +1044,76 @@ describe('Nachtrag 13: Indexstand – Aufträge statt „Kursänderungen“, Abd
   });
 });
 
+describe('Zielgruppe Kinder/Jugendliche in der Begründung (20.11.2026)', async () => {
+  const { childAudience, adultsBackedByText } = await import('../src/lib/aiSearch/audience.js');
+  const { removeUnbackedAdultClaims } = await import('../src/lib/aiSearch/explanation.js');
+  const kids = { child: true, label: 'Kinder und Jugendliche (ab 8 Jahren)', adultsBacked: false };
+
+  it('erkennt Kinderkurse nur aus belastbaren Feldern; target_group „Adults“ ist kein Beleg', () => {
+    expect(childAudience({ category_type: 'kinder', min_age: 8 })).toEqual({ child: true, label: 'Kinder und Jugendliche (ab 8 Jahren)' });
+    expect(childAudience({ category_type: 'kinder_jugend' })).toEqual({ child: true, label: 'Kinder und Jugendliche' });
+    expect(childAudience({ kinder_kursart: 'feriencamp', min_age: 5 }).child).toBe(true);
+    expect(childAudience({ category_type: 'privat' }, [{ level1_slug: 'kinder' }]).child).toBe(true);
+    expect(childAudience({ category_type: 'privat', target_group: 'Adults', min_age: 6 })).toEqual({ child: false, label: null });
+    expect(adultsBackedByText({ description: 'Eltern-Kind-Kurs für Familien' })).toBe(true);
+    expect(adultsBackedByText({ description: 'Roboter bauen in den Ferien' })).toBe(false);
+  });
+
+  it('Text ohne Zielgruppe: Server ergänzt „Zielgruppe laut Kursangaben“ (nie gekürzt, ≤ 50 Wörter)', () => {
+    const lead = 'Du lernst Programmiergrundlagen und steuerst Roboter mit eigenem Code. Der Kurs eignet sich ausdrücklich für Einsteigerinnen und Einsteiger.';
+    const text = buildExplanation({ lead, audience: kids });
+    expect(text).toMatch(/Zielgruppe laut Kursangaben: Kinder und Jugendliche \(ab 8 Jahren\)\./);
+    expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
+  });
+
+  it('Text nennt Kinder bereits: kein doppelter Hinweis', () => {
+    const text = buildExplanation({ lead: 'Du baust Roboter und lernst erste Befehle. Der Ferienkurs richtet sich an Kinder ab 8 Jahren.', audience: kids });
+    expect(text).not.toMatch(/Zielgruppe laut Kursangaben/);
+  });
+
+  it('unbelegte Eignung für Erwachsene wird entfernt; mit Beleg bleibt sie', () => {
+    const lead = 'Du lernst Grundlagen der Robotik. Der Kurs passt auch für Erwachsene ohne Vorkenntnisse.';
+    expect(removeUnbackedAdultClaims(lead, kids)).toBe('Du lernst Grundlagen der Robotik.');
+    const text = buildExplanation({ lead, audience: kids });
+    expect(text).not.toMatch(/Erwachsene/);
+    expect(text).toMatch(/Zielgruppe laut Kursangaben/);
+    expect(removeUnbackedAdultClaims(lead, { ...kids, adultsBacked: true })).toBe(lead);
+    // Erwachsenenkurs: unverändert.
+    expect(removeUnbackedAdultClaims(lead, null)).toBe(lead);
+  });
+
+  it('Zielgruppe bleibt erkennbar, auch wenn der Langtext gekürzt werden muss', () => {
+    const lead = `Ein Kurs für Kinder. ${Array.from({ length: 8 }, (_, i) => `Satz ${i} beschreibt ruhig und genau, was man in diesem Kurs konkret lernt.`).join(' ')}`;
+    const text = buildExplanation({ lead, audience: kids, wishes: [{ type: 'location', label: 'Zürich', value: 'Zürich' }], place: 'Bern' });
+    expect(text).toMatch(/kinder/i);
+    expect(text).toMatch(/Abweichung vom Wunsch „Zürich“/);
+    expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
+  });
+
+  it('Ende-zu-Ende (gemockt): Kinderkurs-Karte nennt die Zielgruppe; Luna erhält sie als Evidenz', async () => {
+    const courses = [course(1, { title: 'Roboter-Camp', category_type: 'kinder', min_age: 8, target_group: 'Adults' }), course(2, { title: 'Python für Berufstätige', category_type: 'professionell', target_group: 'Adults' })];
+    const chunks = [
+      { course_id: 1, section: 'description', chunk_index: 0, text: 'Programmieren mit Robotern in den Ferien.' },
+      { course_id: 2, section: 'description', chunk_index: 0, text: 'Programmieren mit Python im Beruf.' },
+    ];
+    const inner = searchScenario({ courses, chunks });
+    const { client } = createFakeSupabase((call) => (call.table === 'ai_search_config' ? { data: { active_model_version: null }, error: null } : inner(call)));
+    const gateway = {
+      usage: {},
+      embed: vi.fn(),
+      rerank: vi.fn(async (q, cands) => ({ accepted: cands.map((c) => ({ courseId: String(c.courseId), score: 85, explanation: 'Du lernst Programmieren an praktischen Projekten. Der Kurs passt auch für Erwachsene.', reasons: [{ field: 'description', quote: 'Programmieren mit' }] })), rejected: [] })),
+    };
+    const result = await runAiSearch(client, { query: 'Programmieren lernen', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
+    const byId = Object.fromEntries(result.results.map((r) => [r.courseId, r.explanation]));
+    expect(byId[1]).toMatch(/Zielgruppe laut Kursangaben: Kinder und Jugendliche \(ab 8 Jahren\)\./);
+    expect(byId[1]).not.toMatch(/Erwachsene/);
+    expect(byId[2]).not.toMatch(/Zielgruppe laut Kursangaben/);
+    const evidence = gateway.rerank.mock.calls[0][1];
+    expect(evidence.find((c) => String(c.courseId) === '1').evidence.target_group).toBe('Kinder und Jugendliche (ab 8 Jahren)');
+    expect(evidence.find((c) => String(c.courseId) === '2').evidence.target_group).toBeUndefined(); // „Adults“ nicht gesendet
+  });
+});
+
 describe('runAiSearch – Luna-Begründung auf der Karte (gemockt)', () => {
   it('übernimmt den geprüften Luna-Text und meldet den Verbrauch', async () => {
     const courses = [course(1, { title: 'Yoga sanft' })];
