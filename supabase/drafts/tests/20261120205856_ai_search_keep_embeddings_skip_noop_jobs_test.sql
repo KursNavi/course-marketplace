@@ -1,5 +1,6 @@
 -- =====================================================================
--- Test zum ENTWURF 20261120090000 (nicht anwenden!). Stand 20.11.2026, v2.
+-- Rollback-Test zur Migration 20261120205856 (vormals Entwurf 20261120090000).
+-- Stand 20.11.2026, v2. Einmal ausgeführt am 20.11.2026: KNT00 16/16.
 --
 -- EIN DO-Block. Entwurf, Szenarien und Rückweg laufen darin; am Ende wird
 -- IMMER eine Ausnahme ausgelöst, wodurch PostgreSQL alles zurückrollt.

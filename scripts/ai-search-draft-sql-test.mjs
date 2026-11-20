@@ -1,5 +1,6 @@
 /**
- * Setzt den SQL-Test zum Migrationsentwurf 20261120090000 zusammen.
+ * Setzt den SQL-Test zur Migration 20261120205856 (vormals Entwurf
+ * 20261120090000) zusammen.
  *
  * Der Test ist EIN DO-Block, der am Ende immer eine Ausnahme auslöst
  * (AI_DRAFT_TEST_OK … bzw. AI_DRAFT_TEST_FAIL …). Dadurch werden Entwurf,
@@ -16,7 +17,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const DRAFT = 'supabase/drafts/20261120090000_ai_search_keep_embeddings_skip_noop_jobs';
+// Migration (am 20.11.2026 auf der TESTumgebung als 20261120205856 verbucht),
+// Rückweg und Rollback-Test.
+export const MIGRATION_FILE = 'supabase/migrations/20261120205856_ai_search_keep_embeddings_skip_noop_jobs.sql';
+export const ROLLBACK_FILE = 'supabase/rollback/20261120205856_ai_search_keep_embeddings_skip_noop_jobs_down.sql';
+export const TEST_FILE = 'supabase/drafts/tests/20261120205856_ai_search_keep_embeddings_skip_noop_jobs_test.sql';
+export const VERIFY_FILE = 'supabase/drafts/tests/20261120205856_ai_search_keep_embeddings_skip_noop_jobs_verify.sql';
 
 /**
  * Zerlegt SQL in einzelne Anweisungen. Beachtet Dollar-Quoting ($tag$),
@@ -73,9 +79,9 @@ function asExecutes(statements, label) {
 
 export function composeDraftTest(root = ROOT) {
   const read = (rel) => readFileSync(path.join(root, rel), 'utf8');
-  const migration = splitSqlStatements(read(`${DRAFT}.sql`));
-  const rollback = splitSqlStatements(read(`${DRAFT}_down.sql`));
-  const test = read('supabase/drafts/tests/20261120090000_ai_search_keep_embeddings_skip_noop_jobs_test.sql');
+  const migration = splitSqlStatements(read(MIGRATION_FILE));
+  const rollback = splitSqlStatements(read(ROLLBACK_FILE));
+  const test = read(TEST_FILE);
   if (!test.includes('-- @@MIGRATION@@') || !test.includes('-- @@ROLLBACK@@')) throw new Error('Marker fehlen im Test.');
   return {
     migration,

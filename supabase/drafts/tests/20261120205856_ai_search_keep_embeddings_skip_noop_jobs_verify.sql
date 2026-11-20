@@ -1,5 +1,5 @@
 -- =====================================================================
--- Vorher/Nachher-Nachweis zum Test 20261120090000 – NUR LESEND.
+-- Vorher/Nachher-Nachweis zur Migration 20261120205856 – NUR LESEND.
 -- Vor und nach dem Testlauf ausführen; alle Spalten ausser denen im Block
 -- "seq_*" müssen identisch sein. Sequenzen rollen in PostgreSQL nicht
 -- zurück und dürfen daher steigen (einzige erwartete bleibende Wirkung).

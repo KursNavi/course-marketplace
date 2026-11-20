@@ -1,20 +1,24 @@
 /**
- * Statische Prüfungen zum Migrationsentwurf 20261120090000 (NICHT angewendet).
- * Das Verhalten in der Datenbank prüft der SQL-Test mit erzwungenem Rollback
- * (supabase/drafts/tests/…_test.sql, zusammengesetzt per
- * scripts/ai-search-draft-sql-test.mjs).
+ * Statische Prüfungen zur Migration 20261120205856 (vormals Entwurf
+ * 20261120090000; am 20.11.2026 nur auf der TESTumgebung angewendet und dort
+ * als 20261120205856 verbucht). Das Verhalten in der Datenbank prüfte der
+ * SQL-Test mit erzwungenem Rollback (supabase/drafts/tests/…_test.sql,
+ * zusammengesetzt per scripts/ai-search-draft-sql-test.mjs).
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
-import { splitSqlStatements, composeDraftTest } from '../scripts/ai-search-draft-sql-test.mjs';
+import { splitSqlStatements, composeDraftTest, MIGRATION_FILE, ROLLBACK_FILE, TEST_FILE, VERIFY_FILE } from '../scripts/ai-search-draft-sql-test.mjs';
 import { CHUNKABLE_SECTIONS } from '../src/lib/aiSearch/chunking.js';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel) => readFileSync(path.join(ROOT, rel), 'utf8');
-const DRAFT = 'supabase/drafts/20261120090000_ai_search_keep_embeddings_skip_noop_jobs';
-const up = read(`${DRAFT}.sql`);
-const down = read(`${DRAFT}_down.sql`);
+const up = read(MIGRATION_FILE);
+const down = read(ROLLBACK_FILE);
+// md5 der am 20.11.2026 angewendeten Fassung (Commit 779557a, LF-Zeilenenden).
+const APPLIED_MD5 = '10e563be0260d4b7fa734673dee1e726';
+const APPLIED_VERSION = '20261120205856';
 
 function ignoredColumns() {
   const match = /ARRAY\[([^\]]+)\]::text\[\]/.exec(up);
@@ -32,10 +36,41 @@ function indexedCourseFields() {
   return fields;
 }
 
-describe('Migrationsentwurf: Ablage und Rückweg', () => {
-  it('liegt NICHT im Migrationsordner (wird nicht versehentlich angewendet)', () => {
-    expect(readdirSync(path.join(ROOT, 'supabase/migrations')).some((f) => f.includes('20261120090000'))).toBe(false);
-    expect(up).toMatch(/ENTWURF – NICHT ANWENDEN/);
+describe('Migration 20261120205856: Ablage, Historie und Rückweg', () => {
+  it('Inhalt ist byte-genau die angewendete Fassung (unabhängig von Zeilenenden im Checkout)', () => {
+    const normalized = up.replace(/\r\n/g, '\n');
+    expect(createHash('md5').update(normalized, 'utf8').digest('hex')).toBe(APPLIED_MD5);
+  });
+
+  it('Dateiversion entspricht dem verbuchten Eintrag; keine zweite Version im Bestand', () => {
+    expect(MIGRATION_FILE).toBe(`supabase/migrations/${APPLIED_VERSION}_ai_search_keep_embeddings_skip_noop_jobs.sql`);
+    const migrations = readdirSync(path.join(ROOT, 'supabase/migrations'));
+    // Kein Rest unter der alten Entwurfsversion und kein Duplikat unter anderem Namen.
+    expect(migrations.filter((f) => f.includes('20261120090000'))).toEqual([]);
+    expect(migrations.filter((f) => f.includes('keep_embeddings_skip_noop_jobs'))).toEqual([path.basename(MIGRATION_FILE)]);
+    const defining = migrations.filter((f) => f.endsWith('.sql')
+      && /CREATE (OR REPLACE )?FUNCTION public\.ai_search_ignored_course_columns|CREATE TRIGGER ai_search_profiles_outbox/
+        .test(read(`supabase/migrations/${f}`)));
+    expect(defining).toEqual([path.basename(MIGRATION_FILE)]);
+    // Entwurfsordner enthält keine anwendbare Kopie mehr.
+    expect(readdirSync(path.join(ROOT, 'supabase/drafts')).filter((f) => f.endsWith('.sql'))).toEqual([]);
+  });
+
+  it('Rückweg liegt getrennt im Rückwegordner, nicht im Migrationsbestand', () => {
+    expect(ROLLBACK_FILE.startsWith('supabase/rollback/')).toBe(true);
+    expect(readdirSync(path.join(ROOT, 'supabase/migrations')).some((f) => f.includes('_down'))).toBe(false);
+    expect(down).toContain(`supabase/migrations/${APPLIED_VERSION}_ai_search_keep_embeddings_skip_noop_jobs.sql`);
+    for (const file of [TEST_FILE, VERIFY_FILE]) expect(read(file).length).toBeGreaterThan(0);
+  });
+
+  it('erneute Anwendung wäre unschädlich (idempotente Anweisungen)', () => {
+    const statements = splitSqlStatements(up);
+    for (const statement of statements) {
+      expect(statement).toMatch(/^(CREATE OR REPLACE FUNCTION|DROP TRIGGER IF EXISTS|CREATE TRIGGER|REVOKE EXECUTE)/);
+    }
+    // CREATE TRIGGER folgt unmittelbar auf DROP TRIGGER IF EXISTS desselben Triggers.
+    const createIdx = statements.findIndex((s) => s.startsWith('CREATE TRIGGER ai_search_profiles_outbox'));
+    expect(statements[createIdx - 1]).toBe('DROP TRIGGER IF EXISTS ai_search_profiles_outbox ON public.profiles');
   });
 
   it('Rückweg stellt beide Funktionen wieder her und entfernt Trigger und Hilfsfunktionen', () => {
@@ -121,7 +156,7 @@ describe('SQL-Test mit erzwungenem Rollback', () => {
     expect(sql).toMatch(/RAISE EXCEPTION USING ERRCODE = 'KNT00',\s*MESSAGE = format\('AI_DRAFT_TEST_OK/);
   });
 
-  const testSql = read('supabase/drafts/tests/20261120090000_ai_search_keep_embeddings_skip_noop_jobs_test.sql');
+  const testSql = read(TEST_FILE);
   const body = testSql.slice(testSql.indexOf('DO $ai_draft_test$'));
 
   it('verwendet ein eigenes Testprofil, nie ein vorhandenes Anbieterprofil', () => {
@@ -162,7 +197,7 @@ describe('SQL-Test mit erzwungenem Rollback', () => {
   });
 
   it('Vorher/Nachher-Nachweis ist rein lesend und deckt Objekte, Daten und Sequenzen ab', () => {
-    const verify = read('supabase/drafts/tests/20261120090000_ai_search_keep_embeddings_skip_noop_jobs_verify.sql');
+    const verify = read(VERIFY_FILE);
     const code = verify.replace(/--.*$/gm, '');
     expect(code).not.toMatch(/\b(INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TRUNCATE|GRANT|REVOKE|nextval|setval)\b/i);
     for (const column of ['fn_enqueue_md5', 'fn_apply_upsert_md5', 'ai_trigger', 'courses_md5', 'profiles_md5',

@@ -1,5 +1,10 @@
 -- =====================================================================
--- RÜCKWEG zum Entwurf 20261120090000_ai_search_keep_embeddings_skip_noop_jobs
+-- RÜCKWEG zur Migration
+--   supabase/migrations/20261120205856_ai_search_keep_embeddings_skip_noop_jobs.sql
+-- (bis 20.11.2026 als Entwurf 20261120090000 geführt; auf der TESTumgebung
+-- verbucht als 20261120205856). NUR nach ausdrücklicher Freigabe ausführen;
+-- danach den Eintrag in supabase_migrations.schema_migrations entsprechend
+-- bereinigen, sonst gilt die Migration weiterhin als angewendet.
 -- Stellt die Funktionsdefinitionen wieder her, wie sie am 20.11.2026 in der
 -- TESTumgebung aktiv waren (abgerufen mit pg_get_functiondef), und entfernt
 -- den neuen Profil-Trigger samt Hilfsfunktionen. Daten bleiben unberührt:

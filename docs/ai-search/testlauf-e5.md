@@ -43,18 +43,29 @@ FROM pg_available_extensions WHERE name IN ('vector', 'unaccent');
    liegt zur Prüfung vor; Anwendung erst nach Freigabe.** Ohne sie weisen die
    DB-Tests die Abschnitte 8/9 ausdrücklich als NICHT GEPRÜFT aus.
 
-5. `supabase/drafts/20261120090000_ai_search_keep_embeddings_skip_noop_jobs.sql` —
+5. `supabase/migrations/20261120205856_ai_search_keep_embeddings_skip_noop_jobs.sql` —
    Embeddings bei identischem Abschnittstext erhalten, keine Aufträge bei
    wertgleichen UPDATEs, Profil-Trigger. **Am 20.11.2026 ausschliesslich auf der
    TESTumgebung angewendet** (Freigabe des Nutzers, nach bestandenem
    Rollback-Test KNT00 „AI_DRAFT_TEST_OK 16/16“): exakte Fassung aus Commit
-   `779557abcf917a4c4d7bc5475d628c9da2143997` (md5 der Datei im Commit
-   `10e563be0260d4b7fa734673dee1e726`), verbucht in
-   `supabase_migrations.schema_migrations` als
-   `20261120205856 ai_search_keep_embeddings_skip_noop_jobs`. Der Rückweg
-   `…_down.sql` wurde NICHT ausgeführt. Die Datei liegt weiterhin unverändert
-   unter `supabase/drafts/`; die Übernahme nach `supabase/migrations/` (und jede
-   Produktionsanwendung) ist eine eigene, noch nicht freigegebene Entscheidung.
+   `779557abcf917a4c4d7bc5475d628c9da2143997` (damals als Entwurf
+   `supabase/drafts/20261120090000_…`; md5 `10e563be0260d4b7fa734673dee1e726`),
+   verbucht in `supabase_migrations.schema_migrations` als
+   `20261120205856 ai_search_keep_embeddings_skip_noop_jobs`. Danach unter
+   genau dieser Version byte-genau in den Migrationsbestand übernommen
+   (Test `tests/ai-search-draft-migration.test.js` sichert md5, Version und
+   „keine zweite Kopie“). **Der Kopfkommentar der Datei nennt noch „ENTWURF“
+   und die alten Pfade – bewusst unverändert, damit der Inhalt der verbuchten
+   Fassung entspricht.** Rückweg (nicht ausgeführt, nur nach Freigabe):
+   `supabase/rollback/20261120205856_ai_search_keep_embeddings_skip_noop_jobs_down.sql`.
+   Produktion: nicht angewendet; eigene Freigabe nötig.
+
+   Hinweis Versionsabgleich: Die Migrationen 1–4 tragen im Repo andere
+   Versionsnummern als in der Migrationsliste der TESTumgebung (z. B. Datei
+   `20261115190000`, verbucht `20261115200229`). Ein `supabase db push` gegen
+   die TESTumgebung würde sie deshalb als neu ansehen. Vor einem solchen Lauf
+   die Historie abgleichen (`supabase migration repair`), nicht blind pushen.
+   Für 20261120205856 stimmen Datei und Historie überein.
 
 Keine bestehenden Testdaten zurücksetzen; die Migrationen legen ausschliesslich neue
 `ai_search_*`-Objekte und Trigger an. (1–3 sind seit 14.11.2026 auf der TESTumgebung
