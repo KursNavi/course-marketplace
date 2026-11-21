@@ -199,18 +199,21 @@ export async function runReconciliation(client, options = {}) {
     alarms.push(`courses.status IS NULL: ${nullStatusCount} Zeile(n) — Entscheidung laut Datenvertrag §1 noetig.`);
   }
 
+  // maxEnqueue ist EINE gemeinsame Obergrenze fuer saemtliche in diesem Lauf
+  // erzeugten Jobs (Verwaiste, Fehlende, Hash-Abweichungen). Das Restbudget
+  // sinkt um die tatsaechlich eingefuegten Zeilen.
   // Ruecknahme-Vorrang: Verwaiste zuerst und mit hoher Prioritaet einreihen.
-  const cappedOrphaned = orphanedInIndex.slice(0, maxEnqueue);
-  const remainingBudget = Math.max(maxEnqueue - cappedOrphaned.length, 0);
-  const cappedMissing = missingInIndex.slice(0, remainingBudget);
-  const truncated = orphanedInIndex.length > cappedOrphaned.length
-    || missingInIndex.length > cappedMissing.length;
-  if (truncated) {
-    alarms.push(`Einreihung gekappt bei ${maxEnqueue} Jobs; Rest folgt im naechsten Lauf.`);
-  }
-
+  let budget = Math.max(maxEnqueue, 0);
+  let truncated = false;
+  const cappedOrphaned = orphanedInIndex.slice(0, budget);
+  if (orphanedInIndex.length > cappedOrphaned.length) truncated = true;
   const enqueuedOrphaned = await enqueueReconciliationJobs(client, cappedOrphaned, 1);
+  budget -= enqueuedOrphaned;
+
+  const cappedMissing = missingInIndex.slice(0, budget);
+  if (missingInIndex.length > cappedMissing.length) truncated = true;
   const enqueuedMissing = await enqueueReconciliationJobs(client, cappedMissing, 5);
+  budget -= enqueuedMissing;
 
   // Hash-Stichprobe nur ueber Kurse, die in Quelle UND Index vorhanden sind.
   const publishedSet = new Set(publishedIds.map(String));
@@ -238,9 +241,16 @@ export async function runReconciliation(client, options = {}) {
       mismatchedCourseIds.push(courseId);
     }
   }
+  let enqueuedHashMismatch = 0;
   if (mismatchedCourseIds.length > 0) {
-    alarms.push(`Hash-Stichprobe: ${mismatchedCourseIds.length} Abweichung(en) — Jobs eingereiht.`);
-    await enqueueReconciliationJobs(client, mismatchedCourseIds, 3);
+    const cappedMismatched = mismatchedCourseIds.slice(0, budget);
+    if (mismatchedCourseIds.length > cappedMismatched.length) truncated = true;
+    enqueuedHashMismatch = await enqueueReconciliationJobs(client, cappedMismatched, 3);
+    budget -= enqueuedHashMismatch;
+    alarms.push(`Hash-Stichprobe: ${mismatchedCourseIds.length} Abweichung(en) — ${enqueuedHashMismatch} Job(s) eingereiht.`);
+  }
+  if (truncated) {
+    alarms.push(`Einreihung gekappt bei ${maxEnqueue} Jobs; Rest folgt im naechsten Lauf.`);
   }
 
   const pendingJobs = await countRows(client, 'ai_search_jobs',
@@ -273,7 +283,9 @@ export async function runReconciliation(client, options = {}) {
     nullStatusCount,
     missingInIndex: missingInIndex.length,
     orphanedInIndex: orphanedInIndex.length,
-    enqueued: enqueuedOrphaned + enqueuedMissing,
+    // Alle tatsaechlich erzeugten Jobs dieses Laufs (Summe <= maxEnqueue).
+    enqueued: enqueuedOrphaned + enqueuedMissing + enqueuedHashMismatch,
+    enqueuedBy: { orphaned: enqueuedOrphaned, missing: enqueuedMissing, hashMismatch: enqueuedHashMismatch },
     truncated,
     hashSample: { checked: sampleIds.length, mismatches: hashMismatches },
     pendingJobs,

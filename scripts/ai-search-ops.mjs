@@ -52,16 +52,18 @@ export function formatReport(report) {
   lines.push(`  Abschnitte gesamt: ${b.embeddings.chunksTotal} · fehlend/veraltet: ${b.embeddings.needEmbedding} (${b.embeddings.needEmbeddingChars} Zeichen)`);
   lines.push('Gespeicherte Ergebnisse');
   lines.push(`  Gespeichert: ${b.results.stored} · abgelaufen (löschbar): ${b.results.expired}`);
-  lines.push(`Verbrauch ${b.usage.monthKey} (Schätzung, ohne Gewähr)`);
-  lines.push(`  Suchen abgeschlossen: ${b.usage.searchesCompleted} · abgebrochen: ${b.usage.searchesReleased} → höchstens ${usd(b.estimate.searchesUsdMax)}`);
+  lines.push(`Verbrauch ${b.usage.monthKey} – BEGRENZTE SCHÄTZUNG`);
+  lines.push(`  ${b.estimate.note}`);
+  lines.push(`  Suchen abgeschlossen: ${b.usage.searchesCompleted} · abgebrochen: ${b.usage.searchesReleased} → geschätzt ${usd(b.estimate.searchesUsdEstimate)}`);
   lines.push(`  Ausstehende Embeddings: ~${b.estimate.embeddingTokens} Tokens ≈ ${usd(b.estimate.embeddingUsd)}`);
-  lines.push(`  Summe höchstens ${usd(b.estimate.monthTotalUsdMax)} von Budget USD ${b.estimate.monthlyBudgetUsd}`);
+  lines.push(`  Teilsumme dieser zwei Posten ≈ ${usd(b.estimate.partialTotalUsd)} (Budgetrahmen USD ${b.estimate.monthlyBudgetUsd})`);
+  lines.push(`  Nicht enthalten: ${b.estimate.excludes.join('; ')}`);
   lines.push(`Alarme: ${b.alarms.length ? '' : 'keine'}`);
   for (const alarm of b.alarms) lines.push(`  - ${alarm}`);
   lines.push('');
   lines.push('Plan (Grenzen dieses Laufs)');
-  lines.push(`  Index:      ${report.plan.index.execute ? 'AUSFÜHREN' : 'nur anzeigen'} – bis ${report.plan.index.wouldEnqueueMax} Kurse einreihen, bis ${report.plan.index.maxJobs} Jobs verarbeiten (offen: ${report.plan.index.pendingJobs})`);
-  lines.push(`  Embeddings: ${report.plan.embed.execute ? 'AUSFÜHREN' : 'nur anzeigen'} – bis ${report.plan.embed.chunks} Abschnitte (Schätzung gesamt ${usd(report.plan.embed.estimateUsd)})`);
+  lines.push(`  Index:      ${report.plan.index.execute ? 'AUSFÜHREN' : 'nur anzeigen'} – ${report.plan.index.wouldEnqueueMax} fehlende/verwaiste Kurse einreihen (alle Einreihungen inkl. Hash-Abweichungen zusammen höchstens ${report.plan.index.maxEnqueueTotal}), bis ${report.plan.index.maxJobs} Jobs verarbeiten (offen: ${report.plan.index.pendingJobs})`);
+  lines.push(`  Embeddings: ${report.plan.embed.execute ? 'AUSFÜHREN' : 'nur anzeigen'} – bis ${report.plan.embed.chunks} Abschnitte (geschätzt für alle fehlenden ${usd(report.plan.embed.estimateUsd)})`);
   lines.push(`  Bereinigung: ${report.plan.cleanup.execute ? 'AUSFÜHREN' : 'nur anzeigen'} – ${report.plan.cleanup.expired} abgelaufen, höchstens ${report.plan.cleanup.maxDelete} je Lauf`);
   if (report.mode === 'execute') {
     lines.push('');

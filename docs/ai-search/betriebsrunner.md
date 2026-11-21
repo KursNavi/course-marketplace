@@ -18,9 +18,24 @@ Bericht: veröffentlichte Kurse ↔ Indexdokumente (fehlend/verwaist), Kurse
 ohne Status, letzte Indexierung, ältester offener Job, offene/
 fehlgeschlagene Jobs mit ersten Fehlertexten, aktive/konfigurierte
 Embedding-Version, fehlende/veraltete Abschnitte, gespeicherte/abgelaufene
-Ergebnisse, Suchen des Monats und geschätzter Verbrauch gegen das Budget
-von USD 10 (Schätzung, Preisliste 13.11.2026, ersetzt nicht die
-Anbieterabrechnung).
+Ergebnisse, Suchen des Monats und eine **begrenzte Kostenschätzung**.
+
+### Kostenangaben = begrenzte Schätzung
+
+Die Kostenzeile ist **weder der vollständige Projektverbrauch noch eine
+garantierte monatliche Obergrenze**. Sie umfasst nur zwei Posten dieser
+TESTdatenbank:
+
+1. Suchen des Monats laut Kontingenttabelle × angenommener Höchstpreis je
+   Suche (USD 0.003, Annahme aus der Entscheidungsvorlage);
+2. noch fehlende/veraltete Embeddings (einmalig, ~4 Zeichen je Token,
+   USD 0.02 je Mio. Tokens).
+
+Nicht enthalten: bereits ausgeführte Embedding-Läufe und Sonden des Monats,
+Modellaufrufe ausserhalb der Kontingenttabelle (Tests, Vorschau, andere
+Umgebungen), andere Nutzung desselben Anbieterkontos, Preisänderungen,
+Steuern, Gebühren. Massgeblich bleibt die Abrechnung des Anbieters; das
+Budget von USD 10/Monat wird nur als Rahmen daneben angezeigt.
 
 ## Schutzmechanismen
 
@@ -42,8 +57,14 @@ Anbieterabrechnung).
   blockiert höchstens Laufzeit + 120 s.
 - **Grenzen je Lauf:** Laufzeit ≤ 900 s (Standard 300; geprüft zwischen
   Batches/Schritten), Index ≤ 40 Batches à 50 Jobs (Standard 10), Einreihung
-  ≤ 500 Kurse (Standard 200), Embeddings ≤ 3000 Abschnitte (Standard 500),
+  ≤ 500 Jobs (Standard 200), Embeddings ≤ 3000 Abschnitte (Standard 500),
   Bereinigung ≤ 5000 Zeilen (Standard 1000).
+- **Einreihungsgrenze gemeinsam:** `--max-enqueue` begrenzt *sämtliche* im
+  Lauf neu erzeugten Jobs zusammen – verwaiste (Vorrang 1), fehlende
+  (Vorrang 5) und Hash-Abweichungen der Stichprobe (Vorrang 3), in dieser
+  Reihenfolge. Das Restbudget sinkt um die tatsächlich eingefügten Zeilen
+  (bereits offene Jobs zählen nicht). Der Bericht nennt alle erzeugten Jobs
+  (`enqueued`) und ihre Aufteilung (`enqueuedBy`).
 - **Fehler:** Ein Indexfehler stoppt die folgenden Schritte; der Lauf wird
   als `failed` protokolliert und die Sperre freigegeben.
 - **Keine Nebenwirkungen des Cron-Endpunkts:** `api/cron-ai-search.js` wird
@@ -51,6 +72,40 @@ Anbieterabrechnung).
   noch Mailversand auf (statischer Test).
 - **CI:** führt den Runner nicht aus; keine kostenpflichtigen Aufrufe
   (statischer Test auf `.github/workflows/ci.yml`).
+
+## Grenzen der Laufsperre (abgelaufene Sperren, laufende Arbeitsschritte)
+
+Die Sperre ist eine **Frist**, kein dauerhaft gehaltener Lock. Daraus folgen
+bewusst akzeptierte Grenzen:
+
+- **Frist = Laufzeitgrenze + 120 s**, wird einmal beim Start gesetzt und
+  **nicht verlängert** (kein Heartbeat).
+- **Laufende Arbeitsschritte werden nicht abgebrochen.** Die Laufzeit wird
+  nur *zwischen* Batches und Schritten geprüft. Ein einzelner Batch (lange
+  Datenbankantwort, hängende Netzverbindung, Modellaufruf bis zu seinem
+  Timeout) kann die Grenze überschreiten; bereits gestartete Anfragen
+  laufen zu Ende.
+- **Abgelaufene Sperre bei noch laufendem Lauf:** Überschreitet ein Lauf
+  die Frist, gilt die Sperre als frei, und ein zweiter Lauf kann starten,
+  während der erste noch arbeitet. Folgen dann:
+  - Index: Jobs werden ohne Reservierung gelesen; beide Läufe können
+    dieselben Jobs verarbeiten. Die Übernahme ist atomar und
+    versionsgeprüft (kein inkonsistenter Index), aber Fehlversuche können
+    doppelt gezählt werden.
+  - Embeddings: Speichern nur bei unverändertem `content_hash` (kein
+    falscher Vektor), aber **Kosten können doppelt entstehen** (je Lauf
+    höchstens `--max-usd`).
+  - Bereinigung: löscht nur Abgelaufenes, Doppellauf ist unschädlich.
+- **Späte Freigabe:** Die Freigabe prüft Kennung und Halter, nicht die
+  Frist. Ein Lauf, der nach Fristablauf endet, trägt sein Ergebnis trotzdem
+  ein; im Protokoll können sich Läufe dann zeitlich überlappen.
+- **Absturz/Abbruch** (Prozess beendet, Job-Timeout): Die Zeile bleibt ohne
+  `finished_at`/`outcome`; die Sperre löst sich erst mit Fristablauf, ein
+  automatisches Markieren als `aborted` gibt es nicht.
+- **Konsequenz für den Betrieb:** Grenzen klein halten (Testablauf unten),
+  Läufe nicht parallel starten, nach jedem Lauf Protokoll und Trockenlauf
+  prüfen. Ein Heartbeat bzw. Abbruch laufender Anfragen wäre eine eigene
+  Erweiterung.
 
 ## Ausführbarer Trockenlauf
 
@@ -62,6 +117,13 @@ hinterlegt):
 npm run ops:ai-test            # lesbarer Bericht
 npm run ops:ai-test -- --json  # vollständiger Bericht als JSON
 ```
+
+Über die vorhandenen GitHub-Testzugänge: Label `ki-betrieb-trockenlauf` am
+Pull Request setzen → Workflow `.github/workflows/ai-ops-dryrun.yml`
+(ein Label = ein Lauf). Der Aufruf ist fest ohne Schalter, ohne
+Ausführungsbestätigung und ohne Modellschlüssel verdrahtet (statischer
+Test); schreibende Schritte sind damit ausgeschlossen. Nicht Teil der
+normalen CI.
 
 Liest: Kurs-IDs, Indexdokument-IDs, Zählungen in Jobs/Ergebnissen/Kontingent
 und Text der fehlenden/veralteten Abschnitte (für die Kostenschätzung).

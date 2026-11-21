@@ -50,6 +50,19 @@ export const OPS_PRICES = Object.freeze({
 });
 
 export const MONTHLY_BUDGET_USD = 10;
+
+/** Kennzeichnung der Kostenangaben (begrenzte Schätzung, siehe collectStatus). */
+export const ESTIMATE_NOTE = 'Begrenzte Schätzung (Preisannahmen 13.11.2026), nicht der vollständige Projektverbrauch und keine garantierte Monatsobergrenze; massgeblich ist die Abrechnung des Anbieters.';
+export const ESTIMATE_SCOPE = Object.freeze([
+  'Suchen dieses Monats laut Kontingenttabelle der TESTdatenbank × angenommener Höchstpreis je Suche',
+  'noch fehlende/veraltete Embeddings dieser TESTdatenbank (einmalig, ~4 Zeichen je Token)',
+]);
+export const ESTIMATE_EXCLUDES = Object.freeze([
+  'bereits ausgeführte Embedding-Läufe und Sonden dieses Monats',
+  'Modellaufrufe ausserhalb der Kontingenttabelle (z. B. Tests, Vorschau, andere Umgebungen)',
+  'andere Nutzung desselben Anbieterkontos',
+  'Preisänderungen, Steuern, Gebühren',
+]);
 export const STALE_PENDING_HOURS = 24;
 
 const PAGE = 1000;
@@ -272,12 +285,18 @@ export async function collectStatus(client, { embeddingVersion, now = new Date()
     },
     results: { stored: resultsStored, expired: resultsExpired },
     usage: { monthKey, searchesCompleted, searchesReleased },
+    // BEGRENZTE SCHÄTZUNG – kein vollständiger Projektverbrauch und keine
+    // garantierte Monatsobergrenze. Sie umfasst nur die beiden genannten
+    // Posten dieser Testdatenbank (siehe scope/excludes).
     estimate: {
-      note: 'Schätzung ohne Gewähr (Preisliste 13.11.2026); ersetzt nicht die Abrechnung des Anbieters.',
+      kind: 'partial-estimate',
+      note: ESTIMATE_NOTE,
+      scope: ESTIMATE_SCOPE,
+      excludes: ESTIMATE_EXCLUDES,
       embeddingTokens: embedEstimate.tokens,
       embeddingUsd: embedEstimate.usd,
-      searchesUsdMax: searchUsd,
-      monthTotalUsdMax: embedEstimate.usd + searchUsd,
+      searchesUsdEstimate: searchUsd,
+      partialTotalUsd: embedEstimate.usd + searchUsd,
       monthlyBudgetUsd: MONTHLY_BUDGET_USD,
     },
     alarms,
@@ -394,7 +413,7 @@ export async function runOps(client, options, deps) {
   const before = await collectStatus(client, { embeddingVersion: deps.embeddingVersion, now: clock() });
 
   const plan = {
-    index: { execute: options.execute.index, wouldEnqueueMax: Math.min(before.coverage.missingInIndex + before.coverage.orphanedInIndex, options.limits.maxEnqueue), pendingJobs: before.jobs.pending, maxJobs: options.limits.indexBatches * OPS_LIMITS.indexBatchSize },
+    index: { execute: options.execute.index, wouldEnqueueMax: Math.min(before.coverage.missingInIndex + before.coverage.orphanedInIndex, options.limits.maxEnqueue), maxEnqueueTotal: options.limits.maxEnqueue,pendingJobs: before.jobs.pending, maxJobs: options.limits.indexBatches * OPS_LIMITS.indexBatchSize },
     embed: { execute: options.execute.embed, chunks: Math.min(before.embeddings.needEmbedding, options.limits.embedChunks), estimateUsd: before.estimate.embeddingUsd },
     cleanup: { execute: options.execute.cleanup, expired: before.results.expired, maxDelete: options.limits.cleanupBatch },
   };
@@ -457,7 +476,7 @@ export async function runOps(client, options, deps) {
   const summary = {
     modes,
     durationMs,
-    index: steps.index ? { enqueued: steps.index.reconciliation?.enqueued, jobs: steps.index.worker?.fetchedJobs, failures: steps.index.worker?.failures } : undefined,
+    index: steps.index ? { enqueued: steps.index.reconciliation?.enqueued, enqueuedBy: steps.index.reconciliation?.enqueuedBy, jobs: steps.index.worker?.fetchedJobs, failures: steps.index.worker?.failures } : undefined,
     embed: steps.embed ? { embedded: steps.embed.embedded, actualUsd: steps.embed.actualUsd } : undefined,
     cleanup: steps.cleanup ? { deleted: steps.cleanup.deleted } : undefined,
     error: failure ? String(failure.message ?? failure).slice(0, 300) : undefined,

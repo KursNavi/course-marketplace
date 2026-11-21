@@ -14,6 +14,7 @@ import {
   OPS_LIMITS, OpsError,
 } from '../src/lib/aiSearch/ops.js';
 import { drainOutbox } from '../src/lib/aiSearch/worker.js';
+import { formatReport } from '../scripts/ai-search-ops.mjs';
 import { createFakeSupabase, filterValue } from './helpers/fakeSupabase.js';
 
 const REF = 'omoapbvfligjfznzivyu';
@@ -193,7 +194,8 @@ describe('Trockenlauf (Standard)', () => {
     expect(s.results).toEqual({ stored: 4, expired: 1 });
     expect(s.usage).toEqual({ monthKey: '2026-11', searchesCompleted: 3, searchesReleased: 1 });
     expect(s.estimate.embeddingTokens).toBe(200);
-    expect(s.estimate.searchesUsdMax).toBeCloseTo(4 * 0.003, 10);
+    expect(s.estimate.searchesUsdEstimate).toBeCloseTo(4 * 0.003, 10);
+    expect(s.estimate.partialTotalUsd).toBeCloseTo(4 * 0.003 + 200 / 1_000_000 * 0.02, 10);
     expect(s.estimate.monthlyBudgetUsd).toBe(10);
     expect(s.alarms.join(' ')).toMatch(/fehlen im Index/);
     expect(s.alarms.join(' ')).toMatch(/ohne veröffentlichten Kurs/);
@@ -210,6 +212,24 @@ describe('Trockenlauf (Standard)', () => {
 
   it('Kostenschätzung: 4 Zeichen je Token, USD 0.02 je Mio.', () => {
     expect(estimateEmbeddingUsd(4_000_000)).toEqual({ tokens: 1_000_000, usd: 0.02 });
+  });
+
+  it('Kosten als begrenzte Schätzung gekennzeichnet – kein Gesamtverbrauch, keine garantierte Obergrenze', async () => {
+    const { client } = makeClient(fixture());
+    const s = await collectStatus(client, { embeddingVersion: VERSION, now: NOW });
+    expect(s.estimate.kind).toBe('partial-estimate');
+    expect(s.estimate.note).toMatch(/Begrenzte Schätzung/);
+    expect(s.estimate.note).toMatch(/nicht der vollständige Projektverbrauch und keine garantierte Monatsobergrenze/);
+    expect(s.estimate.excludes.length).toBeGreaterThanOrEqual(3);
+    expect(s.estimate).not.toHaveProperty('monthTotalUsdMax');
+    expect(s.estimate).not.toHaveProperty('searchesUsdMax');
+
+    const report = await runOps(client, parse([]).options, { embeddingVersion: VERSION, holder: 'h', clock: () => NOW });
+    const text = formatReport(report);
+    expect(text).toMatch(/BEGRENZTE SCHÄTZUNG/);
+    expect(text).toMatch(/Nicht enthalten:/);
+    expect(text).toMatch(/Teilsumme dieser zwei Posten/);
+    expect(text).not.toMatch(/Summe höchstens|höchstens USD|Gesamtverbrauch/);
   });
 });
 
@@ -383,6 +403,23 @@ describe('Entwurf 20261121160000 (Laufsperre): statisch, nicht angewendet', asyn
     expect((sql.match(/AS \$\$/g) ?? []).length).toBe(2);
     expect(sql).not.toMatch(/@@MIGRATION@@|@@ROLLBACK@@/);
   });
+
+  it('Regression: Freigabe läuft als eigene Anweisung, Wirkung wird erst danach geprüft', () => {
+    const testSql = readFileSync(path.join(ROOT, 'supabase/drafts/tests/20261121160000_ai_search_ops_lease_test.sql'), 'utf8');
+    const lines = testSql.split('\n');
+    // Jeder Aufruf der Freigabe (ausser Rechte-/Existenzprüfung über den
+    // Signaturtext) steht allein in einer Zuweisung an v_bool.
+    const calls = lines.filter((l) => /ai_search_ops_lease_release\(v_/.test(l));
+    expect(calls).toHaveLength(3);
+    for (const line of calls) {
+      expect(line.trim()).toMatch(/^v_bool := ai_search_ops_lease_release\(v_id, h[12], '[^']*', '[^']*'::jsonb\);$/);
+    }
+    // Altes Muster (Funktion und Prüfung derselben Zeile in EINER Bedingung) ist weg.
+    expect(testSql).not.toMatch(/IF\s+(NOT\s+)?ai_search_ops_lease_release\(/);
+    expect(testSql).not.toMatch(/(OR|AND)\s+(NOT\s+)?ai_search_ops_lease_release\(/);
+    // Nach der eigenen Freigabe wird finished_at ausdrücklich geprüft.
+    expect(testSql).toMatch(/v_bool IS DISTINCT FROM TRUE\s+OR \(SELECT finished_at FROM ai_search_ops_runs WHERE id = v_id\) IS NULL/);
+  });
 });
 
 describe('Statisch: keine Nebenwirkungen des Cron-Endpunkts, keine Kosten in der CI', () => {
@@ -401,6 +438,18 @@ describe('Statisch: keine Nebenwirkungen des Cron-Endpunkts, keine Kosten in der
 
   it('CI ruft den Runner nicht auf (keine Betriebsläufe, keine kostenpflichtigen Aufrufe)', () => {
     expect(ci).not.toMatch(/ops:ai-test|ai-search-ops\.mjs|--execute-embed|embed:ai-test/);
+  });
+
+  it('Trockenlauf-Workflow: nur per Label, Aufruf ohne Schalter, ohne Bestätigung und ohne Modellschlüssel', () => {
+    const wf = readFileSync(path.join(ROOT, '.github/workflows/ai-ops-dryrun.yml'), 'utf8');
+    expect(wf).toMatch(/types: \[labeled\]/);
+    expect(wf).toMatch(/if: github\.event\.label\.name == 'ki-betrieb-trockenlauf'/);
+    expect(wf).not.toMatch(/^\s*push:|schedule:|workflow_run:/m);
+    expect(wf).toMatch(/^\s*run: npm run ops:ai-test\s*$/m);
+    const runLines = wf.split('\n').filter((l) => /ops:ai-test|ai-search-ops/.test(l) && /run:/.test(l));
+    expect(runLines).toHaveLength(1);
+    expect(wf).not.toMatch(/--execute|--max-usd|AI_OPS_CONFIRM:|OPENAI|AI_SEARCH_MODELS_ENABLED/);
+    expect(wf).toMatch(/permissions:\s*\n\s*contents: read/);
   });
 
   it('Runner nur gegen die TESTumgebung (strikter URL-Parser der DB-Tests)', () => {

@@ -183,6 +183,9 @@ describe('runReconciliation', () => {
 
     expect(report.hashSample).toEqual({ checked: 1, mismatches: 1 });
     expect(report.alarms.some((a) => a.includes('Hash-Stichprobe'))).toBe(true);
+    // Bericht zählt ALLE tatsächlich erzeugten Jobs, inkl. Hash-Abweichung.
+    expect(report.enqueuedBy).toEqual({ orphaned: 1, missing: 1, hashMismatch: 1 });
+    expect(report.enqueued).toBe(3);
     const inserts = calls.filter((c) => c.table === 'ai_search_jobs' && c.op === 'insert');
     const mismatchInsert = inserts.find((c) => c.payload[0]?.priority === 3);
     expect(mismatchInsert.payload[0]).toMatchObject({ course_id: 2, reason: 'reconciliation' });
@@ -236,5 +239,46 @@ describe('runReconciliation', () => {
     expect(report.alarms.some((a) => a.includes('gekappt'))).toBe(true);
     const insert = findCall(calls, (c) => c.table === 'ai_search_jobs' && c.op === 'insert');
     expect(insert.payload).toHaveLength(2);
+  });
+
+  const allInserted = (calls) => calls
+    .filter((c) => c.table === 'ai_search_jobs' && c.op === 'insert')
+    .flatMap((c) => c.payload);
+
+  it('maxEnqueue gilt gemeinsam: Hash-Abweichung wird nicht über die Grenze hinaus eingereiht', async () => {
+    const { client, calls } = createFakeSupabase(makeScenario({ sampleSize: 1, docHash: 'veralteter-hash' }));
+    const report = await runReconciliation(client, { sampleSize: 1, random: () => 0, maxEnqueue: 2 });
+
+    expect(report.hashSample).toEqual({ checked: 1, mismatches: 1 });
+    expect(allInserted(calls)).toHaveLength(2);
+    expect(allInserted(calls).some((r) => r.priority === 3)).toBe(false);
+    expect(report.enqueuedBy).toEqual({ orphaned: 1, missing: 1, hashMismatch: 0 });
+    expect(report.enqueued).toBe(2);
+    expect(report.truncated).toBe(true);
+    expect(report.alarms.some((a) => a.includes('gekappt bei 2'))).toBe(true);
+  });
+
+  it('maxEnqueue gilt gemeinsam: Restbudget nach Verwaisten reicht nur für einen weiteren Job', async () => {
+    const { client, calls } = createFakeSupabase(makeScenario({ sampleSize: 1, docHash: 'veralteter-hash' }));
+    const report = await runReconciliation(client, { sampleSize: 1, random: () => 0, maxEnqueue: 1 });
+    expect(allInserted(calls)).toEqual([{ course_id: '4', reason: 'reconciliation', priority: 1 }]);
+    expect(report.enqueued).toBe(1);
+    expect(report.truncated).toBe(true);
+  });
+
+  it('bereits offene Jobs verbrauchen kein Budget: Hash-Abweichung rückt nach', async () => {
+    const { client, calls } = createFakeSupabase(makeScenario({ pendingForMissing: true, sampleSize: 1, docHash: 'veralteter-hash' }));
+    const report = await runReconciliation(client, { sampleSize: 1, random: () => 0, maxEnqueue: 2 });
+    expect(report.enqueuedBy).toEqual({ orphaned: 1, missing: 0, hashMismatch: 1 });
+    expect(allInserted(calls)).toHaveLength(2);
+    expect(report.truncated).toBe(false);
+  });
+
+  it('maxEnqueue 0: keinerlei Einreihung, auch nicht für Hash-Abweichungen', async () => {
+    const { client, calls } = createFakeSupabase(makeScenario({ sampleSize: 1, docHash: 'veralteter-hash' }));
+    const report = await runReconciliation(client, { sampleSize: 1, random: () => 0, maxEnqueue: 0 });
+    expect(allInserted(calls)).toEqual([]);
+    expect(report.enqueued).toBe(0);
+    expect(report.truncated).toBe(true);
   });
 });

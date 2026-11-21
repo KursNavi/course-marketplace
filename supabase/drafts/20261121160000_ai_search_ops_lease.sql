@@ -15,6 +15,10 @@
 --     Sperre automatisch frei, ohne manuelles Aufräumen.
 --   - ai_search_ops_lease_release: beendet NUR den eigenen Lauf (Kennung +
 --     Halter) und speichert Ergebnis und Zusammenfassung.
+-- GRENZEN: Die Frist wird nicht verlängert (kein Heartbeat). Überschreitet
+--   ein noch arbeitender Lauf seine Frist, kann ein zweiter starten; die
+--   Freigabe prüft die Frist nicht. Ein abgestürzter Lauf bleibt ohne
+--   outcome. Details: docs/ai-search/betriebsrunner.md.
 -- Nur die Serverrolle darf die Funktionen ausführen. Bestehende Daten
 -- bleiben unverändert.
 -- =====================================================================

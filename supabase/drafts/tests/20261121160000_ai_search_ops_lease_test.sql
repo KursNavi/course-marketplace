@@ -39,18 +39,25 @@ BEGIN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL L2: zweiter Lauf trotz aktiver Sperre';
     END IF;
     v_checks := v_checks + 1;
-    IF ai_search_ops_lease_release(v_id, h2, 'ok', '{}'::jsonb)
+    -- Freigabe jeweils als EIGENE Anweisung ausführen und die Wirkung erst
+    -- danach prüfen: in derselben Anweisung sähe die Unterabfrage den Stand
+    -- vor der Funktion (Snapshot), die Prüfung wäre wirkungslos.
+    v_bool := ai_search_ops_lease_release(v_id, h2, 'ok', '{}'::jsonb);
+    IF v_bool IS DISTINCT FROM FALSE
        OR (SELECT finished_at FROM ai_search_ops_runs WHERE id = v_id) IS NOT NULL THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL L3: fremder Halter beendet Lauf';
     END IF;
     v_checks := v_checks + 1;
-    IF NOT ai_search_ops_lease_release(v_id, h1, 'ok', '{"jobs":3}'::jsonb)
+    v_bool := ai_search_ops_lease_release(v_id, h1, 'ok', '{"jobs":3}'::jsonb);
+    IF v_bool IS DISTINCT FROM TRUE
+       OR (SELECT finished_at FROM ai_search_ops_runs WHERE id = v_id) IS NULL
        OR (SELECT outcome FROM ai_search_ops_runs WHERE id = v_id) IS DISTINCT FROM 'ok'
        OR (SELECT summary->>'jobs' FROM ai_search_ops_runs WHERE id = v_id) IS DISTINCT FROM '3' THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL L4: eigene Freigabe';
     END IF;
     v_checks := v_checks + 1;
-    IF ai_search_ops_lease_release(v_id, h1, 'ok', '{}'::jsonb) THEN
+    v_bool := ai_search_ops_lease_release(v_id, h1, 'ok', '{}'::jsonb);
+    IF v_bool IS DISTINCT FROM FALSE THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL L5: doppelte Freigabe';
     END IF;
     v_checks := v_checks + 1;
