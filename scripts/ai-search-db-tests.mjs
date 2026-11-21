@@ -664,7 +664,7 @@ async function main() {
       }
     }
 
-    // --- 11. Laufsperre v2 (nur wenn Entwurf 20261122090000 angewendet) -----
+    // --- 11. Laufsperre v2 (nur wenn Migration 20261121225750 angewendet) -----
     // Echte Gleichzeitigkeit und Schreibschutz über PostgREST. Eigene Daten:
     // eigene Laufzeilen (werden gelöscht) und Jobs für eigene synthetische
     // Kurs-IDs (createdJobCourseIds, werden gelöscht). Ist gerade ein echter
@@ -682,7 +682,7 @@ async function main() {
       failures += 1;
       console.error('FEHLER: AI_DB_TESTS_REQUIRE_OPS_LEASE=1, aber die Laufsperre v2 fehlt – Abschnitt 11 würde übersprungen.');
     }
-    console.log(`11. Laufsperre v2 (Entwurf 20261122090000): ${opsLeaseAvailable ? 'angewendet' : 'nicht angewendet – übersprungen'}`);
+    console.log(`11. Laufsperre v2 (Migration 20261121225750): ${opsLeaseAvailable ? 'angewendet' : 'nicht angewendet – übersprungen'}`);
     if (opsLeaseAvailable) {
       const acquire = (holder, modes = ['index']) => service.rpc('ai_search_ops_lease_acquire', { p_holder: holder, p_modes: modes, p_lease_seconds: 60, p_max_seconds: 300 });
       const renew = (runId, holder) => service.rpc('ai_search_ops_lease_renew', { p_run_id: runId, p_holder: holder, p_lease_seconds: 60 });

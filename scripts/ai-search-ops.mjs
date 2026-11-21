@@ -10,7 +10,7 @@
  *
  * Schreibende Schritte – jeder mit eigenem Schalter, alle zusätzlich mit
  * AI_OPS_CONFIRM=omoapbvfligjfznzivyu und nur unter Laufsperre v2
- * (Entwurf 20261122090000_ai_search_ops_lease_v2; fehlt sie → gesperrt):
+ * (Migration 20261121225750_ai_search_ops_lease_v2; fehlt sie → gesperrt):
  *   --execute-index    Abgleich + Outbox-Worker (ohne Kontingent-Cleanup)
  *   --execute-embed    fehlende/veraltete Embeddings (KOSTENPFLICHTIG);
  *                      zusätzlich --max-usd=<≤ 1>, AI_SEARCH_MODELS_ENABLED=1,

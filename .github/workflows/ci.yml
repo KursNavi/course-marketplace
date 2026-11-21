@@ -72,6 +72,9 @@ jobs:
           # Migration „ai_search_result_store_and_guard“ ist auf TEST angewendet:
           # Abschnitt 10 (Ergebnisspeicher/Bremse) muss laufen, Überspringen = Fehler.
           AI_DB_TESTS_REQUIRE_RESULT_STORE: '1'
+          # Laufsperre v2 (Migration 20261121225750) ist auf TEST angewendet:
+          # Abschnitt 11 muss laufen, Überspringen = Fehler.
+          AI_DB_TESTS_REQUIRE_OPS_LEASE: '1'
         run: npm run test:ai-db
 
       - name: E2E (app — hybrid)

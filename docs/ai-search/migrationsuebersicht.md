@@ -17,8 +17,9 @@ Leerraum und Semikolons, per md5 verglichen.
 | `20261115200229_ai_search_worker_apply.sql` (bis 21.11.2026 `20261115190000`) | `20261115200229 ai_search_worker_apply` | ja (byte-gleich umbenannt) | dito |
 | `20261120205856_ai_search_keep_embeddings_skip_noop_jobs.sql` | `20261120205856 …` (gleiche Version) | ja (byte-genau, Test) | dito |
 | `20261121122101_ai_search_result_store_and_guard.sql` (vormals Entwurf `20261121090000`, v2) | `20261121122101 ai_search_result_store_and_guard` (angewendet 21.11.2026, 13:21 MEZ) | ja (byte-genau md5 `c8061652…`, normalisiert `a50447e3…` = verbucht; Test) | dito |
+| `20261121225750_ai_search_ops_lease_v2.sql` (vormals Entwurf `20261122090000`) | `20261121225750 ai_search_ops_lease_v2` (angewendet 21.11.2026, 23:57 MEZ, nach Rollback-Test KNT00 28/28) | ja (byte-genau md5 `aa555cb0…`, normalisiert `14b6be9f…` = verbucht) | dito |
 
-Zur letzten Migration: Abschluss + Speicherung in einer Transaktion,
+Zu 20261121122101: Abschluss + Speicherung in einer Transaktion,
 Wiederabruf 24 h, Löschablauf (nicht eingeplant) und Kontolöschung, atomare
 Bremse in `ai_search_quota_reserve`. Vor der Anwendung Rollback-Test v2
 bestanden (KNT00 31/31); Details `testablauf-20261121090000.md`. Der
@@ -27,14 +28,14 @@ unverändert (Inhalt = verbuchte Fassung).
 
 Rückwege angewendeter Migrationen: `supabase/rollback/ai_search_down.sql`
 (Migrationen 1–4), `supabase/rollback/20261120205856_…_down.sql` und
-`supabase/rollback/20261121122101_…_down.sql` (nicht ausgeführt).
+`supabase/rollback/20261121122101_…_down.sql`, `supabase/rollback/20261121225750_…_down.sql` (nicht ausgeführt).
 
-### Offene Entwürfe Betrieb (Stand 22.11.2026, NICHT angewendet)
+### Betrieb: Laufsperre angewendet, Zeitplan offen (Stand 22.11.2026)
 
-| Entwurf (`supabase/drafts/`) | Inhalt | Rückweg | Rollback-Test |
+| Datei | Inhalt | Rückweg | Rollback-Test |
 |---|---|---|---|
-| `20261122090000_ai_search_ops_lease_v2.sql` | Laufsperre mit Besitz, Verlängerung, Abbruch, Übernahme, Schreibschutz (`ai_search_ops_fenced_*`), Laufprotokoll, Löschfunktion `ai_search_ops_cleanup_tick`. Nur neue Objekte. | `…_v2_down.sql` | `tests/…_v2_test.sql`, 28 Prüfungen (`node scripts/ai-search-draft-sql-test.mjs ops_lease_v2`), **noch nicht ausgeführt** |
-| `20261122090100_ai_search_ops_cleanup_schedule.sql` | **Schalter**: pg_cron-Job `ai-search-ops-cleanup`, stündlich Minute 7 | `…_schedule_down.sql` | kein eigener (nur ein `cron.schedule`); Wirkung im Testzyklus geprüft |
+| angewendet → `supabase/migrations/20261121225750_ai_search_ops_lease_v2.sql` (vormals Entwurf `20261122090000`) | Laufsperre mit Besitz, Verlängerung, Abbruch, Übernahme, Schreibschutz (`ai_search_ops_fenced_*`), Laufprotokoll, Löschfunktion `ai_search_ops_cleanup_tick`. Nur neue Objekte. | `supabase/rollback/20261121225750_…_down.sql` (nicht ausgeführt) | `supabase/drafts/tests/20261121225750_…_test.sql`: **KNT00 28/28** am 21.11.2026 (vor Anwendung) |
+| `20261122090100_ai_search_ops_cleanup_schedule.sql` | **Schalter**: pg_cron-Job `ai-search-ops-cleanup`, stündlich Minute 7 | `…_schedule_down.sql` | kein eigener (nur ein `cron.schedule`); Anwendung (T7) noch nicht freigegeben |
 
 Der Entwurf `20261121160000_ai_search_ops_lease` (Rollback-Test 12/12 am
 21.11.2026) ist **ersetzt und entfernt**; er wurde nie angewendet. Sein

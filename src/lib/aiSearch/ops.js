@@ -14,7 +14,7 @@
  *
  * Standard ist ein LESENDER Trockenlauf. Jeder schreibende Schritt braucht
  * seinen eigenen Ausführungsschalter (parseOpsArgs). Schreibende Läufe laufen
- * unter der Laufsperre v2 (Entwurf 20261122090000_ai_search_ops_lease_v2):
+ * unter der Laufsperre v2 (Migration 20261121225750_ai_search_ops_lease_v2):
  * Besitz, Verlängerung vor jedem Schritt, Abbruch, Abschluss – und jede
  * Schreibfunktion prüft die Sperre selbst in der Datenbank (Schreibschutz).
  * Fehlt die Sperre, sind schreibende Modi gesperrt. Kein Mailversand, kein
@@ -556,7 +556,7 @@ export async function acquireLease(client, { holder, modes, leaseSeconds, maxSec
   });
   if (error) {
     if (isMissingFunction(error)) {
-      throw new OpsError('Laufsperre fehlt (Entwurf 20261122090000_ai_search_ops_lease_v2 nicht angewendet) – schreibende Schritte gesperrt.', 2);
+      throw new OpsError('Laufsperre fehlt (Migration 20261121225750_ai_search_ops_lease_v2 nicht angewendet) – schreibende Schritte gesperrt.', 2);
     }
     // Rechte-/Transportfehler NICHT als „nicht vorhanden“ werten.
     throw new OpsError(`Laufsperre nicht prüfbar: ${error.code ?? '-'} ${error.message}`, 1);

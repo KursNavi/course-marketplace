@@ -703,19 +703,20 @@ describe('drainOutbox: Umfangsgrenze maxBatches', () => {
   });
 });
 
-describe('Entwürfe 20261122090000/090100 (Laufsperre v2, Zeitplan): statisch, nicht angewendet', async () => {
+describe('Laufsperre v2 (Migration 20261121225750) und Zeitplan-Entwurf 090100: statisch', async () => {
   const { readdirSync, existsSync } = await import('node:fs');
   const { composeDraftTest } = await import('../scripts/ai-search-draft-sql-test.mjs');
   const ROOT = path.resolve(__dirname, '..');
-  const up = readFileSync(path.join(ROOT, 'supabase/drafts/20261122090000_ai_search_ops_lease_v2.sql'), 'utf8');
-  const down = readFileSync(path.join(ROOT, 'supabase/drafts/20261122090000_ai_search_ops_lease_v2_down.sql'), 'utf8');
+  const up = readFileSync(path.join(ROOT, 'supabase/migrations/20261121225750_ai_search_ops_lease_v2.sql'), 'utf8');
+  const down = readFileSync(path.join(ROOT, 'supabase/rollback/20261121225750_ai_search_ops_lease_v2_down.sql'), 'utf8');
   const schedule = readFileSync(path.join(ROOT, 'supabase/drafts/20261122090100_ai_search_ops_cleanup_schedule.sql'), 'utf8');
   const scheduleDown = readFileSync(path.join(ROOT, 'supabase/drafts/20261122090100_ai_search_ops_cleanup_schedule_down.sql'), 'utf8');
 
-  it('liegen nicht im Migrationsbestand; überholter Entwurf v1 ist entfernt', () => {
+  it('Laufsperre v2 genau einmal im Migrationsbestand (verbuchte Version), Zeitplan weiter nur Entwurf; v1 entfernt', () => {
     const migrations = readdirSync(path.join(ROOT, 'supabase/migrations'));
-    expect(migrations.some((f) => /ops_lease|ops_cleanup/.test(f))).toBe(false);
-    expect(up).toMatch(/ENTWURF – NICHT ANWENDEN/);
+    expect(migrations.filter((f) => /ops_lease/.test(f))).toEqual(['20261121225750_ai_search_ops_lease_v2.sql']);
+    expect(migrations.some((f) => /ops_cleanup/.test(f))).toBe(false);
+    expect(readdirSync(path.join(ROOT, 'supabase/drafts')).some((f) => /20261122090000/.test(f))).toBe(false);
     expect(schedule).toMatch(/ENTWURF – NICHT ANWENDEN/);
     expect(existsSync(path.join(ROOT, 'supabase/drafts/20261121160000_ai_search_ops_lease.sql'))).toBe(false);
   });
@@ -783,7 +784,7 @@ describe('Entwürfe 20261122090000/090100 (Laufsperre v2, Zeitplan): statisch, n
   });
 
   it('Rollback-Test v2: Abschluss/Verlängerung jeweils als eigene Anweisung, Wirkung danach geprüft', () => {
-    const testSql = readFileSync(path.join(ROOT, 'supabase/drafts/tests/20261122090000_ai_search_ops_lease_v2_test.sql'), 'utf8');
+    const testSql = readFileSync(path.join(ROOT, 'supabase/drafts/tests/20261121225750_ai_search_ops_lease_v2_test.sql'), 'utf8');
     for (const fn of ['ai_search_ops_lease_release', 'ai_search_ops_lease_renew']) {
       expect(testSql).not.toMatch(new RegExp(`(IF|OR|AND)\\s+(NOT\\s+)?${fn}\\(`));
       const lines = testSql.split('\n').filter((l) => new RegExp(`${fn}\\(v_`).test(l));

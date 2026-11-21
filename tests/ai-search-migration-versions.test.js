@@ -21,6 +21,8 @@ const EXPECTED = [
   ['20261115200229_ai_search_worker_apply.sql', '931f9bd0e38fc623e03e0d7ab88a36c4'],
   ['20261120205856_ai_search_keep_embeddings_skip_noop_jobs.sql', '10e563be0260d4b7fa734673dee1e726'],
   ['20261121122101_ai_search_result_store_and_guard.sql', 'c8061652db3ecdd0439d30165416bc8d'],
+  // Laufsperre v2, angewendet 21.11.2026 22:57 UTC (vormals Entwurf 20261122090000).
+  ['20261121225750_ai_search_ops_lease_v2.sql', 'aa555cb0c7460e67357bec2cd13d80d8'],
 ];
 
 const md5 = (file) => createHash('md5')
@@ -28,7 +30,7 @@ const md5 = (file) => createHash('md5')
   .digest('hex');
 
 describe('KI-Migrationen: Dateiversion = TEST-Historie', () => {
-  it('genau diese sechs KI-Dateien, in Anwendungsreihenfolge', () => {
+  it('genau diese sieben KI-Dateien, in Anwendungsreihenfolge', () => {
     const files = readdirSync(DIR).filter((f) => /_ai_search_/.test(f)).sort();
     expect(files).toEqual(EXPECTED.map(([f]) => f));
   });

@@ -31,7 +31,7 @@ Paket 1. Details: `betriebsrunner.md`, `migrationsuebersicht.md`.
 
 | Entwurf | Zweck | Rückweg | Test |
 |---|---|---|---|
-| `20261122090000_ai_search_ops_lease_v2` | Sperre v2, Schreibschutz, Laufprotokoll, Löschfunktion (nur neue Objekte) | `…_v2_down.sql` (entfernt alles Neue, Protokoll geht verloren) | Rollback-Test 28 Prüfungen, neu, nicht ausgeführt |
+| `20261121225750_ai_search_ops_lease_v2` | Sperre v2, Schreibschutz, Laufprotokoll, Löschfunktion (nur neue Objekte) | `…_v2_down.sql` (entfernt alles Neue, Protokoll geht verloren) | Rollback-Test 28 Prüfungen, neu, nicht ausgeführt |
 | `20261122090100_ai_search_ops_cleanup_schedule` | Schalter: stündlicher Löschjob | `…_schedule_down.sql` (entfernt nur diesen Job; pg_cron nur, wenn sonst kein Job) | Wirkung in T7 |
 
 Der frühere Entwurf `20261121160000` (12/12 bestanden) ist ersetzt und wurde
@@ -58,7 +58,7 @@ Stopp, tatsächlichen Zustand berichten, keine automatische Wiederholung und
 keine automatische Rückmigration.
 
 **Rückweg:** zuerst `20261122090100_…_down.sql` (Löschjob aus), dann
-`20261122090000_…_v2_down.sql` (Sperre, Schreibschutz, Protokoll entfernt;
+`20261121225750_…_v2_down.sql` (Sperre, Schreibschutz, Protokoll entfernt;
 Runner schreibend wieder gesperrt). Die in T6 verarbeiteten Indexänderungen
 sind reguläre Aktualisierungen und werden nicht zurückgedreht.
 

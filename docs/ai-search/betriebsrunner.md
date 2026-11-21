@@ -4,7 +4,7 @@ Stand 22.11.2026. **Noch kein schreibender Betriebszyklus ausgeführt, kein
 Zeitplan aktiv, kein Produktionszugriff.** Code: `src/lib/aiSearch/ops.js`,
 `src/lib/aiSearch/opsLease.js`, Aufruf `scripts/ai-search-ops.mjs`
 (`npm run ops:ai-test`), Tests `tests/ai-search-ops.test.js`,
-Datenbankentwürfe `supabase/drafts/20261122090000_*` und `…090100_*`.
+Datenbankentwürfe `supabase/migrations/20261121225750_*` und `…090100_*`.
 
 ## 1. Ein gemeinsamer Betriebsablauf
 
