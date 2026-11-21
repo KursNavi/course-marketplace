@@ -35,7 +35,7 @@ import { runAiSearch } from '../src/lib/aiSearch/searchService.js';
 import { normalizeQuery, validateQuery } from '../src/lib/aiSearch/queryParse.js';
 import { QUOTA_LIMIT, quotaResetDate } from '../src/lib/aiSearch/quota.js';
 import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openaiGateway.js';
-import { GUARD_LIMITS, evaluateGuard, storablePayload, isMissingFunction } from '../src/lib/aiSearch/abuseGuard.js';
+import { GUARD_LIMITS, evaluateGuard, storablePayload, isMissingFunction, isDefinitiveDbError } from '../src/lib/aiSearch/abuseGuard.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -74,17 +74,51 @@ const GUARD_RESERVE_CODES = new Set(['too_many_parallel', 'rate_limited', 'coold
  *    Das ist KEIN Speicherfehler, sondern der dokumentierte Altzustand.
  */
 async function finalizeAndStore(service, requestId, userId, queryHash, payload) {
-  const { data, error } = await service.rpc('ai_search_quota_finalize_and_store', {
-    p_request_id: requestId, p_user_id: userId, p_query_hash: queryHash, p_payload: payload, p_limit: QUOTA_LIMIT,
-  });
+  let data;
+  let error;
+  try {
+    ({ data, error } = await service.rpc('ai_search_quota_finalize_and_store', {
+      p_request_id: requestId, p_user_id: userId, p_query_hash: queryHash, p_payload: payload, p_limit: QUOTA_LIMIT,
+    }));
+  } catch (thrown) {
+    error = { message: String(thrown?.message ?? thrown), code: '' };
+  }
   if (!error) return { finalized: data, stored: data === 'completed' };
   if (!isMissingFunction(error)) {
+    if (!isDefinitiveDbError(error)) {
+      // Zeitüberschreitung/verlorene Antwort: die Datenbank kann committed haben.
+      console.error('ai-search: Abschluss/Speicherung – Ausgang unklar:', error.message);
+      return { finalized: 'outcome_unknown', stored: false };
+    }
     console.error('ai-search: Abschluss/Speicherung fehlgeschlagen:', error.message);
     return { finalized: 'store_failed', stored: false };
   }
   const legacy = await service.rpc('ai_search_quota_finalize', { p_request_id: requestId, p_limit: QUOTA_LIMIT });
   if (legacy.error) throw new Error(`Abschluss: ${legacy.error.message}`);
   return { finalized: legacy.data, stored: false };
+}
+
+/**
+ * Klärt einen unklaren Abschluss nutzergebunden und idempotent:
+ *  1. Freigabe versuchen – wirkt nur, solange die Zeile noch 'reserved' ist
+ *     (Zeilensperre serialisiert mit einem eventuell noch laufenden
+ *     Abschluss: entweder dieser gewinnt → 'completed', oder die Freigabe →
+ *     der Abschluss findet danach 'not_reserved' und speichert nichts).
+ *  2. Zustand der EIGENEN Zeile lesen: 'completed' = gezählt und gespeichert,
+ *     'released' = endgültig nicht gezählt. Alles andere bleibt unklar.
+ * @returns {Promise<'completed'|'released'|'unknown'>}
+ */
+async function resolveUnknownOutcome(service, requestId, userId) {
+  try {
+    const release = await service.rpc('ai_search_quota_release', { p_request_id: requestId });
+    if (release.error && !isDefinitiveDbError(release.error)) return 'unknown';
+    const { data, error } = await service.from('ai_search_usage')
+      .select('state').eq('request_id', requestId).eq('user_id', userId).maybeSingle();
+    if (error || !data) return 'unknown';
+    return data.state === 'completed' || data.state === 'released' ? data.state : 'unknown';
+  } catch {
+    return 'unknown';
+  }
 }
 
 /** Holt ein gespeichertes Ergebnis desselben Kontos/Suchinhalts, sonst null. */
@@ -251,8 +285,26 @@ export default async function handler(req, res) {
     // (ai_search_quota_finalize_and_store): nur 'completed' gibt das
     // Ergebnis frei, und dann ist es auch gespeichert.
     const finalizeStarted = Date.now();
-    const { finalized, stored } = await finalizeAndStore(service, body.requestId, user.id, queryHash, storablePayload(result));
+    let { finalized, stored } = await finalizeAndStore(service, body.requestId, user.id, queryHash, storablePayload(result));
     serverTimings.finalize = Date.now() - finalizeStarted;
+    if (finalized === 'outcome_unknown') {
+      // Kein vorschnelles „nicht gezählt“: Ausgang nutzergebunden klären.
+      const resolved = await resolveUnknownOutcome(service, body.requestId, user.id);
+      if (resolved === 'completed') {
+        // Commit war erfolgreich, nur die Antwort ging verloren: gezählt und
+        // gespeichert – das vorliegende Ergebnis ist genau das gespeicherte.
+        finalized = 'completed';
+        stored = true;
+      } else if (resolved === 'released') {
+        finalized = 'store_failed_released';
+      } else {
+        // Weiterhin unklar: Kennung behalten, keine Aussage über die Zählung.
+        return res.status(503).json({ error: 'outcome_unknown' });
+      }
+    }
+    if (finalized === 'store_failed_released') {
+      return res.status(500).json({ error: 'store_failed', quota: await quotaStatus(service, user.id) });
+    }
     if (finalized === 'store_failed') {
       // Speichern fehlgeschlagen → Transaktion zurückgerollt, Reservierung
       // offen: freigeben, damit keine verbrauchte Suche ohne Ergebnis bleibt.

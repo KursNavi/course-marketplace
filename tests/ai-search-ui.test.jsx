@@ -133,6 +133,21 @@ describe('KI-Suche: unterbrochene Suche nach Neuladen (Plan 14, Schritt 3)', () 
     expect(window.sessionStorage.getItem('kn_ai_search_pending')).toBeNull();
   });
 
+  it('unklarer Ausgang (503 outcome_unknown): Kennung bleibt, keine Behauptung „nicht gezählt“', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url, init = {}) => (init.method === 'POST'
+      ? { ok: false, status: 503, json: async () => ({ error: 'outcome_unknown' }) }
+      : { ok: true, json: async () => ({ quota: { remaining: 2, limit: 10 } }) })));
+    const AiSearchView = await loadView();
+    await act(async () => { render(<AiSearchView user={USER} setView={() => {}} />); });
+    fireEvent.change(screen.getByLabelText('Deine Beschreibung'), { target: { value: 'Fotografie lernen' } });
+    await act(async () => { fireEvent.submit(screen.getByTestId('ai-submit').closest('form')); await new Promise((r) => setTimeout(r, 0)); });
+    const alert = screen.getByRole('alert').textContent;
+    expect(alert).toMatch(/unklar/);
+    expect(alert).not.toMatch(/nicht gezählt|nicht belastet|nichts verbraucht/);
+    expect(JSON.parse(window.sessionStorage.getItem('kn_ai_search_pending'))).toHaveProperty('requestId');
+    expect(screen.getByRole('button', { name: 'Erneut versuchen' })).toBeTruthy();
+  });
+
   it('fremdes Konto sieht den unterbrochenen Vorgang nicht; Abmelden verwirft ihn', async () => {
     window.sessionStorage.setItem('kn_ai_search_pending', JSON.stringify({ userId: 'jemand-anders', requestId: RID, payload: { query: 'x y z', musts: {} } }));
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ quota: { remaining: 2, limit: 10 } }) })));

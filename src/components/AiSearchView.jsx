@@ -28,7 +28,7 @@ const RESULT_KEY = 'kn_ai_search_last_result';
 // Ergebnis ohne zweite Belastung abgerufen werden kann (Plan 14, Schritt 3).
 const PENDING_KEY = 'kn_ai_search_pending';
 // Vorübergehende Antworten: Wiederholungskennung bleibt erhalten.
-const RETRYABLE_ERRORS = new Set(['network', 'in_progress', 'too_many_parallel', 'rate_limited', 'cooldown', 'guard_unavailable']);
+const RETRYABLE_ERRORS = new Set(['network', 'in_progress', 'too_many_parallel', 'rate_limited', 'cooldown', 'guard_unavailable', 'outcome_unknown']);
 export const POST_LOGIN_AI_SEARCH_KEY = 'postLoginAiSearch';
 
 const CANTONS = ['Aargau', 'Appenzell AI', 'Appenzell AR', 'Basel-Landschaft', 'Basel-Stadt', 'Bern', 'Fribourg', 'Genève', 'Glarus', 'Graubünden', 'Jura', 'Luzern', 'Neuchâtel', 'Nidwalden', 'Obwalden', 'Schaffhausen', 'Schwyz', 'Solothurn', 'St. Gallen', 'Thurgau', 'Ticino', 'Uri', 'Valais', 'Vaud', 'Zug', 'Zürich'];
@@ -46,6 +46,7 @@ const ERROR_TEXT = {
   cooldown: 'Mehrere KI-Suchen sind zuletzt technisch fehlgeschlagen. Bitte versuche es etwas später erneut. Es wurde nichts verbraucht.',
   guard_unavailable: 'Die KI-Suche ist gerade nicht verfügbar. Es wurde nichts verbraucht.',
   store_failed: 'Das Ergebnis konnte nicht gesichert werden. Die Suche wurde nicht gezählt – bitte starte sie erneut.',
+  outcome_unknown: 'Die Verbindung zur Datenbank brach beim Abschluss ab; ob die Suche gespeichert wurde, ist noch unklar. „Erneut versuchen“ ruft das Ergebnis ab – dieselbe Suche wird höchstens einmal gezählt.',
   in_progress: 'Diese Suche läuft bereits. Bitte warte einen Moment.',
   request_mismatch: 'Die Anfrage passte nicht zum laufenden Suchvorgang. Bitte starte die Suche neu.',
   not_released: 'Das Ergebnis konnte nicht freigegeben werden, weil dein Monatskontingent inzwischen aufgebraucht ist.',

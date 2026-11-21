@@ -99,8 +99,10 @@ export function composeDraftTest(root = ROOT, setName = 'keep_embeddings') {
     migration,
     rollback,
     sql: test
-      .replace('-- @@MIGRATION@@', asExecutes(migration, 'mig'))
-      .replace('-- @@ROLLBACK@@', asExecutes(rollback, 'down')),
+      // Ersetzungsfunktion statt Zeichenfolge: sonst würde String.replace
+      // „$$“ im SQL (Dollar-Quoting) zu „$“ verkürzen.
+      .replace('-- @@MIGRATION@@', () => asExecutes(migration, 'mig'))
+      .replace('-- @@ROLLBACK@@', () => asExecutes(rollback, 'down')),
   };
 }
 

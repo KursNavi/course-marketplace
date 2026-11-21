@@ -275,6 +275,11 @@ function apiScenario(overrides = {}) {
       if (overrides.user === null) return { data: { user: null }, error: { message: 'invalid' } };
       return { data: { user: overrides.user ?? USER }, error: null };
     }
+    if (call.table === 'ai_search_usage' && call.op === 'select' && call.columns === 'state') {
+      // Klärung eines unklaren Abschlusses (eigene Zeile).
+      if (overrides.usageStateError) return { data: null, error: { message: 'fetch failed', code: '' } };
+      return { data: overrides.usageState ? { state: overrides.usageState } : null, error: null };
+    }
     if (call.table === 'ai_search_usage' && call.op === 'select') {
       if (overrides.guardError) return { data: null, error: { message: 'down' } };
       return { data: overrides.guardRows ?? [], error: null };
@@ -283,6 +288,8 @@ function apiScenario(overrides = {}) {
       if (call.table === 'ai_search_quota_finalize_and_store') {
         if (overrides.storeMissing) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
         if (overrides.storeError) return { data: null, error: { code: '22023', message: 'ai_search_result_too_large' } };
+        // Zeitüberschreitung/verlorene Antwort: kein Datenbankcode.
+        if (overrides.storeTransport) return { data: null, error: { code: '', message: 'TypeError: fetch failed' } };
         return { data: overrides.finalize ?? 'completed', error: null };
       }
       if (call.table === 'ai_search_result_fetch') {
@@ -292,7 +299,10 @@ function apiScenario(overrides = {}) {
       if (call.table === 'ai_search_quota_remaining') return { data: overrides.remaining ?? 7, error: null };
       if (call.table === 'ai_search_quota_reserve') return { data: overrides.reserve ?? 'reserved', error: null };
       if (call.table === 'ai_search_quota_finalize') return { data: overrides.finalize ?? 'completed', error: null };
-      if (call.table === 'ai_search_quota_release') return { data: true, error: null };
+      if (call.table === 'ai_search_quota_release') {
+        if (overrides.releaseTransport) return { data: null, error: { code: '', message: 'TypeError: fetch failed' } };
+        return { data: overrides.releaseResult === undefined ? true : overrides.releaseResult, error: null };
+      }
       if (call.table === 'ai_search_lexical') {
         if (overrides.searchError) return { data: null, error: { message: 'boom' } };
         return { data: [], error: null };
@@ -433,6 +443,48 @@ describe('Such-API /api/ai-search', () => {
     expect(rpcs.indexOf('ai_search_quota_release')).toBeGreaterThan(rpcs.indexOf('ai_search_quota_finalize_and_store'));
     expect(rpcs).not.toContain('ai_search_quota_finalize');
     expect(errorLog).toHaveBeenCalledWith(expect.stringMatching(/Abschluss\/Speicherung fehlgeschlagen/), expect.stringMatching(/too_large/));
+    errorLog.mockRestore();
+  });
+
+  // Unklarer Transportausgang (Prüfung 21.11.2026).
+  it('Commit erfolgreich, Antwort verloren: Ausgang wird nutzergebunden geklärt, Ergebnis ausgeliefert, nichts als „nicht gezählt“ gemeldet', async () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Freigabe greift nicht mehr (Zeile ist bereits completed) → data null.
+    const calls = apiScenario({ storeTransport: true, releaseResult: null, usageState: 'completed' });
+    const res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.restorable).toBe(true);
+    expect(res.body.error).toBeUndefined();
+    expect(res.body).toHaveProperty('results');
+    const stateRead = calls.find((c) => c.table === 'ai_search_usage' && c.columns === 'state');
+    expect(stateRead.filters).toEqual(expect.arrayContaining([['eq', 'request_id', REQUEST_ID], ['eq', 'user_id', USER.id]]));
+    // Kein zweiter Abschluss, keine neue Suche.
+    expect(calls.filter((c) => c.table === 'ai_search_quota_finalize_and_store')).toHaveLength(1);
+    expect(calls.filter((c) => c.table === 'ai_search_lexical').length).toBeGreaterThan(0);
+    expect(errorLog).toHaveBeenCalledWith(expect.stringMatching(/Ausgang unklar/), expect.any(String));
+    errorLog.mockRestore();
+  });
+
+  it('unklarer Ausgang, tatsächlich nicht committed: Freigabe wirkt → endgültig nicht gezählt (store_failed)', async () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    apiScenario({ storeTransport: true, releaseResult: true, usageState: 'released' });
+    const res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe('store_failed');
+    errorLog.mockRestore();
+  });
+
+  it('Ausgang bleibt unklar (auch Klärung scheitert): 503 outcome_unknown, keine Aussage zur Zählung, kein Ergebnis', async () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    for (const overrides of [{ releaseTransport: true }, { usageStateError: true }, { usageState: 'reserved' }]) {
+      apiScenario({ storeTransport: true, ...overrides });
+      const res = mockRes();
+      await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+      expect(res.statusCode).toBe(503);
+      expect(res.body).toEqual({ error: 'outcome_unknown' });
+    }
     errorLog.mockRestore();
   });
 

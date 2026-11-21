@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import { GUARD_LIMITS, evaluateGuard, storablePayload, isMissingFunction } from '../src/lib/aiSearch/abuseGuard.js';
+import { GUARD_LIMITS, evaluateGuard, storablePayload, isMissingFunction, isDefinitiveDbError } from '../src/lib/aiSearch/abuseGuard.js';
 
 const NOW = new Date('2026-11-21T10:00:00Z');
 const ago = (ms) => new Date(NOW.getTime() - ms).toISOString();
@@ -47,6 +47,13 @@ describe('evaluateGuard', () => {
     expect(isMissingFunction({ code: 'PGRST202' })).toBe(true);
     expect(isMissingFunction({ message: 'function public.ai_search_result_fetch does not exist' })).toBe(true);
     expect(isMissingFunction({ code: '42501', message: 'permission denied' })).toBe(false);
+  });
+
+  it('endgültige Datenbankfehler vs. unklarer Transportausgang', () => {
+    for (const code of ['22023', '23505', '40001', 'P0001', 'PGRST202', 'PGRST116']) expect(isDefinitiveDbError({ code })).toBe(true);
+    for (const error of [{ code: '', message: 'TypeError: fetch failed' }, { message: 'timeout' }, null, { code: '504' }]) {
+      expect(isDefinitiveDbError(error)).toBe(false);
+    }
   });
 });
 
@@ -107,6 +114,11 @@ describe('Datenbankentwurf 20261121090000 (statisch, nicht angewendet)', () => {
     expect(rollback.length).toBeGreaterThanOrEqual(6);
     expect(body).not.toMatch(/-- @@MIGRATION@@|-- @@ROLLBACK@@/);
     expect(body).not.toMatch(/\$function\$(mig|down)\d+\$/);
+    // Dollar-Quoting der Funktionsrümpfe bleibt beim Zusammensetzen erhalten.
+    const dollarBodies = (migration.join('\n').match(/AS \$\$/g) ?? []).length;
+    expect(dollarBodies).toBeGreaterThan(0);
+    expect((body.match(/AS \$\$\n/g) ?? []).length).toBe(dollarBodies + (rollback.join('\n').match(/AS \$\$/g) ?? []).length);
+    expect(body).not.toMatch(/AS \$\n/);
     // Schreibende Anweisungen DES TESTS (ohne eingebetteten Entwurf) nur auf eigene Kennungen/Konten.
     const testOnly = readFileSync(path.join(ROOT, 'supabase/drafts/tests/20261121090000_ai_search_result_store_and_guard_test.sql'), 'utf8');
     for (const m of testOnly.matchAll(/(UPDATE ai_search_(usage|results) SET[^;]*;|DELETE FROM [a-z_.]+[^;]*;)/g)) {

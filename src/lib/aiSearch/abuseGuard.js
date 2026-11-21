@@ -78,6 +78,18 @@ export function storablePayload(result) {
   return rest;
 }
 
+/**
+ * Endgültige Datenbankantwort (PostgreSQL-SQLSTATE oder PostgREST-Code):
+ * Die Datenbank hat die Anweisung bewertet – bei einer Ausnahme ist die
+ * Funktion vollständig zurückgerollt. Alles andere (kein Code, Netz-/
+ * Zeitüberschreitung, Gateway-Fehler, geworfene Ausnahme) ist ein UNKLARER
+ * Ausgang: Die Datenbank kann bereits committed haben.
+ */
+export function isDefinitiveDbError(error) {
+  const code = String(error?.code ?? '');
+  return /^[0-9A-Z]{5}$/.test(code) || /^PGRST\d+$/.test(code);
+}
+
 /** PostgREST meldet eine (noch) fehlende Funktion mit diesen Codes. */
 export function isMissingFunction(error) {
   if (!error) return false;
