@@ -22,7 +22,7 @@
  *     Ergebnis frei. Echter Systemfehler → Reservierung freigeben.
  *     Abschluss und private, befristete Speicherung laufen in EINER
  *     Datenbanktransaktion (ai_search_quota_finalize_and_store,
- *     Migrationsentwurf 20261121090000). Speicherfehler → nichts gezählt,
+ *     Migration 20261121122101). Speicherfehler → nichts gezählt,
  *     Reservierung freigegeben, Fehler 500. Ohne Entwurf: Altzustand.
  *
  * Rohsuchtexte werden nicht protokolliert.
@@ -65,7 +65,7 @@ export function buildQueryHash(query, musts) {
 const GUARD_RESERVE_CODES = new Set(['too_many_parallel', 'rate_limited', 'cooldown']);
 
 /**
- * Abschluss + Speicherung atomar (Migrationsentwurf 20261121090000).
+ * Abschluss + Speicherung atomar (Migration 20261121122101).
  *  - Erfolg: { finalized: 'completed', stored: true }
  *  - Speicher-/Datenbankfehler: { finalized: 'store_failed' } – nichts
  *    gezählt (Funktion zurückgerollt); Fehler wird protokolliert.

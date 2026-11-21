@@ -1,6 +1,9 @@
 -- =====================================================================
--- RÜCKWEG zum Entwurf 20261121090000_ai_search_result_store_and_guard.
--- NUR nach ausdrücklicher Freigabe ausführen. Entfernt Ergebnisspeicher und
+-- RÜCKWEG zur Migration
+--   supabase/migrations/20261121122101_ai_search_result_store_and_guard.sql
+-- (bis 21.11.2026 Entwurf 20261121090000; auf der TESTumgebung verbucht als
+-- 20261121122101). NUR nach ausdrücklicher Freigabe ausführen; danach den
+-- Eintrag in supabase_migrations.schema_migrations entsprechend bereinigen. Entfernt Ergebnisspeicher und
 -- Bremse; ai_search_quota_reserve erhält wieder die Fassung aus
 -- 20261113180200_ai_search_quota.sql. Gespeicherte Ergebnisse gehen dabei
 -- verloren (gewollt: befristete Kopien); Kontingentdaten bleiben unverändert.

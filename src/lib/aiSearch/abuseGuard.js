@@ -22,7 +22,7 @@
 
 // VORLÄUFIGE TESTEINSTELLUNGEN (Freigabe 21.11.2026 für die Preview); vor
 // einer Produktion anhand realer Nutzung neu festlegen. Identisch im
-// Migrationsentwurf 20261121090000 (ai_search_quota_reserve v2).
+// Migration 20261121122101 (ai_search_quota_reserve v2).
 export const GUARD_LIMITS = Object.freeze({
   parallel: 1,
   perMinute: 3,

@@ -60,6 +60,21 @@ FROM pg_available_extensions WHERE name IN ('vector', 'unaccent');
    `supabase/rollback/20261120205856_ai_search_keep_embeddings_skip_noop_jobs_down.sql`.
    Produktion: nicht angewendet; eigene Freigabe nötig.
 
+6. `supabase/migrations/20261121122101_ai_search_result_store_and_guard.sql` —
+   Ergebnisspeicher (24 h abrufbar, Löschablauf nicht eingeplant,
+   Kontolöschung kaskadiert) und atomare Missbrauchsbremse. **Am 21.11.2026
+   ausschliesslich auf der TESTumgebung angewendet** nach bestandenem
+   Rollback-Test v2 (KNT00 „AI_DRAFT_TEST_OK 31/31“, Commit c3fff53):
+   unveränderte Fassung (md5 `c8061652db3ecdd0439d30165416bc8d`), verbucht
+   als `20261121122101 ai_search_result_store_and_guard`, danach unter dieser
+   Version byte-genau übernommen. Rückweg (nicht ausgeführt):
+   `supabase/rollback/20261121122101_ai_search_result_store_and_guard_down.sql`.
+   Seitdem verlangt die CI Abschnitt 10 der DB-Tests
+   (`AI_DB_TESTS_REQUIRE_RESULT_STORE=1`); Überspringen gilt als Fehler.
+   **Offener Betriebspunkt:** Löschablauf `ai_search_result_cleanup` ist
+   nicht eingeplant – abgelaufene Ergebnisse bleiben bis zu einer manuellen
+   Bereinigung gespeichert (nicht abrufbar).
+
    Hinweis Versionsabgleich: Die Migrationen 1–4 tragen im Repo andere
    Versionsnummern als in der Migrationsliste der TESTumgebung (z. B. Datei
    `20261115190000`, verbucht `20261115200229`). Ein `supabase db push` gegen

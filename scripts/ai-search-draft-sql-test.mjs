@@ -80,10 +80,11 @@ function asExecutes(statements, label) {
 // Weitere Testsätze (Entwurf 20261121090000: Ergebnisspeicher + Bremse).
 export const TEST_SETS = Object.freeze({
   keep_embeddings: { migration: MIGRATION_FILE, rollback: ROLLBACK_FILE, test: TEST_FILE },
+  // Auf TEST verbucht als 20261121122101 (vormals Entwurf 20261121090000).
   result_store: {
-    migration: 'supabase/drafts/20261121090000_ai_search_result_store_and_guard.sql',
-    rollback: 'supabase/drafts/20261121090000_ai_search_result_store_and_guard_down.sql',
-    test: 'supabase/drafts/tests/20261121090000_ai_search_result_store_and_guard_test.sql',
+    migration: 'supabase/migrations/20261121122101_ai_search_result_store_and_guard.sql',
+    rollback: 'supabase/rollback/20261121122101_ai_search_result_store_and_guard_down.sql',
+    test: 'supabase/drafts/tests/20261121122101_ai_search_result_store_and_guard_test.sql',
   },
 });
 

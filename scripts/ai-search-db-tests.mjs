@@ -47,6 +47,7 @@ import { pathToFileURL } from 'node:url';
 import { processOutboxBatch, loadCourseSource } from '../src/lib/aiSearch/worker.js';
 import { verifyCourseChunks } from '../src/lib/aiSearch/reconciliation.js';
 import { buildProjection } from '../src/lib/aiSearch/projection.js';
+import { isMissingFunction } from '../src/lib/aiSearch/abuseGuard.js';
 
 export const PRODUCTION_REF = 'nplxmpfasgpumpiddjfl';
 export const EXPECTED_TEST_REF = 'omoapbvfligjfznzivyu'; // "TESTumgebung KursNavi"
@@ -153,13 +154,26 @@ async function main() {
 
   console.log(`KI-Such-DB-Tests gegen Projekt ${EXPECTED_TEST_REF} (TESTumgebung KursNavi)`);
 
-  // Entwurf 20261121090000 (Ergebnisspeicher + atomare Bremse) angewendet?
+  // Migration 20261121122101 (Ergebnisspeicher + atomare Bremse) angewendet?
   // Dann gelten Parallel-/Minutengrenzen auch für diese Tests: eigene Zeilen
   // werden zwischen den Kontingentschritten gezielt „gealtert“.
+  // Nur „Funktion existiert nicht“ (PGRST202/42883) gilt als nicht angewendet.
+  // Rechte-, Transport- oder andere Fehler werden NICHT als fehlendes Schema
+  // verschluckt, sondern brechen den Lauf als Fehler ab.
   let guardAvailable = false;
   {
     const { error } = await service.rpc('ai_search_result_fetch', { p_request_id: randomUUID(), p_user_id: randomUUID(), p_query_hash: 'probe' });
-    guardAvailable = !error;
+    if (!error) {
+      guardAvailable = true;
+    } else if (!isMissingFunction(error)) {
+      console.error(`FEHLER Verfügbarkeitsprüfung Ergebnisspeicher: ${error.code || '-'} ${error.message}`);
+      process.exit(1);
+    }
+  }
+  // Nach Anwendung der Migration ist ein übersprungener Abschnitt 10 kein Erfolg.
+  if (process.env.AI_DB_TESTS_REQUIRE_RESULT_STORE === '1' && !guardAvailable) {
+    console.error('FEHLER: AI_DB_TESTS_REQUIRE_RESULT_STORE=1, aber ai_search_result_fetch fehlt – Abschnitt 10 würde übersprungen.');
+    process.exit(1);
   }
   const createdAuthUsers = [];
   // Nur eigene Testzeilen (user_id) zurückdatieren: nicht mehr „laufend“ und
@@ -171,7 +185,7 @@ async function main() {
       .eq('user_id', userId);
     if (error) throw new Error(`Testzeilen altern: ${error.message}`);
   };
-  console.log(`Bremse/Ergebnisspeicher (Entwurf 20261121090000): ${guardAvailable ? 'angewendet' : 'nicht angewendet'}`);
+  console.log(`Bremse/Ergebnisspeicher (Migration 20261121122101): ${guardAvailable ? 'angewendet' : 'nicht angewendet'}`);
 
   try {
     // --- 1. Rollen/RLS -------------------------------------------------------
@@ -572,9 +586,9 @@ async function main() {
       }
     }
 
-    // --- 10. Ergebnisspeicher + Bremse (Entwurf 20261121090000) -------------
+    // --- 10. Ergebnisspeicher + Bremse (Migration 20261121122101) -------------
     if (!guardAvailable) {
-      console.log('10. ÜBERSPRUNGEN (NICHT GEPRÜFT): Entwurf 20261121090000 '
+      console.log('10. ÜBERSPRUNGEN (NICHT GEPRÜFT): Migration 20261121122101 '
         + '(ai_search_results / ai_search_quota_finalize_and_store) ist nicht angewendet.');
     } else {
       console.log('10. Abschluss+Speicherung atomar, Wiederabruf, gleichzeitige Abschlüsse, Rechte');

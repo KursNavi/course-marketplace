@@ -57,14 +57,20 @@ describe('evaluateGuard', () => {
   });
 });
 
-describe('Datenbankentwurf 20261121090000 (statisch, nicht angewendet)', () => {
+describe('Migration 20261121122101 (vormals Entwurf 20261121090000; auf TEST angewendet)', async () => {
+  const { createHash } = await import('node:crypto');
   const ROOT = path.resolve(__dirname, '..');
-  const up = readFileSync(path.join(ROOT, 'supabase/drafts/20261121090000_ai_search_result_store_and_guard.sql'), 'utf8');
-  const down = readFileSync(path.join(ROOT, 'supabase/drafts/20261121090000_ai_search_result_store_and_guard_down.sql'), 'utf8');
+  const UP = 'supabase/migrations/20261121122101_ai_search_result_store_and_guard.sql';
+  const up = readFileSync(path.join(ROOT, UP), 'utf8');
+  const down = readFileSync(path.join(ROOT, 'supabase/rollback/20261121122101_ai_search_result_store_and_guard_down.sql'), 'utf8');
 
-  it('liegt nicht im Migrationsbestand', () => {
-    expect(readdirSync(path.join(ROOT, 'supabase/migrations')).some((f) => f.includes('result_store'))).toBe(false);
-    expect(up).toMatch(/ENTWURF( v\d+)? – NICHT ANWENDEN/);
+  it('byte-genau die angewendete Fassung; Version = verbuchter Eintrag; keine zweite Kopie', () => {
+    // md5 der getesteten/angewendeten Fassung (Commit c3fff53, LF).
+    expect(createHash('md5').update(up.replace(/\r\n/g, '\n'), 'utf8').digest('hex')).toBe('c8061652db3ecdd0439d30165416bc8d');
+    const migrations = readdirSync(path.join(ROOT, 'supabase/migrations'));
+    expect(migrations.filter((f) => f.includes('result_store'))).toEqual(['20261121122101_ai_search_result_store_and_guard.sql']);
+    expect(readdirSync(path.join(ROOT, 'supabase/drafts')).filter((f) => f.includes('result_store'))).toEqual([]);
+    expect(migrations.some((f) => f.includes('20261121090000'))).toBe(false);
   });
 
   it('Abschluss und Speicherung in EINER Funktion; Speicherfehler als Ausnahme (Rollback statt verbrauchter Suche ohne Ergebnis)', () => {
@@ -120,7 +126,7 @@ describe('Datenbankentwurf 20261121090000 (statisch, nicht angewendet)', () => {
     expect((body.match(/AS \$\$\n/g) ?? []).length).toBe(dollarBodies + (rollback.join('\n').match(/AS \$\$/g) ?? []).length);
     expect(body).not.toMatch(/AS \$\n/);
     // Schreibende Anweisungen DES TESTS (ohne eingebetteten Entwurf) nur auf eigene Kennungen/Konten.
-    const testOnly = readFileSync(path.join(ROOT, 'supabase/drafts/tests/20261121090000_ai_search_result_store_and_guard_test.sql'), 'utf8');
+    const testOnly = readFileSync(path.join(ROOT, 'supabase/drafts/tests/20261121122101_ai_search_result_store_and_guard_test.sql'), 'utf8');
     for (const m of testOnly.matchAll(/(UPDATE ai_search_(usage|results) SET[^;]*;|DELETE FROM [a-z_.]+[^;]*;)/g)) {
       expect(m[0]).toMatch(/WHERE (request_id = (r\d|rd|ra|rt)|user_id = v_(user|other|third)|id = v_third)/);
     }

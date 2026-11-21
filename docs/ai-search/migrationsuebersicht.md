@@ -16,15 +16,18 @@ Leerraum und Semikolons, per md5 verglichen.
 | `20261113180200_ai_search_quota.sql` | `20261114205947 ai_search_quota` | ja | dito |
 | `20261115190000_ai_search_worker_apply.sql` | `20261115200229 ai_search_worker_apply` | ja | dito |
 | `20261120205856_ai_search_keep_embeddings_skip_noop_jobs.sql` | `20261120205856 …` (gleiche Version) | ja (byte-genau, Test) | dito |
+| `20261121122101_ai_search_result_store_and_guard.sql` (vormals Entwurf `20261121090000`, v2) | `20261121122101 ai_search_result_store_and_guard` (angewendet 21.11.2026, 13:21 MEZ) | ja (byte-genau md5 `c8061652…`, normalisiert `a50447e3…` = verbucht; Test) | dito |
 
-Entwürfe (nicht angewendet, nicht im Migrationsordner):
-
-| Entwurf | Zweck | Rückweg |
-|---|---|---|
-| `supabase/drafts/20261121090000_ai_search_result_store_and_guard.sql` (v2) | Abschluss + Speicherung in einer Transaktion, Wiederabruf 24 h, Löschablauf/Kontolöschung, atomare Bremse in `ai_search_quota_reserve`; Testablauf: `testablauf-20261121090000.md` | `…_down.sql` |
+Zur letzten Migration: Abschluss + Speicherung in einer Transaktion,
+Wiederabruf 24 h, Löschablauf (nicht eingeplant) und Kontolöschung, atomare
+Bremse in `ai_search_quota_reserve`. Vor der Anwendung Rollback-Test v2
+bestanden (KNT00 31/31); Details `testablauf-20261121090000.md`. Der
+Kopfkommentar der Datei nennt noch „ENTWURF v2“ und die alten Pfade – bewusst
+unverändert (Inhalt = verbuchte Fassung).
 
 Rückwege angewendeter Migrationen: `supabase/rollback/ai_search_down.sql`
-(Migrationen 1–4) und `supabase/rollback/20261120205856_…_down.sql`.
+(Migrationen 1–4), `supabase/rollback/20261120205856_…_down.sql` und
+`supabase/rollback/20261121122101_…_down.sql` (nicht ausgeführt).
 
 ## 2. Empfohlener einheitlicher Versionsweg (Entscheidung offen)
 
