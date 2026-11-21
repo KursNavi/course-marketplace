@@ -1,6 +1,9 @@
 -- =====================================================================
--- Rollback-Test zum ENTWURF 20261121090000 (Ergebnisspeicher + Bremse), v1.
--- NOCH NICHT AUSGEFÜHRT. Ausführung nur nach Freigabe, nur TESTumgebung.
+-- Rollback-Test zum ENTWURF 20261121090000 (Ergebnisspeicher + Bremse), v2.
+-- v1 lief einmal am 21.11.2026 (12:16 MEZ): KNTF0 bei S7c nach 22/31 –
+-- Testfehler (Bereinigung und EXISTS-Prüfung in EINER Anweisung; deren
+-- Snapshot sieht die Löschung der Funktion nicht). v2 trennt S7c und S8c.
+-- v2 NOCH NICHT AUSGEFÜHRT. Ausführung nur nach Freigabe, nur TESTumgebung.
 --
 -- EIN DO-Block: Entwurf, Szenarien und Rückweg laufen darin; am Ende wird
 -- IMMER eine Ausnahme ausgelöst → PostgreSQL rollt alles zurück.
@@ -204,7 +207,10 @@ BEGIN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL S7b: Ablauf darf nicht selbst löschen';
     END IF;
     v_checks := v_checks + 1;
-    IF ai_search_result_cleanup(5000) < 1 OR EXISTS (SELECT 1 FROM ai_search_results WHERE request_id = r2)
+    -- Eigene Anweisung: Änderungen einer Funktion sind für die Unterabfragen
+    -- DERSELBEN Anweisung nicht sichtbar (Snapshot der äusseren Anweisung).
+    v_n := ai_search_result_cleanup(5000);
+    IF v_n < 1 OR EXISTS (SELECT 1 FROM ai_search_results WHERE request_id = r2)
        OR NOT EXISTS (SELECT 1 FROM ai_search_results WHERE request_id = rd) THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL S7c: Bereinigung';
     END IF;
@@ -226,7 +232,8 @@ BEGIN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL S8b: Ergebnis überlebt Kontolöschung';
     END IF;
     v_checks := v_checks + 1;
-    IF ai_search_result_purge_user(v_other) <> 1 OR EXISTS (SELECT 1 FROM ai_search_results WHERE user_id = v_other) THEN
+    v_n := ai_search_result_purge_user(v_other);
+    IF v_n <> 1 OR EXISTS (SELECT 1 FROM ai_search_results WHERE user_id = v_other) THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL S8c: Löschbegehren';
     END IF;
     v_checks := v_checks + 1;

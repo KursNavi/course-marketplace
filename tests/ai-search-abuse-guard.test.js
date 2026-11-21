@@ -124,6 +124,11 @@ describe('Datenbankentwurf 20261121090000 (statisch, nicht angewendet)', () => {
     for (const m of testOnly.matchAll(/(UPDATE ai_search_(usage|results) SET[^;]*;|DELETE FROM [a-z_.]+[^;]*;)/g)) {
       expect(m[0]).toMatch(/WHERE (request_id = (r\d|rd|ra|rt)|user_id = v_(user|other|third)|id = v_third)/);
     }
+    // Ändernde Funktionen nie mit EXISTS in derselben Anweisung prüfen
+    // (Snapshot sieht die Änderung nicht – Ursache des Fehlschlags v1 bei S7c).
+    expect(testOnly).not.toMatch(/IF ai_search_result_(cleanup|purge_user)\(/);
+    expect(testOnly).toMatch(/v_n := ai_search_result_cleanup\(5000\);/);
+    expect(testOnly).toMatch(/v_n := ai_search_result_purge_user\(v_other\);/);
     // Pflichtfälle aus der Prüfung vom 21.11.
     for (const label of ['S1 Speicherfehler', 'Wiederabruf', 'S5 Wiederabruf nach 2 h', 'S6 Parallel/Minute vorübergehend', 'zweiter Abschluss', 'S8 Kontolöschung']) {
       expect(body).toContain(label);
