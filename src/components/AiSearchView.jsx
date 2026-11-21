@@ -27,6 +27,8 @@ const RESULT_KEY = 'kn_ai_search_last_result';
 // Laufender Vorgang (Kennung + Inhalt) überlebt ein Neuladen, damit dasselbe
 // Ergebnis ohne zweite Belastung abgerufen werden kann (Plan 14, Schritt 3).
 const PENDING_KEY = 'kn_ai_search_pending';
+// Vorübergehende Antworten: Wiederholungskennung bleibt erhalten.
+const RETRYABLE_ERRORS = new Set(['network', 'in_progress', 'too_many_parallel', 'rate_limited', 'cooldown', 'guard_unavailable']);
 export const POST_LOGIN_AI_SEARCH_KEY = 'postLoginAiSearch';
 
 const CANTONS = ['Aargau', 'Appenzell AI', 'Appenzell AR', 'Basel-Landschaft', 'Basel-Stadt', 'Bern', 'Fribourg', 'Genève', 'Glarus', 'Graubünden', 'Jura', 'Luzern', 'Neuchâtel', 'Nidwalden', 'Obwalden', 'Schaffhausen', 'Schwyz', 'Solothurn', 'St. Gallen', 'Thurgau', 'Ticino', 'Uri', 'Valais', 'Vaud', 'Zug', 'Zürich'];
@@ -43,6 +45,7 @@ const ERROR_TEXT = {
   rate_limited: 'Bitte warte einen Moment vor der nächsten KI-Suche (höchstens drei pro Minute). Es wurde nichts verbraucht.',
   cooldown: 'Mehrere KI-Suchen sind zuletzt technisch fehlgeschlagen. Bitte versuche es etwas später erneut. Es wurde nichts verbraucht.',
   guard_unavailable: 'Die KI-Suche ist gerade nicht verfügbar. Es wurde nichts verbraucht.',
+  store_failed: 'Das Ergebnis konnte nicht gesichert werden. Die Suche wurde nicht gezählt – bitte starte sie erneut.',
   in_progress: 'Diese Suche läuft bereits. Bitte warte einen Moment.',
   request_mismatch: 'Die Anfrage passte nicht zum laufenden Suchvorgang. Bitte starte die Suche neu.',
   not_released: 'Das Ergebnis konnte nicht freigegeben werden, weil dein Monatskontingent inzwischen aufgebraucht ist.',
@@ -261,8 +264,10 @@ export default function AiSearchView({ user, setView }) {
         writeSession(RESULT_KEY, JSON.stringify({ userId: user.id, result: body }));
       } else {
         clickStartedRef.current = null;
-        // Laufende Suche (in_progress) bleibt abrufbar; sonst ist der Vorgang beendet.
-        if (body.error !== 'network' && body.error !== 'in_progress') {
+        // Vorübergehende Zustände (laufend, gebremst, Prüfung nicht verfügbar)
+        // behalten die Kennung: ein späterer Versuch zählt höchstens einmal
+        // bzw. ruft das Ergebnis ab. Sonst ist der Vorgang beendet.
+        if (!RETRYABLE_ERRORS.has(body.error)) {
           pendingRef.current = null;
           removeSession(PENDING_KEY);
         }
@@ -388,10 +393,10 @@ export default function AiSearchView({ user, setView }) {
           {error && error !== 'limit_reached' && (
             <div className="mt-4 bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm" role="alert">
               <p className="flex items-center gap-2"><AlertTriangle className="w-4 h-4" />{ERROR_TEXT[error] || ERROR_TEXT.server_error}</p>
-              {(error === 'network' || error === 'in_progress') && (
+              {(error === 'network' || RETRYABLE_ERRORS.has(error)) && (
                 <button type="button" onClick={() => submit(true)} className="mt-2 text-sm font-semibold underline">Erneut versuchen</button>
               )}
-              {(error === 'search_failed' || error === 'model_failed' || error === 'server_error') && <ClassicAlternatives />}
+              {(error === 'search_failed' || error === 'model_failed' || error === 'server_error' || error === 'store_failed') && <ClassicAlternatives />}
             </div>
           )}
 

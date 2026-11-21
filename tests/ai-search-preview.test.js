@@ -280,9 +280,10 @@ function apiScenario(overrides = {}) {
       return { data: overrides.guardRows ?? [], error: null };
     }
     if (call.op === 'rpc') {
-      if (call.table === 'ai_search_result_store') {
+      if (call.table === 'ai_search_quota_finalize_and_store') {
         if (overrides.storeMissing) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
-        return { data: overrides.storeResult ?? true, error: null };
+        if (overrides.storeError) return { data: null, error: { code: '22023', message: 'ai_search_result_too_large' } };
+        return { data: overrides.finalize ?? 'completed', error: null };
       }
       if (call.table === 'ai_search_result_fetch') {
         if (overrides.fetchMissing) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
@@ -398,39 +399,74 @@ describe('Such-API /api/ai-search', () => {
     expect(res.body).toMatchObject({ requestId: REQUEST_ID, restored: true, results: stored.results, quota: { remaining: 7 } });
     // Keine Suche, kein Modellaufruf, kein neuer Abschluss.
     expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
-    expect(calls.some((c) => c.table === 'ai_search_quota_finalize')).toBe(false);
+    expect(calls.some((c) => /ai_search_quota_finalize/.test(c.table))).toBe(false);
     // Abruf an Konto UND Suchinhalt gebunden.
     const fetchCall = calls.find((c) => c.table === 'ai_search_result_fetch');
     expect(fetchCall.payload ?? fetchCall.args).toMatchObject({ p_request_id: REQUEST_ID, p_user_id: USER.id, p_query_hash: buildQueryHash('Yoga', {}) });
   });
 
-  it('Erfolg: Ergebnis wird nach dem Abschluss privat gespeichert (ohne Kontingent-/Zeitangaben); fehlender Speicher bricht nichts', async () => {
-    let calls = apiScenario();
-    let res = mockRes();
+  it('Erfolg: Abschluss und Speicherung in EINEM Aufruf (Nutzlast ohne Kontingent-/Zeitangaben)', async () => {
+    const calls = apiScenario();
+    const res = mockRes();
     await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body.restorable).toBe(true);
-    const order = calls.filter((c) => c.op === 'rpc').map((c) => c.table);
-    expect(order.indexOf('ai_search_result_store')).toBeGreaterThan(order.indexOf('ai_search_quota_finalize'));
-    const storeCall = calls.find((c) => c.table === 'ai_search_result_store');
-    const args = storeCall.payload ?? storeCall.args;
-    expect(args).toMatchObject({ p_request_id: REQUEST_ID, p_user_id: USER.id });
+    const rpcs = calls.filter((c) => c.op === 'rpc').map((c) => c.table);
+    expect(rpcs).toContain('ai_search_quota_finalize_and_store');
+    expect(rpcs).not.toContain('ai_search_quota_finalize'); // kein getrennter Abschluss
+    const args = calls.find((c) => c.table === 'ai_search_quota_finalize_and_store').payload;
+    expect(args).toMatchObject({ p_request_id: REQUEST_ID, p_user_id: USER.id, p_query_hash: buildQueryHash('Yoga', {}), p_limit: 10 });
     expect(args.p_payload).not.toHaveProperty('quota');
     expect(args.p_payload).not.toHaveProperty('serverTimings');
     expect(args.p_payload).toHaveProperty('results');
+  });
 
-    calls = apiScenario({ storeMissing: true });
-    res = mockRes();
+  it('Speicherfehler: nichts gezählt, Reservierung freigegeben, Fehler sichtbar (500), kein Ergebnis', async () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const calls = apiScenario({ storeError: true });
+    const res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe('store_failed');
+    expect(res.body.results).toBeUndefined();
+    const rpcs = calls.filter((c) => c.op === 'rpc').map((c) => c.table);
+    expect(rpcs.indexOf('ai_search_quota_release')).toBeGreaterThan(rpcs.indexOf('ai_search_quota_finalize_and_store'));
+    expect(rpcs).not.toContain('ai_search_quota_finalize');
+    expect(errorLog).toHaveBeenCalledWith(expect.stringMatching(/Abschluss\/Speicherung fehlgeschlagen/), expect.stringMatching(/too_large/));
+    errorLog.mockRestore();
+  });
+
+  it('Übergangsbetrieb ohne Entwurf: bisheriger Abschluss, Ergebnis ausgeliefert, aber nicht wiederabrufbar', async () => {
+    const calls = apiScenario({ storeMissing: true });
+    const res = mockRes();
     await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body.restorable).toBe(false);
+    expect(calls.some((c) => c.table === 'ai_search_quota_finalize')).toBe(true);
+  });
 
-    // Nicht abgeschlossen → nichts gespeichert, nichts ausgeliefert.
-    calls = apiScenario({ finalize: 'rejected_expired' });
-    res = mockRes();
+  it('nicht freigegebener Abschluss: nichts gespeichert, nichts ausgeliefert', async () => {
+    apiScenario({ finalize: 'rejected_expired' });
+    const res = mockRes();
     await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
     expect(res.statusCode).toBe(409);
-    expect(calls.some((c) => c.table === 'ai_search_result_store')).toBe(false);
+    expect(res.body.results).toBeUndefined();
+  });
+
+  it('Wiederabruf nach mehr als einer Stunde: eigene Kennung wird mitgelesen und nicht gebremst', async () => {
+    const old = new Date(Date.now() - 3 * 3_600_000).toISOString();
+    // Zusätzlich 5 Fehlversuche in der letzten Stunde – Bremse würde neue Suchen stoppen.
+    const failed = [1, 2, 3, 4, 5].map((i) => ({ request_id: `f${i}`, state: 'released', created_at: new Date(Date.now() - i * 60_000).toISOString() }));
+    const stored = { criteria: { terms: ['yoga'], wishes: [], musts: {} }, results: [], incompleteResults: [] };
+    const calls = apiScenario({ guardRows: [{ request_id: REQUEST_ID, state: 'completed', created_at: old }, ...failed], reserve: 'already_completed', stored });
+    const res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.restored).toBe(true);
+    const guardQuery = calls.find((c) => c.table === 'ai_search_usage');
+    const orFilter = guardQuery.filters.find(([name]) => name === 'or');
+    expect(orFilter[1]).toContain(`request_id.eq.${REQUEST_ID}`);
+    expect(guardQuery.filters).toContainEqual(['eq', 'user_id', USER.id]);
   });
 
   // Plan 14, Schritt 3: Missbrauchs-/Parallelitätsbremse vor kostenverursachenden Aufrufen.
@@ -513,17 +549,9 @@ describe('Such-API /api/ai-search', () => {
     await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body.results).toEqual([]);
-    expect(calls.some((c) => c.table === 'ai_search_quota_finalize')).toBe(true);
+    expect(calls.some((c) => c.table === 'ai_search_quota_finalize_and_store')).toBe(true);
     const reserve = calls.find((c) => c.table === 'ai_search_quota_reserve');
     expect(reserve.payload.p_user_id).toBe(USER.id); // aus der verifizierten Sitzung
-  });
-
-  it('nicht freigegebener Abschluss liefert kein Ergebnis aus', async () => {
-    apiScenario({ finalize: 'rejected_expired' });
-    const res = mockRes();
-    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
-    expect(res.statusCode).toBe(409);
-    expect(res.body.results).toBeUndefined();
   });
 
   it('Muss-Vorgaben werden bereinigt und an den Suchinhalt gebunden', () => {

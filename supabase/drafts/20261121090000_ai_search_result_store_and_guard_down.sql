@@ -6,9 +6,10 @@
 -- verloren (gewollt: befristete Kopien); Kontingentdaten bleiben unverändert.
 -- =====================================================================
 
-DROP FUNCTION IF EXISTS public.ai_search_result_cleanup();
+DROP FUNCTION IF EXISTS public.ai_search_result_purge_user(UUID);
+DROP FUNCTION IF EXISTS public.ai_search_result_cleanup(INTEGER);
 DROP FUNCTION IF EXISTS public.ai_search_result_fetch(UUID, UUID, TEXT);
-DROP FUNCTION IF EXISTS public.ai_search_result_store(UUID, UUID, TEXT, JSONB);
+DROP FUNCTION IF EXISTS public.ai_search_quota_finalize_and_store(UUID, UUID, TEXT, JSONB, INTEGER);
 DROP TABLE IF EXISTS public.ai_search_results;
 DROP INDEX IF EXISTS public.ai_search_usage_user_created_idx;
 

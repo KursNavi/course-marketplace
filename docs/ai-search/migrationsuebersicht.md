@@ -21,7 +21,7 @@ Entwürfe (nicht angewendet, nicht im Migrationsordner):
 
 | Entwurf | Zweck | Rückweg |
 |---|---|---|
-| `supabase/drafts/20261121090000_ai_search_result_store_and_guard.sql` | privater Ergebnisspeicher (24 h) + atomare Missbrauchsbremse in `ai_search_quota_reserve` | `…_down.sql` |
+| `supabase/drafts/20261121090000_ai_search_result_store_and_guard.sql` (v2) | Abschluss + Speicherung in einer Transaktion, Wiederabruf 24 h, Löschablauf/Kontolöschung, atomare Bremse in `ai_search_quota_reserve`; Testablauf: `testablauf-20261121090000.md` | `…_down.sql` |
 
 Rückwege angewendeter Migrationen: `supabase/rollback/ai_search_down.sql`
 (Migrationen 1–4) und `supabase/rollback/20261120205856_…_down.sql`.

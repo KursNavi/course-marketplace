@@ -52,7 +52,9 @@ als Nachweis (siehe D).
   Einschaltung (heute nicht als Testschritt).
 - **Kontingent-Bereinigung** (`ai_search_quota_cleanup`) und
   **Ergebnisbereinigung** (`ai_search_result_cleanup`): täglich, nur nach
-  Freigabe (globale Wirkung).
+  Freigabe (globale Wirkung). Ohne diesen Takt bleiben abgelaufene
+  Ergebnisse gespeichert (nicht abrufbar); Abrufbarkeit 24 h ≠ Löschung.
+  Kontolöschung entfernt Ergebnisse sofort (Kaskade auf `auth.users`).
 - **Zuständigkeit**: technischer Betrieb (Alarm, Wiederanlauf), fachlich
   Redaktion (Qualitätsstichproben). Wiederanlauf: Worker ist idempotent
   (Versionsschutz, Koaleszenz); fehlgeschlagene Aufträge nach Ursache erneut.

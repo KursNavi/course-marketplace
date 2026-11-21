@@ -43,7 +43,7 @@ export function createFakeSupabase(respond) {
     builder.upsert = (payload, options) => { call.op = 'upsert'; call.payload = payload; call.options = options; return builder; };
     builder.insert = (payload) => { call.op = 'insert'; call.payload = payload; return builder; };
     builder.delete = () => { call.op = 'delete'; return builder; };
-    for (const name of ['eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in', 'is', 'textSearch']) {
+    for (const name of ['eq', 'neq', 'lt', 'lte', 'gt', 'gte', 'in', 'is', 'textSearch', 'or']) {
       builder[name] = addFilter(name);
     }
     builder.order = (column, options) => { call.order.push([column, options]); return builder; };

@@ -153,6 +153,26 @@ async function main() {
 
   console.log(`KI-Such-DB-Tests gegen Projekt ${EXPECTED_TEST_REF} (TESTumgebung KursNavi)`);
 
+  // Entwurf 20261121090000 (Ergebnisspeicher + atomare Bremse) angewendet?
+  // Dann gelten Parallel-/Minutengrenzen auch für diese Tests: eigene Zeilen
+  // werden zwischen den Kontingentschritten gezielt „gealtert“.
+  let guardAvailable = false;
+  {
+    const { error } = await service.rpc('ai_search_result_fetch', { p_request_id: randomUUID(), p_user_id: randomUUID(), p_query_hash: 'probe' });
+    guardAvailable = !error;
+  }
+  const createdAuthUsers = [];
+  // Nur eigene Testzeilen (user_id) zurückdatieren: nicht mehr „laufend“ und
+  // nicht mehr in der Minuten-/Stundenzählung der Bremse.
+  const ageOwnRows = async (userId) => {
+    if (!guardAvailable) return;
+    const { error } = await service.from('ai_search_usage')
+      .update({ created_at: new Date(Date.now() - 2 * 3_600_000).toISOString() })
+      .eq('user_id', userId);
+    if (error) throw new Error(`Testzeilen altern: ${error.message}`);
+  };
+  console.log(`Bremse/Ergebnisspeicher (Entwurf 20261121090000): ${guardAvailable ? 'angewendet' : 'nicht angewendet'}`);
+
   try {
     // --- 1. Rollen/RLS -------------------------------------------------------
     console.log('1. Rollen und Zugriffsrechte');
@@ -173,6 +193,7 @@ async function main() {
     for (let i = 1; i <= 10; i += 1) {
       const { data, error } = await reserve(service, userA, randomUUID(), 'h');
       check(`Reservierung ${i} erlaubt`, !error && data === 'reserved', error?.message ?? data);
+      await ageOwnRows(userA);
     }
     {
       const { data } = await reserve(service, userA, randomUUID(), 'h');
@@ -193,9 +214,33 @@ async function main() {
     const reservedCount = parallel.filter((r) => r.data === 'reserved').length;
     const limitCount = parallel.filter((r) => r.data === 'limit_reached').length;
     const errorCount = parallel.filter((r) => r.error).length;
-    check('genau 10 reserviert', reservedCount === 10, `reserved=${reservedCount}`);
-    check('restliche 5 limit_reached, keine Fehler', limitCount === 5 && errorCount === 0,
-      `limit=${limitCount} errors=${errorCount}`);
+    if (!guardAvailable) {
+      check('genau 10 reserviert', reservedCount === 10, `reserved=${reservedCount}`);
+      check('restliche 5 limit_reached, keine Fehler', limitCount === 5 && errorCount === 0,
+        `limit=${limitCount} errors=${errorCount}`);
+    } else {
+      // Mit Bremse: höchstens ein laufender Auftrag je Konto, auch bei 15
+      // gleichzeitigen Anfragen (Serialisierung unter dem Nutzer-Lock).
+      const parallelBlocked = parallel.filter((r) => r.data === 'too_many_parallel').length;
+      check('Bremse: von 15 gleichzeitigen genau 1 reserviert, 14 too_many_parallel, keine Fehler',
+        reservedCount === 1 && parallelBlocked === 14 && errorCount === 0,
+        `reserved=${reservedCount} parallel=${parallelBlocked} errors=${errorCount}`);
+      // Kontingentgrenze unter Gleichzeitigkeit: 9 verbrauchte (gealterte) Zeilen,
+      // dann 15 gleichzeitige → nie mehr als 10 verbraucht+reserviert.
+      const userB2 = randomUUID();
+      createdUsers.push(userB2);
+      for (let i = 0; i < 9; i += 1) {
+        const rid = randomUUID();
+        await reserve(service, userB2, rid, 'h');
+        await service.rpc('ai_search_quota_finalize', { p_request_id: rid, p_limit: 10 });
+        await ageOwnRows(userB2);
+      }
+      const burst = await Promise.all(Array.from({ length: 15 }, () => reserve(service, userB2, randomUUID(), 'h')));
+      const { data: remainingB2 } = await service.rpc('ai_search_quota_remaining', { p_user_id: userB2, p_limit: 10 });
+      check('Bremse + Limit: genau 1 reserviert, danach Rest 0, keine Fehler',
+        burst.filter((r) => r.data === 'reserved').length === 1 && remainingB2 === 0 && burst.every((r) => !r.error),
+        burst.map((r) => r.error?.message ?? r.data).join(','));
+    }
 
     // --- 4. Idempotenz und Bindung ------------------------------------------
     console.log('4. Idempotente request_id und Bindung an Nutzer/Inhalt');
@@ -233,6 +278,7 @@ async function main() {
       .eq('request_id', oldRequest)
       .eq('user_id', userD);
     for (let i = 1; i <= 10; i += 1) {
+      await ageOwnRows(userD);
       const requestId = randomUUID();
       await reserve(service, userD, requestId, 'h');
       await service.rpc('ai_search_quota_finalize', { p_request_id: requestId, p_limit: 10 });
@@ -525,7 +571,97 @@ async function main() {
           JSON.stringify({ first: first.data ?? first.error?.message, retry: retry.data ?? retry.error?.message, breakError: breakError?.message }));
       }
     }
+
+    // --- 10. Ergebnisspeicher + Bremse (Entwurf 20261121090000) -------------
+    if (!guardAvailable) {
+      console.log('10. ÜBERSPRUNGEN (NICHT GEPRÜFT): Entwurf 20261121090000 '
+        + '(ai_search_results / ai_search_quota_finalize_and_store) ist nicht angewendet.');
+    } else {
+      console.log('10. Abschluss+Speicherung atomar, Wiederabruf, gleichzeitige Abschlüsse, Rechte');
+      // Echtes eigenes Anmeldekonto (Ergebnisse verweisen auf auth.users); keine Mail.
+      const { data: created, error: createError } = await service.auth.admin.createUser({
+        email: `zz-ki-dbtest-${randomUUID().slice(0, 8)}@example.com`,
+        password: `Db-${randomUUID()}`,
+        email_confirm: true,
+      });
+      check('eigenes Testkonto angelegt', !createError && Boolean(created?.user?.id), createError?.message);
+      const owner = created?.user?.id;
+      if (owner) {
+        createdAuthUsers.push(owner);
+        createdUsers.push(owner);
+        const payload = { results: [{ courseId: 1 }], criteria: { terms: ['yoga'] } };
+        const fas = (rid, userId = owner, hash = 'h', body = payload) => service.rpc('ai_search_quota_finalize_and_store', {
+          p_request_id: rid, p_user_id: userId, p_query_hash: hash, p_payload: body, p_limit: 10,
+        });
+        const fetchResult = (rid, userId = owner, hash = 'h') => service.rpc('ai_search_result_fetch', {
+          p_request_id: rid, p_user_id: userId, p_query_hash: hash,
+        });
+
+        // 10a. Speicherfehler: Ausnahme, nichts gezählt, nichts gespeichert.
+        const failing = randomUUID();
+        await reserve(service, owner, failing, 'h');
+        const tooLarge = await fas(failing, owner, 'h', { x: 'a'.repeat(600_000) });
+        const { data: failingRow } = await service.from('ai_search_usage').select('state').eq('request_id', failing).single();
+        check('Speicherfehler: Fehler gemeldet, Reservierung unverändert offen, kein Ergebnis',
+          Boolean(tooLarge.error) && failingRow?.state === 'reserved' && (await fetchResult(failing)).data === null,
+          JSON.stringify({ error: tooLarge.error?.message, state: failingRow?.state }));
+        await service.rpc('ai_search_quota_release', { p_request_id: failing });
+        await ageOwnRows(owner);
+
+        // 10b. Zwei GLEICHZEITIGE Abschlussversuche: genau einer zählt/speichert.
+        const rid = randomUUID();
+        await reserve(service, owner, rid, 'h');
+        const both = await Promise.all([fas(rid), fas(rid)]);
+        const outcomes = both.map((r) => r.error?.message ?? r.data).sort();
+        const { count: resultRows } = await service.from('ai_search_results').select('*', { count: 'exact', head: true }).eq('request_id', rid);
+        check('gleichzeitige Abschlüsse: einmal completed, einmal not_reserved, genau 1 Ergebnis',
+          JSON.stringify(outcomes) === JSON.stringify(['completed', 'not_reserved']) && resultRows === 1,
+          JSON.stringify({ outcomes, resultRows }));
+
+        // 10c. Verlorene Antwort: dieselbe Kennung → already_completed + Ergebnis, keine neue Zeile.
+        const { count: rowsBefore } = await service.from('ai_search_usage').select('*', { count: 'exact', head: true }).eq('user_id', owner);
+        const again = await reserve(service, owner, rid, 'h');
+        const restored = await fetchResult(rid);
+        const { count: rowsAfter } = await service.from('ai_search_usage').select('*', { count: 'exact', head: true }).eq('user_id', owner);
+        check('Wiederabruf: already_completed, gespeichertes Ergebnis, keine neue Zeile',
+          again.data === 'already_completed' && JSON.stringify(restored.data) === JSON.stringify(payload) && rowsBefore === rowsAfter,
+          JSON.stringify({ again: again.data, rowsBefore, rowsAfter }));
+
+        // 10d. Fremdes Konto / anderer Inhalt: kein Ergebnis.
+        check('fremdes Konto oder anderer Inhalt erhält kein Ergebnis',
+          (await fetchResult(rid, randomUUID())).data === null && (await fetchResult(rid, owner, 'anders')).data === null);
+
+        // 10e. Nach > 1 h und trotz Abkühlpause: Wiederabruf nicht gebremst.
+        await ageOwnRows(owner);
+        for (let i = 0; i < 5; i += 1) {
+          await service.from('ai_search_usage').insert({ user_id: owner, month_key: '2000-01', request_id: randomUUID(), query_hash: `f${i}`, state: 'released', created_at: new Date(Date.now() - (i + 2) * 60_000).toISOString() });
+        }
+        const blocked = await reserve(service, owner, randomUUID(), 'neu');
+        const retry = await reserve(service, owner, rid, 'h');
+        check('nach 2 h und bei Abkühlpause: neue Suche gebremst, Wiederabruf nicht',
+          blocked.data === 'cooldown' && retry.data === 'already_completed' && (await fetchResult(rid)).data !== null,
+          JSON.stringify({ blocked: blocked.data, retry: retry.data }));
+
+        // 10f. Rechte: Clients erreichen weder Speicher noch Funktionen.
+        const anonFetch = await anon.rpc('ai_search_result_fetch', { p_request_id: rid, p_user_id: owner, p_query_hash: 'h' });
+        const anonSelect = await anon.from('ai_search_results').select('*').limit(1);
+        check('anon: kein Abruf, kein Lesezugriff', Boolean(anonFetch.error) && (Boolean(anonSelect.error) || (anonSelect.data ?? []).length === 0));
+      }
+    }
   } finally {
+    // Eigene Anmeldekonten löschen (Ergebnisse folgen per ON DELETE CASCADE)
+    // und Rückstandsfreiheit der Ergebnisse prüfen.
+    for (const id of createdAuthUsers) {
+      try {
+        const { error } = await service.auth.admin.deleteUser(id);
+        if (error) { failures += 1; console.error(`FEHLER Konto-Cleanup: ${error.message}`); }
+        const { count } = await service.from('ai_search_results').select('*', { count: 'exact', head: true }).eq('user_id', id);
+        if ((count ?? 0) > 0) { failures += 1; console.error(`FEHLER Ergebnis-Cleanup: ${count} Zeilen verblieben.`); }
+      } catch (authCleanupException) {
+        failures += 1;
+        console.error('FEHLER beim Konto-Cleanup:', authCleanupException);
+      }
+    }
     // Aufräumen der EIGENEN Testdaten — läuft auch bei Fehlern/Abbrüchen.
     try {
       const { error: cleanupError, count } = await service

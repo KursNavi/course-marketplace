@@ -57,15 +57,31 @@ describe('Datenbankentwurf 20261121090000 (statisch, nicht angewendet)', () => {
 
   it('liegt nicht im Migrationsbestand', () => {
     expect(readdirSync(path.join(ROOT, 'supabase/migrations')).some((f) => f.includes('result_store'))).toBe(false);
-    expect(up).toMatch(/ENTWURF – NICHT ANWENDEN/);
+    expect(up).toMatch(/ENTWURF( v\d+)? – NICHT ANWENDEN/);
   });
 
-  it('Speichern/Abruf an Konto, Suchinhalt, Zustand completed und Ablauf gebunden; kein Client-Zugriff', () => {
-    expect(up).toMatch(/v_row\.user_id IS DISTINCT FROM p_user_id[\s\S]*v_row\.query_hash IS DISTINCT FROM p_query_hash[\s\S]*v_row\.state <> 'completed'/);
+  it('Abschluss und Speicherung in EINER Funktion; Speicherfehler als Ausnahme (Rollback statt verbrauchter Suche ohne Ergebnis)', () => {
+    const fas = up.slice(up.indexOf('FUNCTION public.ai_search_quota_finalize_and_store'), up.indexOf('FUNCTION public.ai_search_result_fetch'));
+    expect(fas).toMatch(/RAISE EXCEPTION 'ai_search_result_invalid'/);
+    expect(fas).toMatch(/RAISE EXCEPTION 'ai_search_result_too_large'/);
+    // Erst sperren, dann Zeile FOR UPDATE neu lesen (zwei gleichzeitige Abschlussversuche).
+    expect(fas.indexOf('pg_advisory_xact_lock')).toBeLessThan(fas.indexOf('FOR UPDATE'));
+    expect(fas).toMatch(/IF v_row\.state <> 'reserved' THEN\s*RETURN 'not_reserved'/);
+    // Zählung und Speicherung im selben Block, Speicherung ohne Fehlerunterdrückung.
+    expect(fas.indexOf("SET state = 'completed'")).toBeLessThan(fas.indexOf('INSERT INTO ai_search_results'));
+    expect(fas).not.toMatch(/EXCEPTION WHEN|ON CONFLICT/);
+    expect(up).not.toMatch(/ai_search_result_store\(/);
+  });
+
+  it('Abruf an Konto, Suchinhalt, completed und Frist gebunden; Abrufbarkeit ≠ Löschung; Kontolöschung kaskadiert', () => {
     expect(up).toMatch(/r\.user_id = p_user_id[\s\S]*r\.query_hash = p_query_hash[\s\S]*u\.state = 'completed'[\s\S]*r\.expires_at > now\(\)/);
     expect(up).toMatch(/expires_at\s+TIMESTAMPTZ NOT NULL DEFAULT now\(\) \+ interval '24 hours'/);
+    expect(up).toMatch(/user_id\s+UUID NOT NULL REFERENCES auth\.users\(id\) ON DELETE CASCADE/);
+    expect(up).toMatch(/FUNCTION public\.ai_search_result_cleanup\(p_batch INTEGER DEFAULT 5000\)/);
+    expect(up).toMatch(/FUNCTION public\.ai_search_result_purge_user\(p_user_id UUID\)/);
+    expect(up).toMatch(/NICHT eingeplant/);
     expect(up).toMatch(/REVOKE ALL ON public\.ai_search_results FROM anon, authenticated/);
-    for (const fn of ['ai_search_result_store(UUID, UUID, TEXT, JSONB)', 'ai_search_result_fetch(UUID, UUID, TEXT)', 'ai_search_result_cleanup()', 'ai_search_quota_reserve(UUID, UUID, TEXT, INTEGER)']) {
+    for (const fn of ['ai_search_quota_finalize_and_store(UUID, UUID, TEXT, JSONB, INTEGER)', 'ai_search_result_fetch(UUID, UUID, TEXT)', 'ai_search_result_cleanup(INTEGER)', 'ai_search_result_purge_user(UUID)', 'ai_search_quota_reserve(UUID, UUID, TEXT, INTEGER)']) {
       expect(up).toContain(`REVOKE EXECUTE ON FUNCTION public.${fn} FROM anon, authenticated, PUBLIC;`);
     }
   });
@@ -79,9 +95,34 @@ describe('Datenbankentwurf 20261121090000 (statisch, nicht angewendet)', () => {
     expect(reserve.indexOf("RETURN 'cooldown'")).toBeLessThan(reserve.indexOf("RETURN 'limit_reached'"));
   });
 
+  it('Rollback-Test: eindeutige Abschlussmeldung, vollständige Prüfanzahl, nur eigene Testdaten', async () => {
+    const { composeDraftTest } = await import('../scripts/ai-search-draft-sql-test.mjs');
+    const { sql, migration, rollback } = composeDraftTest(ROOT, 'result_store');
+    const body = sql.slice(sql.indexOf('DO $ai_draft_test$'));
+    const expected = Number(/c_expected CONSTANT INTEGER := (\d+)/.exec(body)[1]);
+    expect(body.match(/v_checks := v_checks \+ 1;/g)).toHaveLength(expected);
+    expect(body).toContain(`AI_DRAFT_TEST_OK %s/%s`);
+    expect(body.match(/'KNT00'/g)).toHaveLength(1);
+    expect(migration.length).toBeGreaterThanOrEqual(10);
+    expect(rollback.length).toBeGreaterThanOrEqual(6);
+    expect(body).not.toMatch(/-- @@MIGRATION@@|-- @@ROLLBACK@@/);
+    expect(body).not.toMatch(/\$function\$(mig|down)\d+\$/);
+    // Schreibende Anweisungen DES TESTS (ohne eingebetteten Entwurf) nur auf eigene Kennungen/Konten.
+    const testOnly = readFileSync(path.join(ROOT, 'supabase/drafts/tests/20261121090000_ai_search_result_store_and_guard_test.sql'), 'utf8');
+    for (const m of testOnly.matchAll(/(UPDATE ai_search_(usage|results) SET[^;]*;|DELETE FROM [a-z_.]+[^;]*;)/g)) {
+      expect(m[0]).toMatch(/WHERE (request_id = (r\d|rd|ra|rt)|user_id = v_(user|other|third)|id = v_third)/);
+    }
+    // Pflichtfälle aus der Prüfung vom 21.11.
+    for (const label of ['S1 Speicherfehler', 'Wiederabruf', 'S5 Wiederabruf nach 2 h', 'S6 Parallel/Minute vorübergehend', 'zweiter Abschluss', 'S8 Kontolöschung']) {
+      expect(body).toContain(label);
+    }
+  });
+
   it('Rückweg entfernt Speicher/Funktionen und stellt die bisherige Reservierung wieder her', () => {
     expect(down).toMatch(/DROP TABLE IF EXISTS public\.ai_search_results/);
     expect(down).toMatch(/DROP FUNCTION IF EXISTS public\.ai_search_result_fetch/);
+    expect(down).toMatch(/DROP FUNCTION IF EXISTS public\.ai_search_quota_finalize_and_store/);
+    expect(down).toMatch(/DROP FUNCTION IF EXISTS public\.ai_search_result_purge_user/);
     expect(down).not.toMatch(/too_many_parallel|rate_limited|cooldown/);
     expect(down).toMatch(/CREATE OR REPLACE FUNCTION public\.ai_search_quota_reserve/);
   });

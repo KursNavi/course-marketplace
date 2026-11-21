@@ -20,8 +20,10 @@
  *     readModelConfig() freigibt (Standard: aus, keine kostenpflichtigen Aufrufe).
  *  6. Abschluss (ai_search_quota_finalize); NUR 'completed' gibt das
  *     Ergebnis frei. Echter Systemfehler → Reservierung freigeben.
- *  6b. Ergebnis privat und befristet speichern (ai_search_result_store,
- *     Migrationsentwurf 20261121090000; fehlt er, ohne Wiederabruf).
+ *     Abschluss und private, befristete Speicherung laufen in EINER
+ *     Datenbanktransaktion (ai_search_quota_finalize_and_store,
+ *     Migrationsentwurf 20261121090000). Speicherfehler → nichts gezählt,
+ *     Reservierung freigegeben, Fehler 500. Ohne Entwurf: Altzustand.
  *
  * Rohsuchtexte werden nicht protokolliert.
  */
@@ -63,22 +65,26 @@ export function buildQueryHash(query, musts) {
 const GUARD_RESERVE_CODES = new Set(['too_many_parallel', 'rate_limited', 'cooldown']);
 
 /**
- * Speichert das freigegebene Ergebnis (Datenbankfunktion prüft selbst, dass
- * die Kennung diesem Konto gehört, denselben Suchinhalt trägt und
- * 'completed' ist). Fehlt der Speicher (Migration noch nicht angewendet),
- * wird das Ergebnis trotzdem ausgeliefert, nur nicht wiederabrufbar.
- * @returns {Promise<boolean>} gespeichert ja/nein
+ * Abschluss + Speicherung atomar (Migrationsentwurf 20261121090000).
+ *  - Erfolg: { finalized: 'completed', stored: true }
+ *  - Speicher-/Datenbankfehler: { finalized: 'store_failed' } – nichts
+ *    gezählt (Funktion zurückgerollt); Fehler wird protokolliert.
+ *  - Übergangsbetrieb, solange die Funktion nicht existiert (Entwurf nicht
+ *    angewendet): bisheriger Abschluss ohne Speicherung, stored: false.
+ *    Das ist KEIN Speicherfehler, sondern der dokumentierte Altzustand.
  */
-async function storeResult(service, requestId, userId, queryHash, payload) {
-  if (!payload) return false;
-  const { data, error } = await service.rpc('ai_search_result_store', {
-    p_request_id: requestId, p_user_id: userId, p_query_hash: queryHash, p_payload: payload,
+async function finalizeAndStore(service, requestId, userId, queryHash, payload) {
+  const { data, error } = await service.rpc('ai_search_quota_finalize_and_store', {
+    p_request_id: requestId, p_user_id: userId, p_query_hash: queryHash, p_payload: payload, p_limit: QUOTA_LIMIT,
   });
-  if (error) {
-    if (!isMissingFunction(error)) console.error('ai-search: Ergebnis nicht gespeichert:', error.message);
-    return false;
+  if (!error) return { finalized: data, stored: data === 'completed' };
+  if (!isMissingFunction(error)) {
+    console.error('ai-search: Abschluss/Speicherung fehlgeschlagen:', error.message);
+    return { finalized: 'store_failed', stored: false };
   }
-  return data === true;
+  const legacy = await service.rpc('ai_search_quota_finalize', { p_request_id: requestId, p_limit: QUOTA_LIMIT });
+  if (legacy.error) throw new Error(`Abschluss: ${legacy.error.message}`);
+  return { finalized: legacy.data, stored: false };
 }
 
 /** Holt ein gespeichertes Ergebnis desselben Kontos/Suchinhalts, sonst null. */
@@ -150,14 +156,18 @@ export default async function handler(req, res) {
     // 3b. Missbrauchs-/Parallelitätsbremse VOR jeder Reservierung und damit
     // vor jedem kostenpflichtigen Aufruf (Plan 14, Schritt 3). Fällt die
     // Prüfung selbst aus, wird nicht gesucht (fail closed, nichts belastet).
+    // Die eigene Kennung wird unabhängig von ihrem Alter mitgelesen: ein
+    // Wiederabruf (auch nach mehr als einer Stunde) wird so VOR der Bremse
+    // erkannt und nie gebremst.
     const guardStarted = Date.now();
+    const sinceIso = new Date(Date.now() - GUARD_LIMITS.hourWindowMs).toISOString();
     const { data: recentRows, error: guardError } = await service
       .from('ai_search_usage')
       .select('request_id, state, created_at, reserved_until')
       .eq('user_id', user.id)
-      .gte('created_at', new Date(Date.now() - GUARD_LIMITS.hourWindowMs).toISOString())
+      .or(`created_at.gte."${sinceIso}",request_id.eq.${body.requestId}`)
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(51);
     serverTimings.guard = Date.now() - guardStarted;
     if (guardError) {
       console.error('ai-search: Bremse nicht prüfbar:', guardError.message);
@@ -237,23 +247,21 @@ export default async function handler(req, res) {
     }
     serverTimings.search = result.timings?.total ?? null;
 
-    // 6. Abschluss — nur 'completed' gibt das Ergebnis frei.
+    // 6. Abschluss UND Speicherung in EINER Datenbanktransaktion
+    // (ai_search_quota_finalize_and_store): nur 'completed' gibt das
+    // Ergebnis frei, und dann ist es auch gespeichert.
     const finalizeStarted = Date.now();
-    const { data: finalized, error: finalizeError } = await service.rpc('ai_search_quota_finalize', {
-      p_request_id: body.requestId,
-      p_limit: QUOTA_LIMIT,
-    });
+    const { finalized, stored } = await finalizeAndStore(service, body.requestId, user.id, queryHash, storablePayload(result));
     serverTimings.finalize = Date.now() - finalizeStarted;
-    if (finalizeError) throw new Error(`Abschluss: ${finalizeError.message}`);
+    if (finalized === 'store_failed') {
+      // Speichern fehlgeschlagen → Transaktion zurückgerollt, Reservierung
+      // offen: freigeben, damit keine verbrauchte Suche ohne Ergebnis bleibt.
+      await service.rpc('ai_search_quota_release', { p_request_id: body.requestId });
+      return res.status(500).json({ error: 'store_failed', quota: await quotaStatus(service, user.id) });
+    }
     if (finalized !== 'completed') {
       return res.status(409).json({ error: 'not_released', quota: await quotaStatus(service, user.id) });
     }
-
-    // 6b. Ergebnis privat und befristet speichern (nur nach 'completed'),
-    // damit Reload oder verlorene Antwort es ohne zweite Belastung abrufen.
-    const storeStarted = Date.now();
-    const stored = await storeResult(service, body.requestId, user.id, queryHash, storablePayload(result));
-    serverTimings.store = Date.now() - storeStarted;
 
     const quotaStarted = Date.now();
     const quota = await quotaStatus(service, user.id);

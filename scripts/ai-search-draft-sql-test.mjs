@@ -77,11 +77,23 @@ function asExecutes(statements, label) {
   }).join('\n  ');
 }
 
-export function composeDraftTest(root = ROOT) {
+// Weitere Testsätze (Entwurf 20261121090000: Ergebnisspeicher + Bremse).
+export const TEST_SETS = Object.freeze({
+  keep_embeddings: { migration: MIGRATION_FILE, rollback: ROLLBACK_FILE, test: TEST_FILE },
+  result_store: {
+    migration: 'supabase/drafts/20261121090000_ai_search_result_store_and_guard.sql',
+    rollback: 'supabase/drafts/20261121090000_ai_search_result_store_and_guard_down.sql',
+    test: 'supabase/drafts/tests/20261121090000_ai_search_result_store_and_guard_test.sql',
+  },
+});
+
+export function composeDraftTest(root = ROOT, setName = 'keep_embeddings') {
+  const set = TEST_SETS[setName];
+  if (!set) throw new Error(`Unbekannter Testsatz: ${setName}`);
   const read = (rel) => readFileSync(path.join(root, rel), 'utf8');
-  const migration = splitSqlStatements(read(MIGRATION_FILE));
-  const rollback = splitSqlStatements(read(ROLLBACK_FILE));
-  const test = read(TEST_FILE);
+  const migration = splitSqlStatements(read(set.migration));
+  const rollback = splitSqlStatements(read(set.rollback));
+  const test = read(set.test);
   if (!test.includes('-- @@MIGRATION@@') || !test.includes('-- @@ROLLBACK@@')) throw new Error('Marker fehlen im Test.');
   return {
     migration,
@@ -93,5 +105,5 @@ export function composeDraftTest(root = ROOT) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  process.stdout.write(composeDraftTest().sql);
+  process.stdout.write(composeDraftTest(ROOT, process.argv[2] || 'keep_embeddings').sql);
 }
