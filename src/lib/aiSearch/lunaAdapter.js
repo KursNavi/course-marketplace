@@ -115,6 +115,8 @@ export function validateRerankResponse(response, allowedCourseIds) {
       courseId,
       score: Math.max(0, Math.min(100, score)),
       reasons,
+      // Roh; die inhaltliche Prüfung erfolgt in openaiGateway.validateExplanation.
+      explanation: typeof entry.explanation === 'string' ? entry.explanation : null,
     });
   }
 

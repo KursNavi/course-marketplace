@@ -1,4 +1,5 @@
--- RÜCKWEG für die drei KI-Such-Migrationen (20261113180000/180100/180200).
+-- RÜCKWEG für die KI-Such-Migrationen
+-- (20261113180000/180100/180200 sowie 20261115190000).
 --
 -- Zweck: dokumentierter, vollständiger Rückbau NUR der durch diese
 -- Migrationen angelegten Objekte — ausschliesslich auf dem freigegebenen
@@ -30,6 +31,11 @@ DROP FUNCTION IF EXISTS ai_search_quota_remaining(UUID, INTEGER);
 DROP FUNCTION IF EXISTS ai_search_quota_cleanup();
 DROP FUNCTION IF EXISTS ai_search_quota_used(UUID, TEXT);
 DROP FUNCTION IF EXISTS ai_search_month_key(TIMESTAMPTZ);
+
+-- Atomare Uebernahme (20261115190000):
+DROP FUNCTION IF EXISTS ai_search_apply_upsert(BIGINT, BIGINT, JSONB, JSONB);
+DROP FUNCTION IF EXISTS ai_search_apply_delete(BIGINT, BIGINT);
+DROP TABLE IF EXISTS ai_search_index_state;
 
 -- Tabellen und Sequenz:
 DROP TABLE IF EXISTS ai_search_usage;

@@ -1,0 +1,261 @@
+/**
+ * Begründung je Suchkarte als Fliesstext (Nachtrag 10, §4).
+ *
+ * - Empfohlen 40–70 Wörter, harte Obergrenze 100 (MAX_EXPLANATION_WORDS).
+ *   Bei knapper Evidenz bleibt der Text kürzer; nichts wird aufgefüllt.
+ * - Der Text besteht ausschliesslich aus belegten Bausteinen: wörtliche
+ *   Zitate aus dem öffentlichen Kurstext, Ort/Termin/Preis aus den
+ *   Kursangaben. Keine erfundenen Lernziele, Eignung, Abschlüsse.
+ * - Abweichungen von Wünschen und nicht bestätigte Muss-Vorgaben werden
+ *   immer behalten (sie werden beim Kürzen nie entfernt).
+ * - Paket-/Prio-Daten fliessen nie ein.
+ */
+
+import { WISH_CLAIM_PATTERNS } from './wishCheck.js';
+import { ADULT_CLAIM, CHILD_MENTION } from './audience.js';
+
+// Nachtrag 12 (18.11.2026): normal 25–40 Wörter, höchstens 50 einschliesslich
+// serverseitiger Hinweise (ersetzt 40–70/100 aus Nachtrag 10).
+export const MAX_EXPLANATION_WORDS = 50;
+const QUOTE_MAX_WORDS = 12;
+
+const IN_SECTION = {
+  title: 'im Titel',
+  description: 'in der Beschreibung',
+  objectives: 'in den Lernzielen',
+  prerequisites: 'in den Voraussetzungen',
+  keywords: 'in den Stichworten',
+  free_reason: 'im Hinweis des Anbieters',
+  category: 'in der Kategorie',
+  location: 'bei den Ortsangaben',
+  price_status: 'bei den Preisangaben',
+  level: 'beim Niveau',
+  languages: 'bei der Sprache',
+};
+
+export function countWords(text) {
+  return String(text ?? '').trim().split(/\s+/).filter(Boolean).length;
+}
+
+/** Kürzt ein Zitat wortweise um den Suchbegriff herum (bleibt wörtlich). */
+export function shortenQuote(quote, term, maxWords = QUOTE_MAX_WORDS) {
+  const clean = String(quote ?? '').replace(/^…/, '').replace(/…$/, '').trim();
+  const words = clean.split(/\s+/).filter(Boolean);
+  const startsCut = String(quote ?? '').startsWith('…');
+  const endsCut = String(quote ?? '').endsWith('…');
+  if (words.length <= maxWords) return `${startsCut ? '…' : ''}${clean}${endsCut ? '…' : ''}`;
+  const stem = String(term ?? '').toLowerCase().slice(0, 4);
+  let hit = stem ? words.findIndex((w) => w.toLowerCase().includes(stem)) : -1;
+  if (hit < 0) hit = Math.floor(words.length / 2);
+  let from = Math.max(0, hit - Math.floor(maxWords / 2));
+  const to = Math.min(words.length, from + maxWords);
+  from = Math.max(0, to - maxWords);
+  const prefix = from > 0 || startsCut ? '…' : '';
+  const suffix = to < words.length || endsCut ? '…' : '';
+  return `${prefix}${words.slice(from, to).join(' ')}${suffix}`;
+}
+
+function formatDay(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Zurich' });
+}
+
+// Wortfelder je Aspekt: Ein Satzteil, der den Aspekt überhaupt anspricht
+// (positiv ODER verneinend), wird durch den einen Serverhinweis ersetzt.
+const ASPECT_PATTERNS = {
+  Lernform: [WISH_CLAIM_PATTERNS.self_study, WISH_CLAIM_PATTERNS.presence, WISH_CLAIM_PATTERNS.online],
+  Niveau: [WISH_CLAIM_PATTERNS.beginner, /fortgeschritten|mittelstufe|\bniveau\b/i],
+};
+
+function mentionsAny(text, patterns) {
+  return patterns.some((pattern) => pattern.test(text));
+}
+
+/**
+ * Nachtrag 13 (19.11.2026): Ist ein Wunsch zu Lernform/Online/Niveau NICHT
+ * durch die strukturierten Kursangaben bestätigt, gibt der Server genau EINE
+ * datenbasierte Aussage dazu aus (buildExplanation). Aus dem Modelltext
+ * werden deshalb alle Satzteile entfernt, die diesen Aspekt ansprechen:
+ * - positive Erfüllungsbehauptungen („passt zu deinem Wunsch nach
+ *   selbstständigem Lernen“) – unbelegt;
+ * - Ausschlussbehauptungen („nicht im Selbststudium“) – Präsenz allein
+ *   belegt keinen Ausschluss, und der Sachverhalt stünde sonst doppelt.
+ * Entfernt wird möglichst nur der betroffene Satzteil (Komma/Semikolon/
+ * Gedankenstrich); spricht schon der Satzanfang den Aspekt an, der ganze Satz.
+ * Bestätigte Wünsche bleiben unverändert.
+ */
+export function removeUnbackedWishClaims(lead, wishChecks = []) {
+  const text = typeof lead === 'string' ? lead.trim() : '';
+  if (!text) return null;
+  const open = wishChecks.filter((check) => check.status !== 'confirmed');
+  if (open.length === 0) return text;
+  const patterns = [...new Set(open.flatMap((check) => ASPECT_PATTERNS[check.aspect]
+    ?? (WISH_CLAIM_PATTERNS[check.claimKey] ? [WISH_CLAIM_PATTERNS[check.claimKey]] : [])))];
+  if (patterns.length === 0) return text;
+  return removeClauses(text, patterns);
+}
+
+/**
+ * Entfernt Satzteile, die eines der Muster enthalten (Komma/Semikolon/
+ * Gedankenstrich); trifft schon der Satzanfang, den ganzen Satz.
+ */
+function removeClauses(text, patterns) {
+  const sentences = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [text];
+  const kept = sentences.map((raw) => {
+    const sentence = raw.trim();
+    if (!mentionsAny(sentence, patterns)) return sentence;
+    const end = /[.!?]+$/.exec(sentence)?.[0] ?? '.';
+    const clauses = sentence.replace(/[.!?]+$/, '').split(/\s*[,;]\s+|\s+[–—]\s+/);
+    if (mentionsAny(clauses[0], patterns)) return null;
+    const rest = clauses.filter((clause) => !mentionsAny(clause, patterns)).join(', ');
+    return countWords(rest) >= 4 ? `${rest}${end}` : null;
+  }).filter(Boolean);
+  const result = kept.join(' ').trim();
+  return result || null;
+}
+
+/**
+ * Zielgruppe Kinder/Jugendliche (20.11.2026): unbelegte Erwachsenen-Eignung
+ * aus dem Modelltext entfernen. Gibt den bereinigten Text zurück.
+ */
+export function removeUnbackedAdultClaims(lead, audience) {
+  const text = typeof lead === 'string' ? lead.trim() : '';
+  if (!text) return null;
+  if (!audience?.child || audience.adultsBacked) return text;
+  return removeClauses(text, [ADULT_CLAIM]);
+}
+
+/**
+ * Eine evidenzgerechte Aussage je nicht bestätigtem Wunsch. Sie gibt nur
+ * wieder, was die Kursangaben nennen; aus „Präsenz“ wird kein Ausschluss von
+ * Selbststudium gefolgert.
+ */
+export function wishCheckSentence(check) {
+  if (!check || check.status === 'confirmed') return null;
+  const field = check.aspect === 'Niveau' ? 'Niveau' : 'Lernform';
+  const detail = check.actual
+    ? (field === 'Niveau' ? `als Niveau ${check.actual}` : `als Lernform nur ${check.actual}`)
+    : (field === 'Niveau' ? 'kein Niveau' : 'keine Lernform');
+  return `Wunsch „${check.wishLabel}“ nicht bestätigt: Die Kursangaben nennen ${detail}.`;
+}
+
+function capitalize(text) {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+/**
+ * @param {object} input
+ * @param {Array} input.reasons  belegte Gründe (kind text|luna|location)
+ * @param {Array} input.wishes   erkannte Wünsche aus der Vorinterpretation
+ * @param {object} input.musts   aktive Muss-Vorgaben ({location, maxBudget})
+ * @param {string[]} input.mustUnknowns  nicht bestätigbare Muss-Vorgaben
+ * @param {string|null} input.place  Ort laut Kursangaben
+ * @param {object|null} input.event  nächster passender Termin
+ * @param {string} input.price   Preisdarstellung laut Kursangaben
+ * @returns {string}
+ */
+export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, event = null, price = '', audience = null }) {
+  // priority: 0 = nie kürzen (Einschränkungen), höhere Zahl = zuerst weglassen
+  const parts = [];
+  const add = (order, priority, text) => { if (text) parts.push({ order, priority, text, lead: false }); };
+
+  // Serverseitig geprüfter Luna-Fliesstext ersetzt die Zitatsätze. Fehlt er,
+  // bleibt die bisherige belegte Zusammenstellung. Sätze, die einen NICHT
+  // bestätigten Wunsch als erfüllt darstellen oder bei Kinderkursen eine
+  // unbelegte Eignung für Erwachsene behaupten, werden vorher entfernt.
+  const leadText = removeUnbackedAdultClaims(removeUnbackedWishClaims(lead, wishChecks), audience);
+  if (leadText) parts.push({ order: 10, priority: 1, text: leadText, lead: true });
+  const evidence = leadText ? [] : reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');
+  evidence.forEach((reason, index) => {
+    const where = IN_SECTION[reason.section] ?? `bei „${reason.sectionLabel ?? reason.section}“`;
+    let sentence;
+    if (reason.section === 'title' && reason.kind === 'text') {
+      sentence = `Schon der Kurstitel greift „${reason.term}“ auf.`;
+    } else if (reason.kind === 'text') {
+      sentence = `Zu „${reason.term}“ heisst es ${where}: „${shortenQuote(reason.quote, reason.term)}“.`;
+    } else {
+      sentence = `${capitalize(where)} steht: „${shortenQuote(reason.quote, '')}“.`;
+    }
+    add(10 + index, index === 0 ? 1 : 3 + index, sentence);
+  });
+
+  // Kinder-/Jugendkurs: Zielgruppe muss erkennbar sein. Nennt der Text sie
+  // nicht selbst, ergänzt der Server einen nie gekürzten Hinweis.
+  if (audience?.child && audience.label) {
+    const shown = parts.map((p) => p.text).join(' ');
+    if (!CHILD_MENTION.test(shown)) add(15, 0, `Zielgruppe laut Kursangaben: ${audience.label}.`);
+  }
+
+  const locationReason = reasons.find((r) => r.kind === 'location');
+  const locationWishes = wishes.filter((w) => w.type === 'location');
+  if (locationReason) {
+    const where = String(locationReason.quote ?? '').replace(/^Ort laut Kursangaben:\s*/, '');
+    add(20, 2, `Ort laut Kursangaben: ${where}.`);
+  } else if (locationWishes.length > 0) {
+    const wish = locationWishes.map((w) => w.label).join(' / ');
+    add(20, 0, place
+      ? `Abweichung vom Wunsch „${wish}“: Ort ist ${place}.`
+      : `Offen, ob in ${wish}: kein Ort angegeben.`);
+  }
+
+  // Wünsche zu Lernform/Niveau: nur strukturierte Kursangaben entscheiden.
+  // Genau eine Aussage je Wunsch (Nachtrag 13); doppelte Wünsche zusammenfassen.
+  const seenWishes = new Set();
+  wishChecks.forEach((check, index) => {
+    const key = `${check.aspect}|${check.wishLabel}`;
+    if (seenWishes.has(key)) return;
+    seenWishes.add(key);
+    add(25 + index, 0, wishCheckSentence(check));
+  });
+
+  for (const unknown of mustUnknowns) {
+    if (unknown === 'event') add(30, 0, `Nicht bestätigt: ein Termin${musts.location ? ` in ${musts.location}` : ' passend zur Ortsvorgabe'}.`);
+    if (unknown === 'budget') add(31, 0, `Nicht bestätigt: Preis im Budget (${price || 'kein Preis angegeben'}).`);
+    if (unknown === 'language') add(32, 0, 'Nicht bestätigt: Kurssprache.');
+  }
+
+  const budgetWish = wishes.find((w) => w.type === 'budget');
+  if ((budgetWish || musts.maxBudget) && !mustUnknowns.includes('budget') && price) {
+    add(40, 2, `Preis laut Angaben: ${price}.`);
+  }
+
+  const day = formatDay(event?.startDate ?? event?.start_date);
+  add(41, 6, day ? `Nächster Termin: ${day}.` : null);
+
+  // Kürzen: am wenigsten wichtige Bausteine zuerst, Einschränkungen nie.
+  const kept = [...parts];
+  const total = () => kept.reduce((sum, p) => sum + countWords(p.text), 0);
+  const shrink = () => {
+    while (total() > MAX_EXPLANATION_WORDS) {
+      const droppable = kept.filter((p) => p.priority > 0 && !p.lead).sort((a, b) => b.priority - a.priority)[0];
+      if (droppable) { kept.splice(kept.indexOf(droppable), 1); continue; }
+      // Nur noch Lead + Einschränkungen: Lead an Satzgrenzen kürzen.
+      const leadPart = kept.find((p) => p.lead);
+      if (!leadPart) break;
+      const budget = MAX_EXPLANATION_WORDS - (total() - countWords(leadPart.text));
+      const sentences = leadPart.text.match(/[^.!?]+[.!?]+/g) ?? [leadPart.text];
+      let shortened = '';
+      for (const sentence of sentences) {
+        const next = `${shortened} ${sentence.trim()}`.trim();
+        if (countWords(next) > budget) break;
+        shortened = next;
+      }
+      if (shortened) leadPart.text = shortened;
+      else kept.splice(kept.indexOf(leadPart), 1);
+      break;
+    }
+  };
+  shrink();
+  // Ging die Zielgruppen-Nennung beim Kürzen verloren, Hinweis nachträglich sichern.
+  if (audience?.child && audience.label && !CHILD_MENTION.test(kept.map((p) => p.text).join(' '))) {
+    kept.push({ order: 15, priority: 0, text: `Zielgruppe laut Kursangaben: ${audience.label}.`, lead: false });
+    shrink();
+  }
+  let text = kept.sort((a, b) => a.order - b.order).map((p) => p.text).join(' ');
+  if (countWords(text) > MAX_EXPLANATION_WORDS) {
+    text = `${text.split(/\s+/).slice(0, MAX_EXPLANATION_WORDS).join(' ')}…`;
+  }
+  return text;
+}

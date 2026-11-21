@@ -38,9 +38,54 @@ FROM pg_available_extensions WHERE name IN ('vector', 'unaccent');
 2. `supabase/migrations/20261113180100_ai_search_vector.sql` — **nur wenn** Schritt 1
    `vector` als verfügbar ausgewiesen hat; sonst auslassen und berichten.
 3. `supabase/migrations/20261113180200_ai_search_quota.sql`
+4. `supabase/migrations/20261115190000_ai_search_worker_apply.sql` — atomare
+   Worker-Übernahme (`ai_search_index_state`, `ai_search_apply_*`). **Status:
+   liegt zur Prüfung vor; Anwendung erst nach Freigabe.** Ohne sie weisen die
+   DB-Tests die Abschnitte 8/9 ausdrücklich als NICHT GEPRÜFT aus.
+
+5. `supabase/migrations/20261120205856_ai_search_keep_embeddings_skip_noop_jobs.sql` —
+   Embeddings bei identischem Abschnittstext erhalten, keine Aufträge bei
+   wertgleichen UPDATEs, Profil-Trigger. **Am 20.11.2026 ausschliesslich auf der
+   TESTumgebung angewendet** (Freigabe des Nutzers, nach bestandenem
+   Rollback-Test KNT00 „AI_DRAFT_TEST_OK 16/16“): exakte Fassung aus Commit
+   `779557abcf917a4c4d7bc5475d628c9da2143997` (damals als Entwurf
+   `supabase/drafts/20261120090000_…`; md5 `10e563be0260d4b7fa734673dee1e726`),
+   verbucht in `supabase_migrations.schema_migrations` als
+   `20261120205856 ai_search_keep_embeddings_skip_noop_jobs`. Danach unter
+   genau dieser Version byte-genau in den Migrationsbestand übernommen
+   (Test `tests/ai-search-draft-migration.test.js` sichert md5, Version und
+   „keine zweite Kopie“). **Der Kopfkommentar der Datei nennt noch „ENTWURF“
+   und die alten Pfade – bewusst unverändert, damit der Inhalt der verbuchten
+   Fassung entspricht.** Rückweg (nicht ausgeführt, nur nach Freigabe):
+   `supabase/rollback/20261120205856_ai_search_keep_embeddings_skip_noop_jobs_down.sql`.
+   Produktion: nicht angewendet; eigene Freigabe nötig.
+
+6. `supabase/migrations/20261121122101_ai_search_result_store_and_guard.sql` —
+   Ergebnisspeicher (24 h abrufbar, Löschablauf nicht eingeplant,
+   Kontolöschung kaskadiert) und atomare Missbrauchsbremse. **Am 21.11.2026
+   ausschliesslich auf der TESTumgebung angewendet** nach bestandenem
+   Rollback-Test v2 (KNT00 „AI_DRAFT_TEST_OK 31/31“, Commit c3fff53):
+   unveränderte Fassung (md5 `c8061652db3ecdd0439d30165416bc8d`), verbucht
+   als `20261121122101 ai_search_result_store_and_guard`, danach unter dieser
+   Version byte-genau übernommen. Rückweg (nicht ausgeführt):
+   `supabase/rollback/20261121122101_ai_search_result_store_and_guard_down.sql`.
+   Seitdem verlangt die CI Abschnitt 10 der DB-Tests
+   (`AI_DB_TESTS_REQUIRE_RESULT_STORE=1`); Überspringen gilt als Fehler.
+   **Offener Betriebspunkt:** Löschablauf `ai_search_result_cleanup` ist
+   nicht eingeplant – abgelaufene Ergebnisse bleiben bis zu einer manuellen
+   Bereinigung gespeichert (nicht abrufbar).
+
+   Hinweis Versionsabgleich: Die Migrationen 1–4 tragen im Repo andere
+   Versionsnummern als in der Migrationsliste der TESTumgebung (z. B. Datei
+   `20261115190000`, verbucht `20261115200229`). Ein `supabase db push` gegen
+   die TESTumgebung würde sie deshalb als neu ansehen. Vor einem solchen Lauf
+   die Historie abgleichen (`supabase migration repair`), nicht blind pushen.
+   Für 20261120205856 stimmen Datei und Historie überein. Offene Aufgabe:
+   `docs/ai-search/aufgabe-migrationsversionen.md`.
 
 Keine bestehenden Testdaten zurücksetzen; die Migrationen legen ausschliesslich neue
-`ai_search_*`-Objekte und Trigger an.
+`ai_search_*`-Objekte und Trigger an. (1–3 sind seit 14.11.2026 auf der TESTumgebung
+angewendet und verifiziert.)
 
 ## 3. Verifikation nach Anwendung
 
@@ -57,6 +102,15 @@ Eigene neue Zufalls-Testkennungen; `AI_DB_TESTS_ALLOW_GLOBAL_CLEANUP` bleibt
 **ungesetzt**; Aufräumen eigener Testdaten läuft im finally auch bei Fehlern und
 verifiziert Rückstandsfreiheit. Bei Fehlern: anhalten, Einzelergebnisse berichten,
 nichts weiter anwenden.
+
+## 4b. Begrenzter Befüllungslauf (nach separater Freigabe)
+
+`npm run backfill:ai-test` — ausschliesslich TESTumgebung: strikter URL-Parser
+**plus** ausdrückliche Bestätigung `AI_BACKFILL_CONFIRM=omoapbvfligjfznzivyu`.
+Globale Kontingentbereinigung ist ausgeschaltet, kein Mailversand, keine
+Modellaufrufe. Gibt die Nachweise aus: Kursabdeckung, Dokumente ohne Chunks,
+offene/fehlgeschlagene Jobs, entfernte Rücknahmen. Ersetzt den E1-Abgleich mit
+dem aktuellen öffentlichen Katalog nicht.
 
 ## 5. Rückweg
 
