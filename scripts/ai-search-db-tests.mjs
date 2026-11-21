@@ -6,7 +6,7 @@
  * Das Skript verweigert jeden Lauf gegen eine andere Adresse — insbesondere
  * gegen Produktion. Benötigt (wie scripts/seed-e2e.mjs):
  *   SUPABASE_URL_TEST, SUPABASE_SECRET_KEY_TEST, SUPABASE_PUBLISHABLE_KEY_TEST
- * sowie zuvor angewendete Migrationen 20261113180000/180100/180200.
+ * sowie zuvor angewendete Migrationen 20261114205850/205915/205947.
  *
  * Abgedeckt (Nachtrag 07 §4 und Prüfbefunde):
  *   1. Rollen/RLS: anon darf weder ai_search_*-Tabellen lesen noch
@@ -22,7 +22,7 @@
  *   8. Outbox-Worker: eigene synthetische Jobs (nicht existente Kurs-IDs)
  *      werden koalesziert verarbeitet und abgeschlossen; echte Kurse und
  *      fremde Jobs bleiben unberührt (onlyCourseIds-Filter).
- *   9. Atomare Übernahme (Migration 20261115190000) am EIGENEN Testkurs:
+ *   9. Atomare Übernahme (Migration 20261115200229) am EIGENEN Testkurs:
  *      Trigger→Worker→Indexeintrag, zwei gleichzeitige Übernahmen mit
  *      unterschiedlicher Version, Rücknahme gegen verspäteten älteren
  *      Upsert (Tombstone), Reparatur eines unvollständigen Bestands.
@@ -351,7 +351,7 @@ async function main() {
     }
 
     // --- 8./9. Outbox-Worker und atomare Uebernahme --------------------------
-    // Benoetigen Migration 20261115190000 (ai_search_index_state +
+    // Benoetigen Migration 20261115200229 (ai_search_index_state +
     // ai_search_apply_*). Ist sie nicht angewendet, werden diese Abschnitte
     // ausdruecklich als NICHT GEPRUEFT ausgewiesen (kein stilles Gruen).
     {
@@ -364,7 +364,7 @@ async function main() {
       workerApplyAvailable = !stateProbeError;
     }
     if (!workerApplyAvailable) {
-      console.log('8./9. ÜBERSPRUNGEN (NICHT GEPRÜFT): Migration 20261115190000 '
+      console.log('8./9. ÜBERSPRUNGEN (NICHT GEPRÜFT): Migration 20261115200229 '
         + '(ai_search_index_state / ai_search_apply_*) ist auf dem Testprojekt noch '
         + 'nicht angewendet — die Worker-DB-Nachweise stehen damit noch aus.');
     } else {

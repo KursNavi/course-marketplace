@@ -4,7 +4,7 @@
  * Fehlerpfad mit attempts/failed und Zeitbudget des Drains.
  *
  * Die Versions-/Tombstone-/Reparatursemantik selbst liegt in SQL (Migration
- * 20261115190000) und wird durch echte DB-Tests abgedeckt
+ * 20261115200229) und wird durch echte DB-Tests abgedeckt
  * (scripts/ai-search-db-tests.mjs, Abschnitt 9).
  */
 

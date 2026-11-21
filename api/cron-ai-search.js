@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     // Bereitstellungs-Check: in Produktion existieren die ai_search-Tabellen
     // noch nicht — dann sauberer No-op statt Fehlerlauf. Geprueft werden die
     // Outbox UND die Wasserstandstabelle der atomaren Uebernahme (Migration
-    // 20261115190000); fehlt eine davon, laeuft der Worker nicht an.
+    // 20261115200229); fehlt eine davon, laeuft der Worker nicht an.
     // Bewusst GET statt HEAD-Count: HEAD-Antworten tragen keinen
     // Fehlerkoerper, eine fehlende Tabelle bliebe unbemerkt.
     for (const table of ['ai_search_jobs', 'ai_search_index_state']) {

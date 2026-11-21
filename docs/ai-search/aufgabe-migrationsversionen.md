@@ -1,8 +1,11 @@
 # Aufgabe: Versionszuordnung der älteren KI-Suche-Migrationen klären
 
-Stand 20.11.2026. **Offen, eigene Aufgabe vor jeder späteren Übernahme**
-(Merge nach `main`, `supabase db push`, Produktionsrollout). Nichts davon ist
-bisher ausgeführt.
+**Erledigt am 21.11.2026 (Variante „Dateien umbenennen“):** Die vier Dateien
+heissen jetzt wie ihre TEST-Einträge (`20261114205850`, `20261114205915`,
+`20261114205947`, `20261115200229`), Inhalt byte-gleich, Datenbankhistorie
+unverändert. Offen bleibt nur Punkt 4 (nicht KI-bezogene Historie).
+
+Ursprünglicher Stand 20.11.2026:
 
 ## Befund
 

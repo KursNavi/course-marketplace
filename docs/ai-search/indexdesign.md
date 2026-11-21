@@ -9,7 +9,7 @@ TESTumgebung (`omoapbvfligjfznzivyu`) angewendet und per CI-DB-Tests verifiziert
 Outbox-Worker (`src/lib/aiSearch/worker.js`), Reconciliation inkl. Stufe-1-Backfill
 (`src/lib/aiSearch/reconciliation.js`) und der Cron-Endpunkt (`api/cron-ai-search.js`,
 `?task=worker|reconcile|all`) sind implementiert und unit-getestet. Die eigentliche
-**Übernahme läuft atomar in der Datenbank** (Migration `20261115190000`, liegt zur
+**Übernahme läuft atomar in der Datenbank** (Migration `20261115200229`, liegt zur
 Prüfung vor, noch nicht angewendet): `ai_search_apply_upsert`/`ai_search_apply_delete`
 mit kursbezogenem Advisory-Lock serialisieren parallele Worker; die Wasserstandstabelle
 `ai_search_index_state` trägt die zuletzt angewendete Version als Tombstone, damit ein
@@ -100,7 +100,7 @@ Die Such-API bekommt vor jeder Inferenz zwei Stufen:
 1. **Auth-Gate:** verifizierte, nicht-anonyme Kontositzung (Supabase-JWT serverseitig
    prüfen, `is_anonymous` abweisen). Kategorien/klassische Filter bleiben davon
    unberührt.
-2. **Kontingent-Gate:** `ai_search_usage` (Migration `20261113180200`) mit atomarer
+2. **Kontingent-Gate:** `ai_search_usage` (Migration `20261114205947`) mit atomarer
    Reservierung per nutzerbezogenem Advisory-Lock: Zustand `reserved` →
    `completed`/`released`, befristete Reservierung (`reserved_until`) für
    Crash-Recovery, eindeutige `request_id` für idempotente Wiederholungen.

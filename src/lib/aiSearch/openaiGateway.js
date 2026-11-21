@@ -23,7 +23,7 @@ import { checkAiSearchEnvironment } from './previewGuard.js';
 import { MAX_EXPLANATION_WORDS, countWords } from './explanation.js';
 
 export const EMBEDDING_MODEL_DEFAULT = 'text-embedding-3-small';
-// Passt zur vorhandenen Spalte vector(1024) (Migration 20261113180100);
+// Passt zur vorhandenen Spalte vector(1024) (Migration 20261114205915);
 // text-embedding-3-* unterstützt verkürzte Dimensionen per Parameter.
 export const EMBEDDING_DIMENSIONS = 1024;
 export const RERANK_MAX_CANDIDATES = 30;

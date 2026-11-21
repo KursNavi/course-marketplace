@@ -9,7 +9,7 @@
  *  - Die UEBERNAHME selbst (Versionspruefung + Dokument + Chunks bzw.
  *    Loeschung + Tombstone) laeuft ATOMAR in der Datenbank
  *    (ai_search_apply_upsert / ai_search_apply_delete, Migration
- *    20261115190000): kursbezogener Advisory-Lock serialisiert parallele
+ *    20261115200229): kursbezogener Advisory-Lock serialisiert parallele
  *    Worker; ein aelterer Lauf kann weder einen neueren Stand ueberschreiben
  *    noch einen zurueckgezogenen Kurs wieder anlegen (Wasserstand in
  *    ai_search_index_state ueberlebt Loeschungen).
@@ -249,8 +249,8 @@ export async function processOutboxBatch(client, options = {}) {
 
 /**
  * Laesst Batches laufen, bis die Outbox leer ist oder das Zeitbudget
- * aufgebraucht ist (Vercel-Funktionslaufzeit). 'drained' sagt ehrlich, ob
- * am Ende noch Jobs offen waren.
+ * aufgebraucht ist (Vercel-Funktionslaufzeit) bzw. maxBatches erreicht ist.
+ * 'drained' sagt ehrlich, ob am Ende noch Jobs offen waren.
  */
 export async function drainOutbox(client, options = {}) {
   const timeBudgetMs = options.timeBudgetMs ?? 40_000;
@@ -293,6 +293,8 @@ export async function drainOutbox(client, options = {}) {
     // ist der vorgesehene Backoff.
     if (batch.courses > 0 && batch.failures === batch.courses) break;
     if (Date.now() - startedAt >= timeBudgetMs) break;
+    // Optionale Umfangsgrenze (Betriebsrunner): höchstens maxBatches Batches.
+    if (Number.isFinite(options.maxBatches) && total.batches >= options.maxBatches) break;
   }
 
   return total;

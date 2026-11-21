@@ -34,11 +34,11 @@ FROM pg_available_extensions WHERE name IN ('vector', 'unaccent');
 
 ## 2. Migrationen anwenden (nur TESTumgebung, in dieser Reihenfolge)
 
-1. `supabase/migrations/20261113180000_ai_search_foundation.sql`
-2. `supabase/migrations/20261113180100_ai_search_vector.sql` — **nur wenn** Schritt 1
+1. `supabase/migrations/20261114205850_ai_search_foundation.sql`
+2. `supabase/migrations/20261114205915_ai_search_vector.sql` — **nur wenn** Schritt 1
    `vector` als verfügbar ausgewiesen hat; sonst auslassen und berichten.
-3. `supabase/migrations/20261113180200_ai_search_quota.sql`
-4. `supabase/migrations/20261115190000_ai_search_worker_apply.sql` — atomare
+3. `supabase/migrations/20261114205947_ai_search_quota.sql`
+4. `supabase/migrations/20261115200229_ai_search_worker_apply.sql` — atomare
    Worker-Übernahme (`ai_search_index_state`, `ai_search_apply_*`). **Status:
    liegt zur Prüfung vor; Anwendung erst nach Freigabe.** Ohne sie weisen die
    DB-Tests die Abschnitte 8/9 ausdrücklich als NICHT GEPRÜFT aus.
@@ -75,13 +75,15 @@ FROM pg_available_extensions WHERE name IN ('vector', 'unaccent');
    nicht eingeplant – abgelaufene Ergebnisse bleiben bis zu einer manuellen
    Bereinigung gespeichert (nicht abrufbar).
 
-   Hinweis Versionsabgleich: Die Migrationen 1–4 tragen im Repo andere
-   Versionsnummern als in der Migrationsliste der TESTumgebung (z. B. Datei
-   `20261115190000`, verbucht `20261115200229`). Ein `supabase db push` gegen
-   die TESTumgebung würde sie deshalb als neu ansehen. Vor einem solchen Lauf
-   die Historie abgleichen (`supabase migration repair`), nicht blind pushen.
-   Für 20261120205856 stimmen Datei und Historie überein. Offene Aufgabe:
-   `docs/ai-search/aufgabe-migrationsversionen.md`.
+   Hinweis Versionsabgleich: Seit 21.11.2026 tragen auch die Migrationen 1–4
+   die Versionen, unter denen sie in der TESTumgebung verbucht sind (vormals
+   `20261113180000/180100/180200` und `20261115190000`; Inhalt byte-gleich,
+   Datenbankhistorie unverändert). Damit stimmen alle sechs KI-Dateien mit
+   der TEST-Historie überein (Test `tests/ai-search-migration-versions.test.js`).
+   Ältere, nicht KI-bezogene Einträge weichen weiterhin ab – deshalb weiterhin
+   kein blindes `supabase db push` (siehe `migrationsuebersicht.md`).
+   Kommentare in SQL-Dateien nennen teils noch die alten Nummern (bewusst
+   unverändert, SQL-Inhalt bleibt gleich).
 
 Keine bestehenden Testdaten zurücksetzen; die Migrationen legen ausschliesslich neue
 `ai_search_*`-Objekte und Trigger an. (1–3 sind seit 14.11.2026 auf der TESTumgebung

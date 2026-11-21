@@ -11,10 +11,10 @@ Leerraum und Semikolons, per md5 verglichen.
 
 | Datei im Repo | In TEST verbucht als | Inhalt gleich | Produktion |
 |---|---|---|---|
-| `20261113180000_ai_search_foundation.sql` | `20261114205850 ai_search_foundation` | ja | nicht angewendet (nicht verifiziert) |
-| `20261113180100_ai_search_vector.sql` | `20261114205915 ai_search_vector` | ja | dito |
-| `20261113180200_ai_search_quota.sql` | `20261114205947 ai_search_quota` | ja | dito |
-| `20261115190000_ai_search_worker_apply.sql` | `20261115200229 ai_search_worker_apply` | ja | dito |
+| `20261114205850_ai_search_foundation.sql` (bis 21.11.2026 `20261113180000`) | `20261114205850 ai_search_foundation` | ja (byte-gleich umbenannt) | nicht angewendet (nicht verifiziert) |
+| `20261114205915_ai_search_vector.sql` (bis 21.11.2026 `20261113180100`) | `20261114205915 ai_search_vector` | ja (byte-gleich umbenannt) | dito |
+| `20261114205947_ai_search_quota.sql` (bis 21.11.2026 `20261113180200`) | `20261114205947 ai_search_quota` | ja (byte-gleich umbenannt) | dito |
+| `20261115200229_ai_search_worker_apply.sql` (bis 21.11.2026 `20261115190000`) | `20261115200229 ai_search_worker_apply` | ja (byte-gleich umbenannt) | dito |
 | `20261120205856_ai_search_keep_embeddings_skip_noop_jobs.sql` | `20261120205856 …` (gleiche Version) | ja (byte-genau, Test) | dito |
 | `20261121122101_ai_search_result_store_and_guard.sql` (vormals Entwurf `20261121090000`, v2) | `20261121122101 ai_search_result_store_and_guard` (angewendet 21.11.2026, 13:21 MEZ) | ja (byte-genau md5 `c8061652…`, normalisiert `a50447e3…` = verbucht; Test) | dito |
 
@@ -29,15 +29,15 @@ Rückwege angewendeter Migrationen: `supabase/rollback/ai_search_down.sql`
 (Migrationen 1–4), `supabase/rollback/20261120205856_…_down.sql` und
 `supabase/rollback/20261121122101_…_down.sql` (nicht ausgeführt).
 
-## 2. Empfohlener einheitlicher Versionsweg (Entscheidung offen)
+## 2. Einheitlicher Versionsweg (umgesetzt 21.11.2026)
 
-Da die vier älteren Dateien inhaltlich exakt den verbuchten Fassungen
-entsprechen, ist der einfachste konsistente Weg: **Dateien auf die
-TEST-Versionen umbenennen** (wie bei 20261120205856). Reihenfolge bleibt
-erhalten (foundation < vector < quota < worker_apply < keep_embeddings), für
-Produktion ändert sich nichts am Inhalt. Alternative `supabase migration
-repair` ändert die Datenbankhistorie und braucht eine eigene Freigabe.
-Keine erneute Anwendung derselben SQLs.
+Die vier älteren Dateien sind auf die TEST-Versionen **umbenannt** (wie bei
+20261120205856), Inhalt byte-gleich (md5 vorher = nachher), Datenbankhistorie
+unverändert, keine erneute Anwendung. Reihenfolge bleibt erhalten
+(foundation < vector < quota < worker_apply < keep_embeddings <
+result_store_and_guard). `tests/ai-search-migration-versions.test.js` sichert
+md5, Versionen und „keine Kopie unter alter Nummer“. Kommentare in SQL-Dateien
+nennen teils noch die alten Nummern (bewusst unverändert).
 
 ## 3. Gesamthistorie TEST (nicht nur KI) – wichtiger Befund
 

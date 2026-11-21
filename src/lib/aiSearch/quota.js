@@ -6,7 +6,7 @@
  * parallelen Tabs/Geräten. Kein höheres Kontingent für Bezahlpakete.
  *
  * Die ATOMARE Durchsetzung lebt serverseitig in der Datenbank
- * (supabase/migrations/20261113180200_ai_search_quota.sql, Advisory-Lock).
+ * (supabase/migrations/20261114205947_ai_search_quota.sql, Advisory-Lock).
  * Dieses Modul ist die deterministische fachliche REFERENZ desselben
  * Vertrags — lokal testbar ohne Datenbank. Konsistenzmodell:
  *

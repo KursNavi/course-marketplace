@@ -86,6 +86,12 @@ export const TEST_SETS = Object.freeze({
     rollback: 'supabase/rollback/20261121122101_ai_search_result_store_and_guard_down.sql',
     test: 'supabase/drafts/tests/20261121122101_ai_search_result_store_and_guard_test.sql',
   },
+  // Entwurf (nicht angewendet): Laufsperre des Betriebsrunners.
+  ops_lease: {
+    migration: 'supabase/drafts/20261121160000_ai_search_ops_lease.sql',
+    rollback: 'supabase/drafts/20261121160000_ai_search_ops_lease_down.sql',
+    test: 'supabase/drafts/tests/20261121160000_ai_search_ops_lease_test.sql',
+  },
 });
 
 export function composeDraftTest(root = ROOT, setName = 'keep_embeddings') {
