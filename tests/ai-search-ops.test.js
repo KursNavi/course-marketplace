@@ -384,7 +384,7 @@ describe('Schreibende Läufe: Laufsperre v2, Grenzen, keine Nebenwirkungen', () 
     const report = await runOps(client, parse(['--execute-embed', '--max-usd=0.01'], confirm).options,
       deps({ modelsEnabled: true, createGateway: () => gw }));
     expect(report.outcome).toBe('failed');
-    expect(report.error).toMatch(/Monatsgrenze/);
+    expect(report.error).toMatch(/Monats-Stoppschwelle/);
     expect(gw.calls).toEqual([]);
   });
 
@@ -517,6 +517,43 @@ describe('Sperrlücke geschlossen: langer Schritt, Sperrverlust, Abbruch, Wieder
     expect(report).toMatchObject({ outcome: 'lost', exitCode: 4 });
     expect(gw.calls).toEqual([2]);
     expect(calls.find((c) => c.table === 'ai_search_ops_lease_release').payload.p_summary.embed.actualUsd).toBeGreaterThan(0);
+  });
+
+  it('Abbruch WÄHREND des Embedding-Aufrufs: nach Rückkehr nichts gespeichert, Kosten des Aufrufs protokolliert', async () => {
+    const fx = fixture();
+    const { client, calls } = makeClient(fx);
+    let session = null;
+    const gw = fakeGateway();
+    const original = gw.embed;
+    gw.embed = async (texts) => { const out = await original(texts); session.requestStop('SIGTERM'); return out; };
+    const report = await runOps(client, parse(['--execute-embed', '--max-usd=0.01'], confirm).options,
+      deps({ now: () => NOW.getTime(), modelsEnabled: true, createGateway: () => gw, onSession: (s) => { session = s; } }));
+    expect(report).toMatchObject({ outcome: 'aborted', exitCode: 4 });
+    expect(gw.calls).toEqual([2]);
+    expect(calls.some((c) => c.table === 'ai_search_ops_fenced_store_embeddings')).toBe(false);
+    const summary = calls.find((c) => c.table === 'ai_search_ops_lease_release').payload.p_summary;
+    expect(summary.embed.actualUsd).toBeGreaterThan(0);
+  });
+
+  it('Sperrverlust WÄHREND des Embedding-Aufrufs: Prüfung nach Rückkehr verhindert das Speichern', async () => {
+    const clock = fakeClock();
+    let lost = false;
+    const fx = fixture({
+      clockNow: clock.now,
+      renew: () => (lost
+        ? { data: { status: 'expired', db_now: new Date(clock.now()).toISOString() }, error: null }
+        : { data: { status: 'renewed', lease_until: new Date(clock.now() + 120_000).toISOString(), db_now: new Date(clock.now()).toISOString() }, error: null }),
+    });
+    const { client, calls } = makeClient(fx);
+    const s = new LeaseSession(client, { runId: 77, holder: 'h', now: clock.now });
+    const gw = fakeGateway();
+    const original = gw.embed;
+    gw.embed = async (texts) => { const out = await original(texts); lost = true; clock.advance(100_000); return out; };
+    await expect(runEmbedStep(client, gw, s, {
+      version: VERSION, activeVersion: VERSION, candidates: fixture().candidates, maxChunks: 10, maxUsd: 1, deadline: Infinity, now: clock.now,
+    })).rejects.toMatchObject({ status: 'expired' });
+    expect(gw.calls).toEqual([2]);
+    expect(calls.some((c) => c.table === 'ai_search_ops_fenced_store_embeddings')).toBe(false);
   });
 
   it('Abbruch von aussen (Datenbank): nächster Schritt startet nicht, Lauf „aborted“', async () => {
@@ -753,8 +790,22 @@ describe('Entwürfe 20261122090000/090100 (Laufsperre v2, Zeitplan): statisch, n
       expect(lines.length).toBeGreaterThan(0);
       for (const line of lines) expect(line.trim()).toMatch(new RegExp(`^v_(txt|json) := ${fn}\\(`));
     }
-    // Keine Einfügung in bestehende Tabellen (Zähler bleiben unverändert).
-    expect(testSql).not.toMatch(/INSERT INTO ai_search_(jobs|chunks|results|documents|usage)/);
+    // Nur eigene Testdaten: keine bestehenden Jobs/Abschnitte als Probeobjekte,
+    // eigene Testkurse, eigener Abschnitt, eigenes Konto mit eigenen Ergebnissen.
+    expect(testSql).not.toMatch(/FROM ai_search_jobs WHERE status = 'pending' ORDER BY id LIMIT 1/);
+    expect(testSql).not.toMatch(/FROM ai_search_chunks WHERE embedding IS NOT NULL/);
+    expect(testSql).toMatch(/INSERT INTO courses \(title, status, user_id, description\)\s+VALUES \('ZZ Laufsperre-Test A', 'draft'/);
+    expect(testSql).toMatch(/INSERT INTO ai_search_chunks [^;]*VALUES \(v_course,/);
+    expect(testSql).toMatch(/'zz-ki-leasetest-'/);
+    expect(testSql).toMatch(/INSERT INTO ai_search_results [^;]*FROM ai_search_usage WHERE user_id = v_user/);
+    // Vor jeder Bereinigung: Abbruch, falls fremde abgelaufene Ergebnisse existieren.
+    const guard = testSql.indexOf('fremde abgelaufene Ergebnisse vorhanden');
+    expect(guard).toBeGreaterThan(0);
+    expect(guard).toBeLessThan(testSql.indexOf('ai_search_ops_fenced_cleanup('));
+    expect(guard).toBeLessThan(testSql.indexOf('ai_search_ops_cleanup_tick('));
+    // Geschützte Schreibproben nur mit eigenen Objekten.
+    expect(testSql).toMatch(/ai_search_ops_fenced_job_failure\(v_run, h1, ARRAY\[v_job\]/);
+    expect(testSql).toMatch(/'id', v_chunk, 'content_hash', 'zz-hash-a'/);
   });
 });
 

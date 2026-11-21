@@ -16,8 +16,9 @@ Paket 1. Details: `betriebsrunner.md`, `migrationsuebersicht.md`.
 - Physische Ergebnislöschung stündlich (pg_cron), maximal ~25 h
   Aufbewahrung im Normalbetrieb, Alarm ab 2 h Rückstand; Laufprotokoll 90 Tage.
 - Betriebsbericht in Alltagssprache inkl. Löschrückstand, Laufprotokoll,
-  Aufträge je Kurs; Kosten nur als begrenzte Schätzung plus gemessene
-  Runner-Embeddings; Monatsgrenze Runner-Embeddings USD 2.
+  Aufträge je Kurs; Kosten nur als begrenzte Schätzung plus erfasste
+  Teilkosten der Runner-Embeddings; Stoppschwellen je Lauf und Monat
+  (USD 2) sind Schätzwerte, keine garantierten Grenzen.
 - Zeitplan vorbereitet und AUS (GitHub-Workflow mit Schalter-Variable;
   pg_cron-Schalter als eigener Entwurf). Kein Vercel-Cron, keine Mails.
 - Tests mit eigenen Fixtures: langer Schritt, Sperrverlust (Gate und
@@ -46,11 +47,11 @@ nie angewendet; sein Ergebnis wird nicht wiederverwendet.
 | T3 | Entwurf v2 als Migration anwenden | 0 USD | 12 Funktionen + Tabelle, Rechte nur Serverrolle, Inhalt = Datei | Stopp; Rückweg nur nach Rücksprache |
 | T4 | Commit „CI verlangt Abschnitt 11“ (`AI_DB_TESTS_REQUIRE_OPS_LEASE=1`), Push, normale CI | 0 USD | Abschnitt 11 läuft und besteht (5 gleichzeitige Bewerber → genau einer; KNL01 nach Ablauf; Übernahme; Abbruch), eigene Zeilen gelöscht | Stopp |
 | T5 | Trockenlauf (Label `ki-betrieb-trockenlauf` neu setzen) | 0 USD | „Laufsperre angewendet“, keine aktiven Läufe | Stopp |
-| T6 | Beaufsichtigter Zyklus (Label `ki-betrieb-zyklus`) | ≤ 100 Jobs, ≤ 50 Einreihungen, ≤ 100 Abschnitte, ≤ **USD 0.01**, ≤ 100 Löschungen, ≤ 180 s | Lauf `ok` im Protokoll, offene Aufträge sinken, geänderte Abschnitte erhalten Vektoren, unveränderte behalten ihre, Quellkurse unverändert | Stopp, Bericht; kein zweiter Lauf |
+| T6 | Beaufsichtigter Zyklus (Label `ki-betrieb-zyklus`) | ≤ 100 Jobs, ≤ 50 Einreihungen, ≤ 100 Abschnitte, Stoppschwelle USD 0.01 (Schätzung), ≤ 100 Löschungen, ≤ 180 s | Lauf `ok` im Protokoll, offene Aufträge sinken, geänderte Abschnitte erhalten Vektoren, unveränderte behalten ihre, Quellkurse unverändert | Stopp, Bericht; kein zweiter Lauf |
 | T7 | Zeitplan-Entwurf `090100` anwenden; nächsten Lauf (Minute 7) abwarten | 0 USD | `cron.job` vorhanden, `cron.job_run_details` erfolgreich, Protokollzeile `cleanup-scheduled` | Rückweg `090100_down` |
 | T8 | Abschluss-Trockenlauf + lesender Nachher-Nachweis | 0 USD | nur erwartete Änderungen (Jobs erledigt, Index der verarbeiteten Kurse, Protokoll, ein Datenbank-Job) | Bericht |
 
-**Kosten gesamt höchstens USD 0.01** (Embeddings in T6, nur für tatsächlich
+**Kosten:** geschätzt Bruchteile eines Cents, Stoppschwelle USD 0.01 (keine garantierte Grenze; ein bereits gestarteter Aufruf zählt mit), innerhalb des 10-USD-Projektbudgets (Embeddings in T6, nur für tatsächlich
 fehlende Abschnitte). Keine Modellaufrufe sonst, keine Nutzersuche, keine
 Mails, kein Kontingent-Cleanup, keine Produktion. Bei unerwartetem Fehler:
 Stopp, tatsächlichen Zustand berichten, keine automatische Wiederholung und

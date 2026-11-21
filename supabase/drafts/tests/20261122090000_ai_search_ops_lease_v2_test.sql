@@ -9,14 +9,23 @@
 --   Fehler:  SQLSTATE KNTF0, Meldung "AI_DRAFT_TEST_FAIL …"
 --   Anderer Code (z. B. 42601) = Test lief nicht.
 --
--- Eigene Testdaten: Zeilen der im Block angelegten Tabelle
--- ai_search_ops_runs. Berührt bestehende Daten nur innerhalb des Blocks
--- (immer zurückgerollt): ein vorhandener Abschnitt erhält seinen EIGENEN
--- Vektor erneut; abgelaufene Ergebnisse würden gelöscht (aktuell 0).
--- Keine Einfügung in bestehende Tabellen → bestehende Zähler (Sequenzen)
--- bleiben unverändert; die Sequenz der neuen Tabelle wird mit
--- zurückgerollt. Hinweis: now() steht innerhalb des Blocks still; Abläufe
--- werden daher durch Setzen von lease_until in die Vergangenheit geprüft.
+-- AUSSCHLIESSLICH EIGENE TESTDATEN (alle im Block angelegt, immer
+-- zurückgerollt): ein Testanbieter-Profil, zwei Entwurfs-Testkurse
+-- „ZZ Laufsperre-Test …“ (deren Outbox-Jobs entstehen per Trigger), ein
+-- eigener Abschnitt mit eigenem Vektor, ein Testkonto
+-- zz-ki-leasetest-…@example.com mit drei eigenen, bereits abgelaufenen
+-- Ergebniszeilen, Zeilen der neuen Tabelle ai_search_ops_runs.
+-- Bestehende Kurse, Abschnitte, Jobs oder Ergebnisse werden weder für
+-- Probe-Schreibvorgänge noch für die Bereinigung verwendet. Weil
+-- ai_search_result_cleanup alle abgelaufenen Ergebnisse erfasst, bricht der
+-- Test VOR jeder Bereinigung ab (Vorbedingung V), falls fremde abgelaufene
+-- Ergebnisse existieren.
+-- Bleibende Wirkung trotz Rollback: nur Zählerstände (Sequenzen/Identitäten
+-- von courses, ai_search_jobs, ai_search_source_version_seq,
+-- ai_search_chunks, ai_search_usage) steigen um die Zahl der eigenen
+-- Testzeilen – wird im Nachher-Nachweis getrennt benannt.
+-- Hinweis: now() steht innerhalb des Blocks still; Abläufe werden durch
+-- Setzen von lease_until/expires_at in die Vergangenheit geprüft.
 --
 -- Zusammensetzen: node scripts/ai-search-draft-sql-test.mjs ops_lease_v2
 -- =====================================================================
@@ -37,19 +46,52 @@ DECLARE
   v_caught BOOLEAN;
   v_count INTEGER;
   v_course BIGINT;
-  v_chunk RECORD;
+  v_course2 BIGINT;
+  v_profile UUID;
+  v_user UUID := gen_random_uuid();
+  v_chunk BIGINT;
+  v_job BIGINT;
+  v_vec_a TEXT := '[' || array_to_string(array_fill(0.01::real, ARRAY[1024]), ',') || ']';
+  v_vec_b TEXT := '[' || array_to_string(array_fill(0.02::real, ARRAY[1024]), ',') || ']';
   v_version TEXT;
 BEGIN
   BEGIN
     -- @@MIGRATION@@
 
+    -- ---------- Vorbedingungen und eigene Testdaten ----------
     SELECT active_model_version INTO v_version FROM ai_search_config WHERE id = 1;
-    SELECT course_id INTO v_course FROM ai_search_jobs WHERE status = 'pending' ORDER BY id LIMIT 1;
-    SELECT id, content_hash, embedding::text AS emb INTO v_chunk
-      FROM ai_search_chunks WHERE embedding IS NOT NULL AND model_version = v_version ORDER BY id LIMIT 1;
-    IF v_version IS NULL OR v_course IS NULL OR v_chunk.id IS NULL THEN
-      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL V: Vorbedingung (Version/offener Job/Abschnitt) fehlt';
+    IF v_version IS NULL THEN
+      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL V: keine aktive Modellversion';
     END IF;
+    IF EXISTS (SELECT 1 FROM ai_search_results WHERE expires_at <= now()) THEN
+      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL V: fremde abgelaufene Ergebnisse vorhanden – Bereinigung würde sie erfassen, Test nicht ausgeführt';
+    END IF;
+
+    INSERT INTO profiles (id, full_name, role, package_tier, slug, city, canton, bio_text)
+    VALUES (gen_random_uuid(), 'ZZ Laufsperre-Test Anbieter', 'teacher', 'basic',
+            'zz-leasetest-' || substr(md5(random()::text), 1, 10), 'Testort', 'Zürich', 'Testprofil')
+    RETURNING id INTO v_profile;
+    INSERT INTO courses (title, status, user_id, description)
+    VALUES ('ZZ Laufsperre-Test A', 'draft', v_profile, 'Testtext A') RETURNING id INTO v_course;
+    INSERT INTO courses (title, status, user_id, description)
+    VALUES ('ZZ Laufsperre-Test B', 'draft', v_profile, 'Testtext B') RETURNING id INTO v_course2;
+    -- Outbox-Trigger hat je Kurs einen offenen Job angelegt; den von Kurs B
+    -- entfernen, damit die geschützte Einreihung einen echten Insert zeigt.
+    SELECT id INTO v_job FROM ai_search_jobs WHERE course_id = v_course AND status = 'pending' ORDER BY id LIMIT 1;
+    DELETE FROM ai_search_jobs WHERE course_id = v_course2;
+    IF v_job IS NULL THEN
+      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL V: Outbox-Job des Testkurses fehlt';
+    END IF;
+    INSERT INTO ai_search_chunks (course_id, section, chunk_index, char_start, char_end, text, content_hash, source_version, model_version, embedding)
+    VALUES (v_course, 'description', 0, 0, 10, 'Testtext A', 'zz-hash-a', 1, v_version, v_vec_a::vector)
+    RETURNING id INTO v_chunk;
+    INSERT INTO auth.users (id, email, aud, role)
+    VALUES (v_user, 'zz-ki-leasetest-' || substr(v_user::text, 1, 8) || '@example.com', 'authenticated', 'authenticated');
+    INSERT INTO ai_search_usage (user_id, month_key, request_id, query_hash, state, finalized_at)
+    SELECT v_user, ai_search_month_key(), gen_random_uuid(), 'zz' || g, 'completed', now() FROM generate_series(1, 3) g;
+    INSERT INTO ai_search_results (request_id, user_id, query_hash, payload, created_at, expires_at)
+    SELECT request_id, v_user, query_hash, '{"test":true}'::jsonb, now() - interval '30 hours', now() - interval '6 hours'
+    FROM ai_search_usage WHERE user_id = v_user;
 
     -- ---------- Übernehmen ----------
     v_run := ai_search_ops_lease_acquire(h1, ARRAY['index'], 60, 600);
@@ -101,40 +143,49 @@ BEGIN
     v_checks := v_checks + 1;
 
     -- ---------- Geschützte Schreibzugriffe mit gültiger Sperre ----------
-    v_int := ai_search_ops_fenced_cleanup(v_run, h1, 100);
-    IF v_int IS NULL OR v_int < 0 THEN
-      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL F1: Bereinigung unter Sperre';
+    -- Bereinigung: nur eigene abgelaufene Ergebnisse existieren (Vorbedingung V).
+    v_int := ai_search_ops_fenced_cleanup(v_run, h1, 2);
+    IF v_int IS DISTINCT FROM 2
+       OR (SELECT count(*) FROM ai_search_results WHERE user_id = v_user) <> 1 THEN
+      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = format('AI_DRAFT_TEST_FAIL F1: Bereinigung unter Sperre (%s)', v_int);
     END IF;
     v_checks := v_checks + 1;
-    v_int := ai_search_ops_fenced_enqueue(v_run, h1, ARRAY[v_course], 5);
-    IF v_int IS DISTINCT FROM 0 THEN
-      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL F2: offener Job doppelt eingereiht';
+    -- Einreihung: Kurs A hat schon einen offenen Job (0 neu), Kurs B keinen (1 neu).
+    v_int := ai_search_ops_fenced_enqueue(v_run, h1, ARRAY[v_course, v_course2], 5);
+    IF v_int IS DISTINCT FROM 1
+       OR (SELECT count(*) FROM ai_search_jobs WHERE course_id = v_course AND status = 'pending') <> 1
+       OR (SELECT count(*) FROM ai_search_jobs WHERE course_id = v_course2 AND status = 'pending' AND reason = 'reconciliation') <> 1 THEN
+      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = format('AI_DRAFT_TEST_FAIL F2: Einreihung/Duplikatschutz (%s)', v_int);
     END IF;
     v_checks := v_checks + 1;
     v_json := ai_search_ops_fenced_store_embeddings(v_run, h1, v_version,
-      jsonb_build_array(jsonb_build_object('id', v_chunk.id, 'content_hash', v_chunk.content_hash, 'embedding', v_chunk.emb::jsonb)));
+      jsonb_build_array(jsonb_build_object('id', v_chunk, 'content_hash', 'zz-hash-a', 'embedding', v_vec_b::jsonb)));
     IF (v_json->>'stored')::int <> 1 OR (v_json->>'changed')::int <> 0
-       OR (SELECT embedding::text FROM ai_search_chunks WHERE id = v_chunk.id) IS DISTINCT FROM v_chunk.emb THEN
+       OR (SELECT embedding::text FROM ai_search_chunks WHERE id = v_chunk) IS DISTINCT FROM v_vec_b::vector::text THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = format('AI_DRAFT_TEST_FAIL F3: Vektor speichern %s', v_json);
     END IF;
     v_checks := v_checks + 1;
     v_json := ai_search_ops_fenced_store_embeddings(v_run, h1, v_version,
-      jsonb_build_array(jsonb_build_object('id', v_chunk.id, 'content_hash', 'veraltet', 'embedding', v_chunk.emb::jsonb)));
-    IF (v_json->>'stored')::int <> 0 OR (v_json->>'changed')::int <> 1 THEN
+      jsonb_build_array(jsonb_build_object('id', v_chunk, 'content_hash', 'veraltet', 'embedding', v_vec_a::jsonb)));
+    IF (v_json->>'stored')::int <> 0 OR (v_json->>'changed')::int <> 1
+       OR (SELECT embedding::text FROM ai_search_chunks WHERE id = v_chunk) IS DISTINCT FROM v_vec_b::vector::text THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL F4: geänderter Abschnitt überschrieben';
     END IF;
     v_checks := v_checks + 1;
     v_caught := FALSE;
     BEGIN PERFORM ai_search_ops_fenced_store_embeddings(v_run, h1, 'anderes-modell@1',
-      jsonb_build_array(jsonb_build_object('id', v_chunk.id, 'content_hash', v_chunk.content_hash, 'embedding', v_chunk.emb::jsonb)));
+      jsonb_build_array(jsonb_build_object('id', v_chunk, 'content_hash', 'zz-hash-a', 'embedding', v_vec_a::jsonb)));
     EXCEPTION WHEN SQLSTATE '22023' THEN v_caught := TRUE; END;
     IF NOT v_caught THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL F5: fremde Modellversion gespeichert';
     END IF;
     v_checks := v_checks + 1;
-    v_int := ai_search_ops_fenced_job_failure(v_run, h1, ARRAY[-1]::bigint[], 1, 'test', 5);
-    IF v_int IS DISTINCT FROM 0 THEN
-      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL F6: Fehlversuch ohne passenden Job';
+    v_int := ai_search_ops_fenced_job_failure(v_run, h1, ARRAY[v_job], 1, 'Testfehler', 5);
+    IF v_int IS DISTINCT FROM 1
+       OR (SELECT attempts FROM ai_search_jobs WHERE id = v_job) <> 1
+       OR (SELECT status FROM ai_search_jobs WHERE id = v_job) IS DISTINCT FROM 'pending'
+       OR (SELECT last_error FROM ai_search_jobs WHERE id = v_job) IS DISTINCT FROM 'Testfehler' THEN
+      RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL F6: Fehlversuch am eigenen Job';
     END IF;
     v_checks := v_checks + 1;
     v_caught := FALSE;
@@ -242,10 +293,13 @@ BEGIN
             now() - interval '100 days', now() - interval '100 days', 'ok')
     RETURNING id INTO v_old;
     v_int := ai_search_ops_cleanup_tick(100, 2);
-    IF v_int IS NULL OR v_int < 0
+    -- Nur noch das letzte EIGENE abgelaufene Ergebnis ist vorhanden.
+    IF v_int IS DISTINCT FROM 1
+       OR EXISTS (SELECT 1 FROM ai_search_results WHERE user_id = v_user)
        OR EXISTS (SELECT 1 FROM ai_search_ops_runs WHERE id = v_old)
        OR NOT EXISTS (SELECT 1 FROM ai_search_ops_runs WHERE modes = ARRAY['cleanup-scheduled'] AND outcome = 'ok'
-                      AND summary ? 'deleted' AND (summary->>'protocol_pruned')::int = 1) THEN
+                      AND (summary->>'deleted')::int = 1 AND (summary->>'expired_left')::int = 0
+                      AND (summary->>'protocol_pruned')::int = 1) THEN
       RAISE EXCEPTION USING ERRCODE = 'KNTF0', MESSAGE = 'AI_DRAFT_TEST_FAIL T1: zeitgesteuerte Löschung/Protokoll';
     END IF;
     v_checks := v_checks + 1;

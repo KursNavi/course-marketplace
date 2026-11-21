@@ -41,8 +41,13 @@ export const OPS_LIMITS = Object.freeze({
   defaultEmbedChunks: 500,
   maxEmbedChunks: 3000,
   embedBatch: 100,
+  // Stoppschwellen, KEINE garantierten Kostengrenzen: Der Runner beginnt
+  // keinen Aufruf, wenn Schätzung bzw. erfasste Teilkosten (Tokens laut
+  // Anbieterantwort × Preisannahme) die Schwelle überschreiten würden. Ein
+  // bereits gestarteter Aufruf, abweichende Tokenzahlen oder Preise können
+  // die tatsächlichen Kosten darüber hinaus erhöhen.
   maxEmbedUsdPerRun: 1,
-  // Gemessene Runner-Embeddings je Kalendermonat (Zürich) – harte Grenze.
+  // Erfasste Runner-Embedding-Teilkosten je Kalendermonat (Zürich).
   maxEmbedUsdPerMonth: 2,
   defaultCleanupBatch: 1000,
   maxCleanupBatch: 5000,
@@ -164,9 +169,9 @@ export function parseOpsArgs(argv, env, expectedRef) {
   if (execute.embed) {
     const maxUsd = Number(flags.get('max-usd'));
     if (!flags.has('max-usd') || !Number.isFinite(maxUsd) || maxUsd <= 0) {
-      errors.push('--execute-embed braucht --max-usd=<Grenze in USD>.');
+      errors.push('--execute-embed braucht --max-usd=<Stoppschwelle in USD, Schätzung>.');
     } else if (maxUsd > OPS_LIMITS.maxEmbedUsdPerRun) {
-      errors.push(`--max-usd=${maxUsd} liegt über der Laufgrenze ${OPS_LIMITS.maxEmbedUsdPerRun} USD.`);
+      errors.push(`--max-usd=${maxUsd} liegt über der höchsten Lauf-Stoppschwelle ${OPS_LIMITS.maxEmbedUsdPerRun} USD (Schätzung).`);
     } else {
       limits.maxUsd = maxUsd;
     }
@@ -366,7 +371,7 @@ export async function collectStatus(client, { embeddingVersion, now = new Date()
     const recentProblems = ops.problemRuns.filter((r) => new Date(r.startedAt) >= new Date(now.getTime() - 24 * 3_600_000));
     if (recentProblems.length > 0) critical.push(`${recentProblems.length} Betriebslauf/-läufe in den letzten 24 h nicht erfolgreich (${recentProblems.map((r) => `${r.id}:${r.outcome}`).join(', ')}).`);
     if (ops.embedUsdMonth > OPS_LIMITS.maxEmbedUsdPerMonth * 0.8) {
-      notes.push(`Runner-Embeddings diesen Monat USD ${ops.embedUsdMonth.toFixed(4)} – über 80 % der Monatsgrenze USD ${OPS_LIMITS.maxEmbedUsdPerMonth}.`);
+      notes.push(`Erfasste Runner-Embedding-Teilkosten diesen Monat ca. USD ${ops.embedUsdMonth.toFixed(4)} – über 80 % der Monats-Stoppschwelle USD ${OPS_LIMITS.maxEmbedUsdPerMonth} (Schätzung, keine Abrechnung).`);
     }
   } else {
     notes.push('Laufsperre v2 nicht angewendet – schreibende Schritte gesperrt, kein Laufprotokoll.');
@@ -485,10 +490,10 @@ export async function runEmbedStep(client, gateway, session, {
   const chars = planned.reduce((sum, row) => sum + String(row.text ?? '').length, 0);
   const estimate = estimateEmbeddingUsd(chars, prices);
   if (estimate.usd > maxUsd) {
-    throw new OpsError(`Embedding-Schätzung USD ${estimate.usd.toFixed(4)} über Laufgrenze ${maxUsd} – kein Aufruf.`, 2);
+    throw new OpsError(`Embedding-Schätzung ca. USD ${estimate.usd.toFixed(4)} über der Lauf-Stoppschwelle ${maxUsd} – kein Aufruf.`, 2);
   }
   if (monthSpentUsd + estimate.usd > monthCapUsd) {
-    throw new OpsError(`Monatsgrenze Runner-Embeddings: bereits USD ${monthSpentUsd.toFixed(4)} + geschätzt ${estimate.usd.toFixed(4)} > USD ${monthCapUsd} – kein Aufruf.`, 2);
+    throw new OpsError(`Monats-Stoppschwelle Runner-Embeddings: erfasste Teilkosten ca. USD ${monthSpentUsd.toFixed(4)} + geschätzt ${estimate.usd.toFixed(4)} > USD ${monthCapUsd} – kein Aufruf.`, 2);
   }
 
   const result = { planned: planned.length, embedded: 0, changedMeanwhile: 0, calls: 0, estimate, stoppedBy: null };
@@ -505,6 +510,11 @@ export async function runEmbedStep(client, gateway, session, {
       if (!Array.isArray(vectors) || vectors.length !== batch.length) {
         throw new OpsError(`Embedding-Antwort unvollständig (${vectors?.length ?? 0}/${batch.length}).`);
       }
+      // Nach der Rückkehr des Aufrufs VOR dem Speichern erneut prüfen:
+      // Abbruch angefordert oder Sperre verloren → nichts speichern. Der
+      // bereits gestartete Aufruf kann trotzdem Kosten verursacht haben; sie
+      // bleiben in actualTokens/actualUsd sichtbar (finally).
+      await session.gate(STEP_MS.dbRequest);
       // Nur speichern, wenn der Abschnitt seit dem Lesen unverändert ist –
       // sonst gehört der Vektor zu einem alten Text. Sperre in der Datenbank geprüft.
       const { data, error } = await client.rpc('ai_search_ops_fenced_store_embeddings', {

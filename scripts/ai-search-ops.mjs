@@ -14,7 +14,9 @@
  *   --execute-index    Abgleich + Outbox-Worker (ohne Kontingent-Cleanup)
  *   --execute-embed    fehlende/veraltete Embeddings (KOSTENPFLICHTIG);
  *                      zusätzlich --max-usd=<≤ 1>, AI_SEARCH_MODELS_ENABLED=1,
- *                      OPENAI_API_KEY; Monatsgrenze Runner-Embeddings USD 2
+ *                      OPENAI_API_KEY; Monats-Stoppschwelle für erfasste
+ *                      Runner-Embedding-Teilkosten USD 2 (Schätzung, keine
+ *                      garantierte Kostengrenze)
  *   --execute-cleanup  abgelaufene gespeicherte Ergebnisse physisch löschen
  * Grenzen: --max-runtime-sec (≤ 900), --max-index-batches (≤ 40 à 50 Jobs),
  *   --max-enqueue (≤ 500), --max-embed-chunks (≤ 3000), --cleanup-batch (≤ 5000).
@@ -90,7 +92,7 @@ export function formatReport(report) {
   lines.push(`  Ausstehende Embeddings: ~${b.estimate.embeddingTokens} Tokens ≈ ${usd(b.estimate.embeddingUsd)}`);
   lines.push(`  Teilsumme dieser zwei Posten ≈ ${usd(b.estimate.partialTotalUsd)} (Budgetrahmen USD ${b.estimate.monthlyBudgetUsd})`);
   if (b.estimate.runnerEmbedUsdMonth !== null && b.estimate.runnerEmbedUsdMonth !== undefined) {
-    lines.push(`  Gemessen, nur Runner-Embeddings diesen Monat: ${usd(b.estimate.runnerEmbedUsdMonth)} (Grenze USD ${OPS_LIMITS.maxEmbedUsdPerMonth})`);
+    lines.push(`  Erfasste Teilkosten, nur Runner-Embeddings diesen Monat (Tokens laut Anbieter × Preisannahme): ca. ${usd(b.estimate.runnerEmbedUsdMonth)} – Stoppschwelle USD ${OPS_LIMITS.maxEmbedUsdPerMonth}, keine garantierte Grenze`);
   }
   lines.push(`  Nicht enthalten: ${b.estimate.excludes.join('; ')}`);
   lines.push('');

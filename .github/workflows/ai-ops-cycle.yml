@@ -14,8 +14,10 @@ name: KI-Suche Betriebszyklus
 #     AI_OPS_SCHEDULE_ENABLED auf 'true' gesetzt ist (Schalter).
 #
 # Voraussetzung: Laufsperre v2 angewendet (sonst bricht der Runner schreibend
-# mit Exit 2 ab). Kosten: Embeddings nur für Lücken, je Lauf höchstens
-# USD 0.01, Runner-Monatsgrenze USD 2 (gemessen im Laufprotokoll). Kein
+# mit Exit 2 ab). Kosten: Embeddings nur für Lücken; Stoppschwellen je Lauf
+# USD 0.01 und je Monat USD 2 beruhen auf Schätzung bzw. erfassten
+# Teilkosten (Tokens laut Anbieter) – keine garantierten Grenzen; ein
+# bereits gestarteter Aufruf kann sie überschreiten. Kein
 # Mailversand, kein Kontingent-Cleanup, kein Vercel-Cron. Schlüsselwerte
 # erscheinen nicht im Log.
 

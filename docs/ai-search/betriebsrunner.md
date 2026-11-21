@@ -22,10 +22,17 @@ Embeddings zusätzlich `AI_SEARCH_MODELS_ENABLED=1` und `OPENAI_API_KEY`.
 
 **Grenzen je Lauf** (Werte darüber werden abgewiesen): Laufzeit ≤ 900 s,
 Index ≤ 40 × 50 Jobs, Einreihungen ≤ 500 (gemeinsam für fehlende, verwaiste
-Kurse und Hash-Abweichungen), Embeddings ≤ 3000 Abschnitte und ≤ USD 1,
-Bereinigung ≤ 5000 Zeilen. **Monatsgrenze Runner-Embeddings USD 2**, gemessen
-aus den Tokenangaben des Anbieters im Laufprotokoll; liegt Verbrauch +
-Schätzung darüber, gibt es keinen Aufruf.
+Kurse und Hash-Abweichungen), Embeddings ≤ 3000 Abschnitte,
+Bereinigung ≤ 5000 Zeilen. **Kosten-Stoppschwellen (keine garantierten
+Grenzen):** je Lauf `--max-usd` (≤ USD 1), je Monat USD 2 für die
+**erfassten Teilkosten** der Runner-Embeddings (Tokens laut Anbieterantwort ×
+Preisannahme, im Laufprotokoll). Würde Schätzung bzw. erfasster Verbrauch die
+Schwelle überschreiten, beginnt kein weiterer Aufruf. Ein bereits
+gestarteter Aufruf, abweichende Tokenzahlen oder Preise können die
+tatsächlichen Kosten darüber hinaus erhöhen; massgeblich ist die
+Anbieterabrechnung. Nach der Rückkehr jedes Embedding-Aufrufs werden Abbruch
+und Sperrbesitz vor dem Speichern erneut geprüft; die Kosten des bereits
+ausgeführten Aufrufs bleiben im Protokoll sichtbar.
 
 Kein Mailversand, kein globaler Kontingent-Cleanup, kein Vercel-Cron
 (`vercel.json` behält genau zwei Crons; statischer Test).
@@ -135,7 +142,7 @@ erfolgreicher Lauf in den letzten 24 h.
 | Lesender Trockenlauf | `ai-ops-dryrun.yml`, Label `ki-betrieb-trockenlauf` | Label setzen | in Betrieb (lesend) |
 
 Zeitplan-Grenzen je Lauf: 300 s, 6 × 50 Jobs, 200 Einreihungen, 300
-Abschnitte, USD 0.01, Bereinigung 1000. Danach lesender Bericht mit
+Abschnitte, Stoppschwelle USD 0.01 (Schätzung), Bereinigung 1000. Danach lesender Bericht mit
 `--alarm-exit`: bei kritischem Alarm wird der Lauf rot und GitHub
 benachrichtigt (Zuständig: Repository-Inhaber; Reaktion laut Abschnitt 7).
 Vercel-Crons werden nicht verwendet (Kontingent ausgeschöpft, keine
@@ -160,7 +167,7 @@ Label `ki-betrieb-trockenlauf` am PR.
 | Exit 3 (anderer Lauf aktiv) | nichts ausgeführt | nichts; nächster Termin |
 | Exit 4 (Sperre verloren/abgebrochen) | kein Fehlversuch gezählt, Rest offen | Bericht prüfen; nächster Lauf übernimmt |
 | Exit 1 (Fehler, z. B. Kurs fehlgeschlagen) | Fehlversuch gezählt (ab 5 → `failed`), Folgeschritte gestoppt | Fehlertext im Bericht; Ursache beheben |
-| Exit 2 (Vorbedingung, Kostengrenze) | kein Aufruf | Grenze/Konfiguration prüfen, nicht automatisch erhöhen |
+| Exit 2 (Vorbedingung, Kosten-Stoppschwelle) | kein Aufruf | Grenze/Konfiguration prüfen, nicht automatisch erhöhen |
 | Alarm Löschrückstand | Ergebnisse älter als 26 h vorhanden | pg_cron-Job prüfen (`cron.job_run_details`) |
 | Lauf `expired` ohne Abschluss | Absturz | wird beim nächsten Lauf automatisch übernommen |
 
