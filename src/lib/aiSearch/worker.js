@@ -111,16 +111,31 @@ export async function loadCourseSource(client, courseId) {
  * Transaktion, kursbezogener Advisory-Lock) — hier wird nur noch das
  * Ergebnis entgegengenommen.
  */
-async function applyProjection(client, courseId, projection, sourceVersion) {
+function rpcError(prefix, error) {
+  const wrapped = new Error(`${prefix}: ${error.message}`);
+  wrapped.code = error.code;
+  return wrapped;
+}
+
+/**
+ * fence (optional, Betriebsrunner): { gate(stepMs), fence() } einer
+ * LeaseSession. Dann laufen Übernahme UND Jobabschluss über die geschützten
+ * Funktionen ai_search_ops_fenced_apply_* (Sperrprüfung in derselben
+ * Transaktion); ohne fence unverändert wie bisher.
+ */
+async function applyProjection(client, courseId, projection, sourceVersion, fence = null) {
+  const fenceArgs = fence ? fence.fence() : null;
   if (projection.action === 'delete') {
-    const { data, error } = await client.rpc('ai_search_apply_delete', {
+    const { data, error } = await client.rpc(fence ? 'ai_search_ops_fenced_apply_delete' : 'ai_search_apply_delete', {
+      ...(fenceArgs ?? {}),
       p_course_id: courseId,
       p_source_version: sourceVersion,
     });
-    if (error) throw new Error(`Loeschung ${courseId}: ${error.message}`);
+    if (error) throw rpcError(`Loeschung ${courseId}`, error);
     return data;
   }
-  const { data, error } = await client.rpc('ai_search_apply_upsert', {
+  const { data, error } = await client.rpc(fence ? 'ai_search_ops_fenced_apply_upsert' : 'ai_search_apply_upsert', {
+    ...(fenceArgs ?? {}),
     p_course_id: courseId,
     p_source_version: sourceVersion,
     p_document: projection.document,
@@ -132,8 +147,24 @@ async function applyProjection(client, courseId, projection, sourceVersion) {
       text: chunk.text,
     })),
   });
-  if (error) throw new Error(`Uebernahme ${courseId}: ${error.message}`);
+  if (error) throw rpcError(`Uebernahme ${courseId}`, error);
   return data;
+}
+
+/** Sperrverlust (Gate oder Datenbank KNL01): ganzen Lauf stoppen, Job NICHT als Fehlversuch zählen. */
+function isLeaseLoss(err) {
+  return err?.leaseLost === true || err?.code === 'KNL01' || /ai_search_ops_lease_lost/.test(String(err?.message ?? ''));
+}
+
+export class WorkerLeaseLostError extends Error {
+  constructor(cause) {
+    super(`Laufsperre verloren: ${cause?.message ?? cause}`);
+    this.name = 'WorkerLeaseLostError';
+    this.leaseLost = true;
+    this.status = cause?.status ?? 'fenced';
+    this.exitCode = 4;
+    this.cause = cause;
+  }
 }
 
 /**
@@ -191,8 +222,15 @@ export async function processOutboxBatch(client, options = {}) {
     }
   };
 
+  const fence = options.fence ?? null;
+  // Längste Dauer eines Kursschritts (Lesen + Übernahme) für das Sperr-Gate.
+  const groupStepMs = options.groupStepMs ?? 30_000;
+  let leaseLoss = null;
+
   async function processGroup(group) {
+    if (leaseLoss) return;
     try {
+      if (fence) await fence.gate(groupStepMs);
       const source = await loadCourseSource(client, group.courseId);
       const projection = buildProjection(
         source.course,
@@ -203,7 +241,7 @@ export async function processOutboxBatch(client, options = {}) {
         },
       );
 
-      const outcome = await applyProjection(client, group.courseId, projection, group.sourceVersion);
+      const outcome = await applyProjection(client, group.courseId, projection, group.sourceVersion, fence);
 
       if (outcome === 'inserted') summary.inserted += 1;
       else if (outcome === 'updated') summary.updated += 1;
@@ -214,26 +252,48 @@ export async function processOutboxBatch(client, options = {}) {
 
       // Koaleszenz: ALLE offenen Jobs dieses Kurses bis zur verarbeiteten
       // Version abschliessen — auch solche, die nicht im Batch-Limit lagen.
-      const { error: doneError } = await client
-        .from('ai_search_jobs')
-        .update({ status: 'done', processed_at: now().toISOString() })
-        .eq('course_id', group.courseId)
-        .lte('source_version', group.sourceVersion)
-        .eq('status', 'pending');
-      if (doneError) throw new Error(`Jobs abschliessen ${group.courseId}: ${doneError.message}`);
+      // Geschützter Modus: bereits in derselben Transaktion erledigt.
+      if (!fence) {
+        const { error: doneError } = await client
+          .from('ai_search_jobs')
+          .update({ status: 'done', processed_at: now().toISOString() })
+          .eq('course_id', group.courseId)
+          .lte('source_version', group.sourceVersion)
+          .eq('status', 'pending');
+        if (doneError) throw new Error(`Jobs abschliessen ${group.courseId}: ${doneError.message}`);
+      }
     } catch (err) {
+      if (fence && isLeaseLoss(err)) {
+        // Kein Fehlversuch zählen, nichts mehr schreiben: Job bleibt offen
+        // und wird vom nächsten gültigen Lauf übernommen (Wiederaufnahme).
+        leaseLoss = err;
+        return;
+      }
       const message = String(err?.message ?? err).slice(0, ERROR_TEXT_LIMIT);
       summary.failures += 1;
       summary.errors.push({ courseId: group.courseId, message });
       const nextAttempts = group.attempts + 1;
-      const { error: markError } = await client
-        .from('ai_search_jobs')
-        .update({
-          attempts: nextAttempts,
-          last_error: message,
-          status: nextAttempts >= maxAttempts ? 'failed' : 'pending',
-        })
-        .in('id', group.jobIds);
+      let markError = null;
+      if (fence) {
+        const { error } = await client.rpc('ai_search_ops_fenced_job_failure', {
+          ...fence.fence(),
+          p_job_ids: group.jobIds,
+          p_attempts: nextAttempts,
+          p_error: message,
+          p_max_attempts: maxAttempts,
+        });
+        if (error && isLeaseLoss(error)) { leaseLoss = error; return; }
+        markError = error;
+      } else {
+        ({ error: markError } = await client
+          .from('ai_search_jobs')
+          .update({
+            attempts: nextAttempts,
+            last_error: message,
+            status: nextAttempts >= maxAttempts ? 'failed' : 'pending',
+          })
+          .in('id', group.jobIds));
+      }
       if (markError) {
         // Markierung fehlgeschlagen: nur protokollieren — der Job bleibt
         // 'pending' und wird im naechsten Lauf erneut versucht.
@@ -244,6 +304,11 @@ export async function processOutboxBatch(client, options = {}) {
 
   await Promise.all(Array.from({ length: Math.min(concurrency, groups.length) }, () => runNext()));
 
+  if (leaseLoss) {
+    const error = new WorkerLeaseLostError(leaseLoss);
+    error.partialSummary = summary;
+    throw error;
+  }
   return summary;
 }
 
@@ -271,7 +336,15 @@ export async function drainOutbox(client, options = {}) {
   };
 
   for (;;) {
-    const batch = await processOutboxBatch(client, options);
+    let batch;
+    let leaseError = null;
+    try {
+      batch = await processOutboxBatch(client, options);
+    } catch (error) {
+      if (!error?.leaseLost || !error.partialSummary) throw error;
+      leaseError = error;
+      batch = error.partialSummary;
+    }
     total.batches += 1;
     total.fetchedJobs += batch.fetchedJobs;
     total.courses += batch.courses;
@@ -284,6 +357,11 @@ export async function drainOutbox(client, options = {}) {
     total.failures += batch.failures;
     total.errors.push(...batch.errors);
 
+    if (leaseError) {
+      // Sperre verloren: Teilergebnis mitgeben und sofort aufhören.
+      leaseError.partialTotal = total;
+      throw leaseError;
+    }
     if (batch.fetchedJobs === 0) {
       total.drained = true;
       break;

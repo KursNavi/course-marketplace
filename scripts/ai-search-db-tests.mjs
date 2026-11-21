@@ -134,6 +134,7 @@ async function main() {
   const createdUsers = [];
   const createdCourseIds = [];
   const createdJobCourseIds = [];
+  const createdOpsRunIds = [];
   // Eigene, garantiert nicht existente Kurs-IDs für Worker-Jobtests
   // (ai_search_jobs hat bewusst keinen FK auf courses; weit ausserhalb
   // realer ID-Bereiche, aber Number-sicher):
@@ -662,7 +663,119 @@ async function main() {
         check('anon: kein Abruf, kein Lesezugriff', Boolean(anonFetch.error) && (Boolean(anonSelect.error) || (anonSelect.data ?? []).length === 0));
       }
     }
+
+    // --- 11. Laufsperre v2 (nur wenn Entwurf 20261122090000 angewendet) -----
+    // Echte Gleichzeitigkeit und Schreibschutz über PostgREST. Eigene Daten:
+    // eigene Laufzeilen (werden gelöscht) und Jobs für eigene synthetische
+    // Kurs-IDs (createdJobCourseIds, werden gelöscht). Ist gerade ein echter
+    // Betriebslauf aktiv, wird der Abschnitt übersprungen statt gestört.
+    let opsLeaseAvailable = false;
+    {
+      const { error } = await service.rpc('ai_search_ops_lease_renew', { p_run_id: -1, p_holder: randomUUID(), p_lease_seconds: 60 });
+      if (!error) opsLeaseAvailable = true;
+      else if (!isMissingFunction(error)) {
+        failures += 1;
+        console.error(`FEHLER Verfügbarkeitsprüfung Laufsperre v2: ${error.code || '-'} ${error.message}`);
+      }
+    }
+    if (process.env.AI_DB_TESTS_REQUIRE_OPS_LEASE === '1' && !opsLeaseAvailable) {
+      failures += 1;
+      console.error('FEHLER: AI_DB_TESTS_REQUIRE_OPS_LEASE=1, aber die Laufsperre v2 fehlt – Abschnitt 11 würde übersprungen.');
+    }
+    console.log(`11. Laufsperre v2 (Entwurf 20261122090000): ${opsLeaseAvailable ? 'angewendet' : 'nicht angewendet – übersprungen'}`);
+    if (opsLeaseAvailable) {
+      const acquire = (holder, modes = ['index']) => service.rpc('ai_search_ops_lease_acquire', { p_holder: holder, p_modes: modes, p_lease_seconds: 60, p_max_seconds: 300 });
+      const renew = (runId, holder) => service.rpc('ai_search_ops_lease_renew', { p_run_id: runId, p_holder: holder, p_lease_seconds: 60 });
+      const release = (runId, holder, outcome = 'ok') => service.rpc('ai_search_ops_lease_release', { p_run_id: runId, p_holder: holder, p_outcome: outcome, p_summary: { test: 'ai-search-db-tests' } });
+      const enqueue = (runId, holder, courseId) => service.rpc('ai_search_ops_fenced_enqueue', { p_run_id: runId, p_holder: holder, p_course_ids: [courseId], p_priority: 9 });
+      const expire = (runId) => service.from('ai_search_ops_runs').update({ lease_until: new Date(Date.now() - 1000).toISOString() }).eq('id', runId);
+      const runRow = async (runId) => (await service.from('ai_search_ops_runs').select('outcome, finished_at, summary').eq('id', runId).single()).data;
+
+      const h1 = randomUUID();
+      const first = await acquire(h1);
+      if (first.error) {
+        check('Sperre übernehmen', false, first.error.message);
+      } else if (first.data === null) {
+        console.log('  übersprungen: ein anderer Betriebslauf ist gerade aktiv (keine Störung des echten Laufs).');
+      } else {
+        createdOpsRunIds.push(first.data);
+        const okRenew = await renew(first.data, h1);
+        const foreign = await renew(first.data, randomUUID());
+        check('Verlängerung nur durch den eigenen Halter', okRenew.data?.status === 'renewed' && foreign.data?.status === 'lost',
+          JSON.stringify({ own: okRenew.data?.status, foreign: foreign.data?.status }));
+
+        const ownCourse = fakeCourseId();
+        createdJobCourseIds.push(ownCourse);
+        const fencedOk = await enqueue(first.data, h1, ownCourse);
+        check('geschützte Einreihung mit gültiger Sperre', !fencedOk.error && fencedOk.data === 1, fencedOk.error?.message ?? String(fencedOk.data));
+
+        await expire(first.data);
+        const lateCourse = fakeCourseId();
+        createdJobCourseIds.push(lateCourse);
+        const fencedLate = await enqueue(first.data, h1, lateCourse);
+        const { count: lateRows } = await service.from('ai_search_jobs').select('*', { count: 'exact', head: true }).eq('course_id', lateCourse);
+        check('nach Fristablauf: Schreibzugriff abgewiesen (KNL01), nichts geschrieben',
+          fencedLate.error?.code === 'KNL01' && lateRows === 0, JSON.stringify({ code: fencedLate.error?.code, lateRows }));
+        const lateRenew = await renew(first.data, h1);
+        const lateRelease = await release(first.data, h1);
+        const row1 = await runRow(first.data);
+        check('abgelaufene Sperre: keine Verlängerung, Lauf als expired protokolliert',
+          lateRenew.data?.status === 'expired' && lateRelease.data === 'already_finished' && row1?.outcome === 'expired',
+          JSON.stringify({ renew: lateRenew.data?.status, release: lateRelease.data, outcome: row1?.outcome }));
+
+        // Echte Gleichzeitigkeit: 5 Bewerber zugleich → genau einer erhält die Sperre.
+        const holders = Array.from({ length: 5 }, () => randomUUID());
+        const race = await Promise.all(holders.map((h) => acquire(h, ['cleanup'])));
+        const winners = race.map((r, i) => ({ id: r.data, holder: holders[i], error: r.error })).filter((r) => r.id !== null && r.id !== undefined);
+        for (const w of winners) createdOpsRunIds.push(w.id);
+        check('5 gleichzeitige Bewerber: genau eine Sperre', winners.length === 1 && race.every((r) => !r.error),
+          JSON.stringify(race.map((r) => r.error?.message ?? r.data)));
+
+        if (winners.length === 1) {
+          const winner = winners[0];
+          // Übernahme: Gewinner „stürzt ab“ (Frist abgelaufen), neuer Lauf übernimmt.
+          await expire(winner.id);
+          const h3 = randomUUID();
+          const takeover = await acquire(h3);
+          if (takeover.data) createdOpsRunIds.push(takeover.data);
+          const crashed = await runRow(winner.id);
+          check('Übernahme nach Absturz: neuer Lauf, alter als expired mit Übernehmer protokolliert',
+            Boolean(takeover.data) && crashed?.outcome === 'expired' && crashed?.summary?.taken_over_by === h3,
+            JSON.stringify({ takeover: takeover.data, outcome: crashed?.outcome }));
+
+          if (takeover.data) {
+            const abort = await service.rpc('ai_search_ops_request_abort', { p_run_id: takeover.data, p_reason: 'DB-Test' });
+            const afterAbort = await renew(takeover.data, h3);
+            const abortCourse = fakeCourseId();
+            createdJobCourseIds.push(abortCourse);
+            const fencedAbort = await enqueue(takeover.data, h3, abortCourse);
+            const abortRelease = await release(takeover.data, h3, 'aborted');
+            check('Abbruch: keine Verlängerung, kein Schreiben, Abschluss als aborted',
+              abort.data === true && afterAbort.data?.status === 'abort_requested' && fencedAbort.error?.code === 'KNL01' && abortRelease.data === 'released',
+              JSON.stringify({ abort: abort.data, renew: afterAbort.data?.status, code: fencedAbort.error?.code, release: abortRelease.data }));
+          }
+        }
+
+        const anonAcquire = await anon.rpc('ai_search_ops_lease_acquire', { p_holder: randomUUID(), p_modes: ['index'], p_lease_seconds: 60, p_max_seconds: 300 });
+        const anonRuns = await anon.from('ai_search_ops_runs').select('*').limit(1);
+        check('anon: keine Sperre, kein Laufprotokoll', Boolean(anonAcquire.error) && (Boolean(anonRuns.error) || (anonRuns.data ?? []).length === 0));
+      }
+    }
   } finally {
+    // Eigene Laufzeilen der Laufsperre entfernen (nur eigene Kennungen).
+    try {
+      if (createdOpsRunIds.length > 0) {
+        const { error: runCleanupError, count: runCount } = await service
+          .from('ai_search_ops_runs')
+          .delete({ count: 'exact' })
+          .in('id', createdOpsRunIds);
+        console.log(`Cleanup: ${runCount ?? 0} Laufzeilen gelöscht${runCleanupError ? ` (FEHLER: ${runCleanupError.message})` : ''}`);
+        if (runCleanupError || runCount !== createdOpsRunIds.length) failures += 1;
+      }
+    } catch (runCleanupException) {
+      failures += 1;
+      console.error('FEHLER beim Lauf-Cleanup:', runCleanupException);
+    }
     // Eigene Anmeldekonten löschen (Ergebnisse folgen per ON DELETE CASCADE)
     // und Rückstandsfreiheit der Ergebnisse prüfen.
     for (const id of createdAuthUsers) {

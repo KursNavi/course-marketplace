@@ -1,0 +1,91 @@
+name: KI-Suche Betriebszyklus
+
+# Gemeinsamer Betriebszyklus der KI-Suche AUSSCHLIESSLICH auf der
+# TESTumgebung KursNavi (omoapbvfligjfznzivyu): Index/Änderungsaufträge,
+# fehlende Embeddings (nur Deltas), Ergebnislöschung – danach lesender
+# Nachher-Bericht mit Überwachung (--alarm-exit: roter Lauf bei kritischem
+# Alarm; GitHub benachrichtigt bei fehlgeschlagenen Läufen).
+#
+# NICHT Teil der normalen CI. Zwei Auslöser, beide AUS bis zur Freigabe:
+#  1) Beaufsichtigter Einzellauf: Label "ki-betrieb-zyklus" am Pull Request
+#     (ein Label = ein Lauf) mit kleinen festen Grenzen.
+#  2) Zeitplan alle 15 Minuten: wirkt erst, wenn diese Datei auf dem
+#     Standardbranch liegt UND die Repository-Variable
+#     AI_OPS_SCHEDULE_ENABLED auf 'true' gesetzt ist (Schalter).
+#
+# Voraussetzung: Laufsperre v2 angewendet (sonst bricht der Runner schreibend
+# mit Exit 2 ab). Kosten: Embeddings nur für Lücken, je Lauf höchstens
+# USD 0.01, Runner-Monatsgrenze USD 2 (gemessen im Laufprotokoll). Kein
+# Mailversand, kein Kontingent-Cleanup, kein Vercel-Cron. Schlüsselwerte
+# erscheinen nicht im Log.
+
+on:
+  pull_request:
+    types: [labeled]
+  schedule:
+    - cron: '*/15 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ki-betrieb-zyklus
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    if: >-
+      (github.event_name == 'pull_request' && github.event.label.name == 'ki-betrieb-zyklus') ||
+      (github.event_name == 'schedule' && vars.AI_OPS_SCHEDULE_ENABLED == 'true')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Beaufsichtigter Testzyklus (kleine feste Grenzen)
+        if: github.event_name == 'pull_request'
+        env:
+          SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+          SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+          AI_OPS_CONFIRM: omoapbvfligjfznzivyu
+          AI_SEARCH_MODELS_ENABLED: '1'
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+        run: npm run ops:ai-test -- --execute-index --execute-embed --execute-cleanup --max-usd=0.01 --max-runtime-sec=180 --max-index-batches=2 --max-enqueue=50 --max-embed-chunks=100 --cleanup-batch=100
+
+      - name: Zeitgesteuerter Zyklus
+        if: github.event_name == 'schedule'
+        env:
+          SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+          SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+          AI_OPS_CONFIRM: omoapbvfligjfznzivyu
+          AI_SEARCH_MODELS_ENABLED: '1'
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+        run: npm run ops:ai-test -- --execute-index --execute-embed --execute-cleanup --max-usd=0.01 --max-runtime-sec=300 --max-index-batches=6 --max-enqueue=200 --max-embed-chunks=300 --cleanup-batch=1000
+
+      - name: Nachher-Bericht (lesend)
+        if: always() && github.event_name == 'pull_request'
+        env:
+          SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+          SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+        run: npm run ops:ai-test
+
+      - name: Nachher-Bericht mit Überwachung (lesend, rot bei kritischem Alarm)
+        if: always() && github.event_name == 'schedule'
+        env:
+          SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+          SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+        run: npm run ops:ai-test -- --alarm-exit

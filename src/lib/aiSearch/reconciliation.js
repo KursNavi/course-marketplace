@@ -186,6 +186,10 @@ export async function runReconciliation(client, options = {}) {
   const maxEnqueue = options.maxEnqueue ?? DEFAULT_MAX_ENQUEUE;
   const random = options.random ?? Math.random;
   const alarms = [];
+  // Optional (Betriebsrunner): geschützte Einreihung unter Laufsperre.
+  const enqueue = typeof options.enqueue === 'function'
+    ? options.enqueue
+    : (courseIds, priority) => enqueueReconciliationJobs(client, courseIds, priority);
 
   const publishedIds = await fetchAllIds(client, 'courses', 'id',
     (query) => query.eq('status', 'published'));
@@ -207,12 +211,12 @@ export async function runReconciliation(client, options = {}) {
   let truncated = false;
   const cappedOrphaned = orphanedInIndex.slice(0, budget);
   if (orphanedInIndex.length > cappedOrphaned.length) truncated = true;
-  const enqueuedOrphaned = await enqueueReconciliationJobs(client, cappedOrphaned, 1);
+  const enqueuedOrphaned = await enqueue(cappedOrphaned, 1);
   budget -= enqueuedOrphaned;
 
   const cappedMissing = missingInIndex.slice(0, budget);
   if (missingInIndex.length > cappedMissing.length) truncated = true;
-  const enqueuedMissing = await enqueueReconciliationJobs(client, cappedMissing, 5);
+  const enqueuedMissing = await enqueue(cappedMissing, 5);
   budget -= enqueuedMissing;
 
   // Hash-Stichprobe nur ueber Kurse, die in Quelle UND Index vorhanden sind.
@@ -245,7 +249,7 @@ export async function runReconciliation(client, options = {}) {
   if (mismatchedCourseIds.length > 0) {
     const cappedMismatched = mismatchedCourseIds.slice(0, budget);
     if (mismatchedCourseIds.length > cappedMismatched.length) truncated = true;
-    enqueuedHashMismatch = await enqueueReconciliationJobs(client, cappedMismatched, 3);
+    enqueuedHashMismatch = await enqueue(cappedMismatched, 3);
     budget -= enqueuedHashMismatch;
     alarms.push(`Hash-Stichprobe: ${mismatchedCourseIds.length} Abweichung(en) — ${enqueuedHashMismatch} Job(s) eingereiht.`);
   }

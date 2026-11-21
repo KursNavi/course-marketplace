@@ -86,11 +86,13 @@ export const TEST_SETS = Object.freeze({
     rollback: 'supabase/rollback/20261121122101_ai_search_result_store_and_guard_down.sql',
     test: 'supabase/drafts/tests/20261121122101_ai_search_result_store_and_guard_test.sql',
   },
-  // Entwurf (nicht angewendet): Laufsperre des Betriebsrunners.
-  ops_lease: {
-    migration: 'supabase/drafts/20261121160000_ai_search_ops_lease.sql',
-    rollback: 'supabase/drafts/20261121160000_ai_search_ops_lease_down.sql',
-    test: 'supabase/drafts/tests/20261121160000_ai_search_ops_lease_test.sql',
+  // Entwurf (nicht angewendet): Laufsperre v2 des Betriebsrunners mit
+  // Verlängerung, Abbruch, Übernahme und Schreibschutz. Ersetzt den nie
+  // angewendeten Entwurf 20261121160000 (ops_lease, 12/12 am 21.11.2026).
+  ops_lease_v2: {
+    migration: 'supabase/drafts/20261122090000_ai_search_ops_lease_v2.sql',
+    rollback: 'supabase/drafts/20261122090000_ai_search_ops_lease_v2_down.sql',
+    test: 'supabase/drafts/tests/20261122090000_ai_search_ops_lease_v2_test.sql',
   },
 });
 

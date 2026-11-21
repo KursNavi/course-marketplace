@@ -1,4 +1,4 @@
-# Migrationsübersicht KI-Suche (Stand 21.11.2026)
+# Migrationsübersicht KI-Suche (Stand 22.11.2026)
 
 Nur lesend ermittelt (Repo-Dateien und `supabase_migrations.schema_migrations`
 der TESTumgebung `omoapbvfligjfznzivyu`). **Produktion nicht abgefragt** –
@@ -28,6 +28,17 @@ unverändert (Inhalt = verbuchte Fassung).
 Rückwege angewendeter Migrationen: `supabase/rollback/ai_search_down.sql`
 (Migrationen 1–4), `supabase/rollback/20261120205856_…_down.sql` und
 `supabase/rollback/20261121122101_…_down.sql` (nicht ausgeführt).
+
+### Offene Entwürfe Betrieb (Stand 22.11.2026, NICHT angewendet)
+
+| Entwurf (`supabase/drafts/`) | Inhalt | Rückweg | Rollback-Test |
+|---|---|---|---|
+| `20261122090000_ai_search_ops_lease_v2.sql` | Laufsperre mit Besitz, Verlängerung, Abbruch, Übernahme, Schreibschutz (`ai_search_ops_fenced_*`), Laufprotokoll, Löschfunktion `ai_search_ops_cleanup_tick`. Nur neue Objekte. | `…_v2_down.sql` | `tests/…_v2_test.sql`, 28 Prüfungen (`node scripts/ai-search-draft-sql-test.mjs ops_lease_v2`), **noch nicht ausgeführt** |
+| `20261122090100_ai_search_ops_cleanup_schedule.sql` | **Schalter**: pg_cron-Job `ai-search-ops-cleanup`, stündlich Minute 7 | `…_schedule_down.sql` | kein eigener (nur ein `cron.schedule`); Wirkung im Testzyklus geprüft |
+
+Der Entwurf `20261121160000_ai_search_ops_lease` (Rollback-Test 12/12 am
+21.11.2026) ist **ersetzt und entfernt**; er wurde nie angewendet. Sein
+Testergebnis gilt nicht für v2.
 
 ## 2. Einheitlicher Versionsweg (umgesetzt 21.11.2026)
 
