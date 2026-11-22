@@ -29,7 +29,7 @@ import { isPubliclySearchable } from './publication.js';
 import { fuseRankedLists } from './retrieval.js';
 import { rankWithPaidPriority, MIN_SCORE } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
-import { buildExplanation } from './explanation.js';
+import { buildExplanation, localizedPrice } from './explanation.js';
 import { checkWishes, deliveryEvidence } from './wishCheck.js';
 import { childAudience, adultsBackedByText } from './audience.js';
 import { providerDisplayName } from './providerPublic.js';
@@ -123,7 +123,8 @@ export function scoreTextFit(course, terms, chunksByCourse, wishes) {
   }
 
   let wishBonus = 0;
-  const locationWishes = wishes.filter((w) => w.type === 'location');
+  // Verneinte Ortsangaben („nicht in Zürich“) sind kein Ortswunsch (K1).
+  const locationWishes = wishes.filter((w) => w.type === 'location' && !w.negated);
   if (locationWishes.length > 0) {
     const places = [
       course.canton,
@@ -314,6 +315,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
   if (!place) gaps.push('Ort nicht angegeben.');
   for (const unknown of mustResult.unknowns) {
     if (unknown === 'event') gaps.push('Ort/Termin-Vorgabe kann ohne passenden Termin nicht bestätigt werden.');
+    if (unknown === 'location') gaps.push('Kursort zur Ortsvorgabe nicht angegeben.');
     if (unknown === 'budget') gaps.push('Budget-Vorgabe kann mit den Preisangaben nicht bestätigt werden.');
     if (unknown === 'language') gaps.push('Kurssprache nicht angegeben.');
   }
@@ -340,9 +342,13 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     musts: request.musts,
     mustUnknowns: mustResult.unknowns ?? [],
     place,
+    // Städte laut Kursorten/Termin: für verneinte Ortswünsche (K1), damit
+    // Kanton und Stadt nicht verwechselt werden.
+    cities: [...new Set([event?.location, ...(course.course_locations ?? []).map((l) => l.city)].filter(Boolean))],
     event: cardEvent,
-    price: price.text,
+    price: localizedPrice(priceStatus, request.language),
     audience,
+    language: request.language,
   });
 
   // Paketeinfluss bewusst NICHT je Karte (Nachtrag 10: keine Einzelbadges);
@@ -364,6 +370,41 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     gaps: [...new Set(gaps)],
     mustStatus: mustResult.result,
     wishChecks,
+  };
+}
+
+/**
+ * Auswahlstufen je Kandidat für den Prüfbericht (K3): Rang je Abrufkanal,
+ * fusionierter Rang, Muss-Ergebnis, an Luna gesendet, Score, angezeigt.
+ */
+export function buildSelectionDiagnostics({ channels, candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults }) {
+  const rankIn = (list) => new Map((list ?? []).map((row, index) => [String(row.courseId ?? row.course_id), index + 1]));
+  const ranks = { lexicalChunks: rankIn(channels.lexicalChunks), lexicalDocuments: rankIn(channels.lexicalDocuments), semantic: channels.semantic ? rankIn(channels.semantic) : null };
+  const sent = new Set((lunaSentIds ?? []).map(String));
+  const scoreById = new Map(scored.map((s) => [String(s.course.id), { rated: lunaUsed ? Boolean(s.rated) : true, score: s.candidate.score }]));
+  const shown = new Map([...results.map((c) => [String(c.courseId), 'Treffer']), ...incompleteResults.map((c) => [String(c.courseId), 'unvollständig'])]);
+  return {
+    minScore: MIN_SCORE,
+    semanticUsed: Boolean(channels.semantic),
+    candidates: candidateIds.map((id, index) => {
+      const key = String(id);
+      const must = mustLog.get(key) ?? null;
+      const scoredEntry = scoreById.get(key);
+      return {
+        courseId: key,
+        fusedRank: index + 1,
+        lexicalChunkRank: ranks.lexicalChunks.get(key) ?? null,
+        lexicalDocumentRank: ranks.lexicalDocuments.get(key) ?? null,
+        semanticRank: ranks.semantic ? (ranks.semantic.get(key) ?? null) : null,
+        must: must ? must.result : 'not_loaded',
+        mustFailures: must?.failures ?? [],
+        mustUnknowns: must?.unknowns ?? [],
+        sentToLuna: lunaUsed ? sent.has(key) : null,
+        rated: scoredEntry ? scoredEntry.rated : false,
+        score: scoredEntry && scoredEntry.rated ? scoredEntry.score : null,
+        shown: shown.get(key) ?? null,
+      };
+    }),
   };
 }
 
@@ -449,8 +490,11 @@ export async function runAiSearch(client, input) {
 
   const scored = [];
   let excludedByMust = 0;
+  // K3: Muss-Ergebnis je Kandidat (nur IDs/Codes) für den Prüfbericht.
+  const mustLog = new Map();
   for (const course of freshCourses) {
     const mustResult = checkCourseMusts(course, musts, { today: now });
+    mustLog.set(String(course.id), { result: mustResult.result, failures: mustResult.failures, unknowns: mustResult.unknowns });
     if (mustResult.result === MUST_RESULT.FAILED) {
       excludedByMust += 1;
       continue;
@@ -477,6 +521,7 @@ export async function runAiSearch(client, input) {
   // Kandidaten fallen heraus (kein Auffüllen mit unbewerteten Kursen).
   let lunaUsed = false;
   let lunaSent = 0;
+  let lunaSentIds = [];
   let lunaDiscarded = 0;
   let explanationsRejected = 0;
   let explanationsRequested = null;
@@ -489,6 +534,7 @@ export async function runAiSearch(client, input) {
     const evidenceCandidates = ordered.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
     const { accepted, sentIds, rejected = [] } = await timed('lunaScore', () => models.gateway.scoreCandidates(parsed.normalized, evidenceCandidates));
     lunaSent = Array.isArray(sentIds) ? sentIds.length : evidenceCandidates.length;
+    lunaSentIds = Array.isArray(sentIds) ? sentIds.map(String) : evidenceCandidates.map((c) => String(c.courseId));
     lunaDiscarded = rejected.filter((r) => /Kurs-ID|doppelt|Score/.test(r.reason)).length;
     const byId = new Map(accepted.map((a) => [String(a.courseId), a]));
     for (const entry of scored) {
@@ -504,8 +550,9 @@ export async function runAiSearch(client, input) {
     const rankIndex = new Map(candidateIds.map((id, index) => [String(id), index]));
     const ordered = [...scored].sort((a, b) => (rankIndex.get(String(a.course.id)) ?? 1e9) - (rankIndex.get(String(b.course.id)) ?? 1e9));
     const evidenceCandidates = ordered.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
-    const { accepted, sentIds, rejected = [] } = await timed('luna', () => models.gateway.rerank(parsed.normalized, evidenceCandidates));
+    const { accepted, sentIds, rejected = [] } = await timed('luna', () => models.gateway.rerank(parsed.normalized, evidenceCandidates, { language: parsed.language }));
     lunaSent = Array.isArray(sentIds) ? sentIds.length : evidenceCandidates.length;
+    lunaSentIds = Array.isArray(sentIds) ? sentIds.map(String) : evidenceCandidates.map((c) => String(c.courseId));
     lunaDiscarded = rejected.filter((r) => /Kurs-ID|doppelt|Score/.test(r.reason)).length;
     explanationsRejected = rejected.filter((r) => /Begründungstext/.test(r.reason)).length;
     const byId = new Map(accepted.map((a) => [String(a.courseId), a]));
@@ -538,7 +585,7 @@ export async function runAiSearch(client, input) {
     const finalEntries = [...selectedConfirmed, ...selectedIncomplete].map((r) => entryById.get(String(r.courseId))).filter(Boolean);
     explanationsRequested = finalEntries.length;
     const explainInput = finalEntries.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
-    const { accepted = [], rejected = [] } = await timed('lunaExplain', () => models.gateway.explainCandidates(parsed.normalized, explainInput));
+    const { accepted = [], rejected = [] } = await timed('lunaExplain', () => models.gateway.explainCandidates(parsed.normalized, explainInput, { language: parsed.language }));
     explanationsRejected = rejected.filter((r) => /Begründungstext/.test(r.reason)).length;
     const explainedById = new Map(accepted.map((a) => [String(a.courseId), a]));
     for (const ranked of [...selectedConfirmed, ...selectedIncomplete]) {
@@ -555,7 +602,7 @@ export async function runAiSearch(client, input) {
     const byId = new Map(group.map((s) => [String(s.course.id), s]));
     return selected.map((ranked) => {
       const entry = byId.get(String(ranked.courseId));
-      return buildCard(entry.course, ranked, entry.mustResult, context, now, { wishes: parsed.wishes, musts });
+      return buildCard(entry.course, ranked, entry.mustResult, context, now, { wishes: parsed.wishes, musts, language: parsed.language });
     });
   };
 
@@ -570,8 +617,17 @@ export async function runAiSearch(client, input) {
   const rated = lunaUsed ? scored.filter((s) => s.rated) : scored;
   const belowThreshold = rated.filter((s) => s.candidate.score < MIN_SCORE).length;
 
+  // K3 (22.11.2026): nachvollziehbare Auswahlstufen, nur auf ausdrückliche
+  // Anforderung (Qualitätsprüfung). Nur IDs, Ränge, Codes und Scores.
+  const diagnostics = input.diagnostics === true ? buildSelectionDiagnostics({
+    channels: { lexicalChunks: lexicalChannels[0] ?? [], lexicalDocuments: lexicalChannels[1] ?? [], semantic: semanticUsed ? semanticChannel : null },
+    candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults,
+  }) : null;
+
   return {
+    ...(diagnostics ? { diagnostics } : {}),
     criteria: {
+      language: parsed.language,
       terms: parsed.terms,
       wishes: parsed.wishes,
       musts: {

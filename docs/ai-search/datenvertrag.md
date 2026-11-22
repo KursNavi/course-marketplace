@@ -89,9 +89,22 @@ bestehende Speicherzustände bleiben unverändert.
 - Zeitzone: Europe/Zurich; Datumsvergleiche auf Tagesebene in dieser Zone.
 - Vergangene und abgesagte Events erfüllen nichts und werden nie als „nächster Termin“
   ausgegeben.
-- Kurse ohne Event können eventbezogene Muss-Kriterien nicht bestätigen → Bereich
-  „Angaben unvollständig“ (laut Snapshot betrifft das die Mehrheit des Bestands;
-  endgültige Quote nach E1).
+- ~~Kurse ohne Event können eventbezogene Muss-Kriterien nicht bestätigen → Bereich
+  „Angaben unvollständig“.~~ **Nachtrag 22.11.2026 (K2, nach der Abnahme):** Ohne
+  passenden Termin entscheiden die **bekannten Kursorte** über eine Ortsvorgabe
+  (`mussCheck.js`, `checkCourseLocationMust`):
+  - Bekannt sind das Kursfeld `canton` und die Präsenz-Kursorte (`course_locations`),
+    jeweils nur mit echtem Kantonsnamen, dazu die Lernform.
+  - **Bestätigt**, wenn ein bekannter Präsenzort im gewünschten Kanton liegt oder Online
+    erlaubt und angeboten ist.
+  - **Verstoss** (Kurs ausgeschlossen), wenn alle bekannten Präsenzorte anderswo liegen oder
+    der Kurs nur online ist und Online nicht erlaubt ist.
+  - **„Angaben unvollständig“ nur, wenn der Ort tatsächlich unbekannt ist** (auch bei
+    widersprüchlichen Angaben wie Kanton „Online“ bei Präsenz).
+  - Termine ohne Ortsangabe werden gleich behandelt.
+  - Die Regel „ein und derselbe Event“ für Ort plus Zeitraum bleibt unverändert.
+  - Budget: Nennt ein Preisfreitext Frankenbeträge und liegt schon der kleinste über dem
+    Budget, ist der Verstoss belegt (`priceStatus.js`, `infoTextAmounts`).
 - „Online“ zählt nur als Ortstreffer, wenn die Suchperson Online erlaubt hat.
 
 ## 5. Datenlücken und Unbekannt-Zustände

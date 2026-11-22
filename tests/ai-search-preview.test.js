@@ -135,7 +135,8 @@ describe('runAiSearch', () => {
     const courses = [
       course(1, { title: 'Yoga für Einsteiger' }),
       course(2, { status: 'draft', title: 'Yoga Entwurf' }),
-      course(3, { title: 'Abendkurs', course_events: [] }),
+      // Ort wirklich unbekannt (kein Kanton, kein Kursort, kein Termin) → unvollständig.
+      course(3, { title: 'Abendkurs', course_events: [], canton: null }),
     ];
     const chunks = [
       { course_id: 1, section: 'description', chunk_index: 0, text: 'Sanftes Yoga am Abend für alle.' },
@@ -1251,14 +1252,15 @@ describe('Nachtrag 13: Indexstand – Aufträge statt „Kursänderungen“, Abd
 describe('Zielgruppe Kinder/Jugendliche in der Begründung (20.11.2026)', async () => {
   const { childAudience, adultsBackedByText } = await import('../src/lib/aiSearch/audience.js');
   const { removeUnbackedAdultClaims } = await import('../src/lib/aiSearch/explanation.js');
-  const kids = { child: true, label: 'Kinder und Jugendliche (ab 8 Jahren)', adultsBacked: false };
+  const kids = { child: true, label: 'Kinder ab 8 Jahren', minAge: 8, maxAge: null, teens: false, adultsBacked: false };
 
   it('erkennt Kinderkurse nur aus belastbaren Feldern; target_group „Adults“ ist kein Beleg', () => {
-    expect(childAudience({ category_type: 'kinder', min_age: 8 })).toEqual({ child: true, label: 'Kinder und Jugendliche (ab 8 Jahren)' });
-    expect(childAudience({ category_type: 'kinder_jugend' })).toEqual({ child: true, label: 'Kinder und Jugendliche' });
+    // K5 (22.11.2026): Altersgruppe präzise, nicht pauschal „Kinder und Jugendliche“.
+    expect(childAudience({ category_type: 'kinder', min_age: 8 })).toEqual({ child: true, label: 'Kinder ab 8 Jahren', minAge: 8, maxAge: null, teens: false });
+    expect(childAudience({ category_type: 'kinder_jugend' })).toMatchObject({ child: true, label: 'Kinder und Jugendliche' });
     expect(childAudience({ kinder_kursart: 'feriencamp', min_age: 5 }).child).toBe(true);
     expect(childAudience({ category_type: 'privat' }, [{ level1_slug: 'kinder' }]).child).toBe(true);
-    expect(childAudience({ category_type: 'privat', target_group: 'Adults', min_age: 6 })).toEqual({ child: false, label: null });
+    expect(childAudience({ category_type: 'privat', target_group: 'Adults', min_age: 6 })).toMatchObject({ child: false, label: null });
     expect(adultsBackedByText({ description: 'Eltern-Kind-Kurs für Familien' })).toBe(true);
     expect(adultsBackedByText({ description: 'Roboter bauen in den Ferien' })).toBe(false);
   });
@@ -1266,7 +1268,7 @@ describe('Zielgruppe Kinder/Jugendliche in der Begründung (20.11.2026)', async 
   it('Text ohne Zielgruppe: Server ergänzt „Zielgruppe laut Kursangaben“ (nie gekürzt, ≤ 50 Wörter)', () => {
     const lead = 'Du lernst Programmiergrundlagen und steuerst Roboter mit eigenem Code. Der Kurs eignet sich ausdrücklich für Einsteigerinnen und Einsteiger.';
     const text = buildExplanation({ lead, audience: kids });
-    expect(text).toMatch(/Zielgruppe laut Kursangaben: Kinder und Jugendliche \(ab 8 Jahren\)\./);
+    expect(text).toMatch(/Zielgruppe laut Kursangaben: Kinder ab 8 Jahren\./);
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
   });
 
@@ -1309,11 +1311,11 @@ describe('Zielgruppe Kinder/Jugendliche in der Begründung (20.11.2026)', async 
     };
     const result = await runAiSearch(client, { query: 'Programmieren lernen', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
     const byId = Object.fromEntries(result.results.map((r) => [r.courseId, r.explanation]));
-    expect(byId[1]).toMatch(/Zielgruppe laut Kursangaben: Kinder und Jugendliche \(ab 8 Jahren\)\./);
+    expect(byId[1]).toMatch(/Zielgruppe laut Kursangaben: Kinder ab 8 Jahren\./);
     expect(byId[1]).not.toMatch(/Erwachsene/);
     expect(byId[2]).not.toMatch(/Zielgruppe laut Kursangaben/);
     const evidence = gateway.rerank.mock.calls[0][1];
-    expect(evidence.find((c) => String(c.courseId) === '1').evidence.target_group).toBe('Kinder und Jugendliche (ab 8 Jahren)');
+    expect(evidence.find((c) => String(c.courseId) === '1').evidence.target_group).toBe('Kinder ab 8 Jahren');
     expect(evidence.find((c) => String(c.courseId) === '2').evidence.target_group).toBeUndefined(); // „Adults“ nicht gesendet
   });
 });

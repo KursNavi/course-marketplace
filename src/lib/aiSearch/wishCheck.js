@@ -30,10 +30,11 @@ export const LEVEL_LABELS = Object.freeze({
 
 // Wortfelder, mit denen ein Text eine Wunsch-Erfüllung BEHAUPTET.
 export const WISH_CLAIM_PATTERNS = Object.freeze({
-  self_study: /selbststudium|selbstlern|selbstständig|selbständig|eigene[nm]? tempo|zeitlich flexibel|on.?demand/i,
-  presence: /präsenz|vor ort/i,
-  online: /\bonline\b|virtuell|von zu hause|ortsunabhängig/i,
-  beginner: /anfänger|einsteiger|ohne vorkenntnisse|keine vorkenntnisse/i,
+  // DE/FR/IT (K4): Begründungen erscheinen in der Sprache der Anfrage.
+  self_study: /selbststudium|selbstlern|selbstständig|selbständig|eigene[nm]? tempo|zeitlich flexibel|on.?demand|autoformation|à ton rythme|autoapprendimento|al tuo ritmo/i,
+  presence: /präsenz|vor ort|présentiel|sur place|in presenza/i,
+  online: /\bonline\b|virtuell|von zu hause|ortsunabhängig|en ligne|à distance|in linea|a distanza/i,
+  beginner: /anfänger|einsteiger|ohne vorkenntnisse|keine vorkenntnisse|débutant|sans connaissances|principiant|senza conoscenze/i,
 });
 
 function deliveryTypes(course) {
@@ -58,14 +59,24 @@ export function checkWish(course, wish) {
   if (wish?.type === 'format') {
     const types = deliveryTypes(course);
     const wanted = wish.value === 'presence' ? ['presence', 'vor_ort'] : [String(wish.value)];
-    const base = { aspect: 'Lernform', wishLabel: wish.label, claimKey: wish.value === 'presence' ? 'presence' : 'self_study' };
+    const base = { aspect: 'Lernform', wishLabel: wish.label, claimKey: wish.value === 'presence' ? 'presence' : 'self_study', key: wish.value === 'presence' ? 'presence' : 'self_study' };
     if (types.length === 0) return { ...base, status: 'unknown', actual: null };
     if (types.some((type) => wanted.includes(type))) return { ...base, status: 'confirmed', actual: labelDelivery(types) };
     return { ...base, status: 'deviating', actual: labelDelivery(types) };
   }
+  if (wish?.type === 'online' && wish.negated) {
+    // Verneint („nicht online“, K1): erfüllt, wenn Präsenz angeboten wird;
+    // abweichend nur, wenn die Kursangaben ausschliesslich Online nennen.
+    const types = deliveryTypes(course);
+    const base = { aspect: 'Lernform', wishLabel: wish.label, claimKey: 'presence', negated: true, key: 'not_online' };
+    if (types.length === 0) return { ...base, status: 'unknown', actual: null };
+    if (types.some((type) => type === 'presence' || type === 'vor_ort')) return { ...base, status: 'confirmed', actual: labelDelivery(types) };
+    if (types.every((type) => type === 'online' || type === 'online_live')) return { ...base, status: 'deviating', actual: labelDelivery(types) };
+    return { ...base, status: 'unknown', actual: labelDelivery(types) };
+  }
   if (wish?.type === 'online') {
     const types = deliveryTypes(course);
-    const base = { aspect: 'Lernform', wishLabel: wish.label, claimKey: 'online' };
+    const base = { aspect: 'Lernform', wishLabel: wish.label, claimKey: 'online', key: 'online' };
     if (types.length === 0) return { ...base, status: 'unknown', actual: null };
     if (types.some((type) => type === 'online' || type === 'online_live')) return { ...base, status: 'confirmed', actual: labelDelivery(types) };
     // Reines Selbststudium kann online oder gedruckt sein: nicht bestätigt.
@@ -74,7 +85,7 @@ export function checkWish(course, wish) {
   }
   if (wish?.type === 'level' && wish.value === 'beginner') {
     const level = String(course?.level ?? '').toLowerCase().trim();
-    const base = { aspect: 'Niveau', wishLabel: wish.label, claimKey: 'beginner' };
+    const base = { aspect: 'Niveau', wishLabel: wish.label, claimKey: 'beginner', key: 'beginner' };
     if (!level) return { ...base, status: 'unknown', actual: null };
     if (level === 'beginner' || level === 'all_levels' || level === 'all levels') return { ...base, status: 'confirmed', actual: LEVEL_LABELS[level] };
     return { ...base, status: 'deviating', actual: LEVEL_LABELS[level] ?? level };

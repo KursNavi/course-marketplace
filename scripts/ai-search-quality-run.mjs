@@ -39,6 +39,7 @@ import { ACCEPTANCE_RANGE, ID_OFFSET, BACKUP_BUCKET, QUALITY_PREFIX } from '../s
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const CASES_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/cases-36.json');
 export const STARTSET_PATH = resolve(ROOT, 'tests/fixtures/ai-search-goldstandard/tasks-initial.json');
+export const SOLL_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/soll-listen.json');
 export const MAX_USD_CEILING = 1;
 export const MAX_ERRORS = 3;
 /** Annahme je Suche (e3-entscheidungsvorlage): 18 000 Eingabe-, 2 000 Ausgabetokens ≈ USD 0.003. */
@@ -176,6 +177,29 @@ export function autoChecks(testCase, result) {
   };
 }
 
+/**
+ * K3: Wo ist jeder fehlende Soll-Kurs ausgeschieden? Nur aus den
+ * gespeicherten Auswahlstufen (keine Vermutung): nicht unter den Kandidaten,
+ * Muss-Verstoss, nicht an Luna gesendet, Score unter der Mindestpassung,
+ * nicht ausgewählt.
+ */
+export function analyzeSoll(soll, cards, diagnostics) {
+  const shown = new Set((cards ?? []).map((c) => String(c.courseId)));
+  const byId = new Map((diagnostics?.candidates ?? []).map((c) => [String(c.courseId), c]));
+  const wanted = (soll ?? []).map(String).slice(0, 10);
+  const found = wanted.filter((id) => shown.has(id));
+  const missing = wanted.filter((id) => !shown.has(id)).map((id) => {
+    const c = byId.get(id);
+    if (!c) return { courseId: id, stage: 'nicht_unter_kandidaten' };
+    if (c.must === 'failed') return { courseId: id, stage: 'muss_verstoss', detail: c.mustFailures, fusedRank: c.fusedRank };
+    if (c.sentToLuna === false) return { courseId: id, stage: 'nicht_an_luna', fusedRank: c.fusedRank, lexicalChunkRank: c.lexicalChunkRank, lexicalDocumentRank: c.lexicalDocumentRank, semanticRank: c.semanticRank };
+    if (c.rated && c.score !== null && c.score < (diagnostics.minScore ?? 70)) return { courseId: id, stage: 'score_unter_mindestpassung', score: c.score, fusedRank: c.fusedRank };
+    if (!c.rated) return { courseId: id, stage: 'nicht_bewertet', fusedRank: c.fusedRank };
+    return { courseId: id, stage: 'nicht_ausgewaehlt', score: c.score, fusedRank: c.fusedRank };
+  });
+  return { soll: wanted.length, found: found.length, coverage: wanted.length ? found.length / wanted.length : null, missing };
+}
+
 function sourceId(courseId) {
   return Number(courseId) - ID_OFFSET;
 }
@@ -198,6 +222,10 @@ export function buildReviewMarkdown(meta, runs) {
       lines.push(`| ${index + 1} | ${card.section} | ${card.courseId} (${sourceId(card.courseId)}) | ${String(card.title).replace(/\|/g, '/')} | ${card.score} | ${text} |  |  |  |  |`);
     });
     if (run.cards.length === 0) lines.push('| – | – | keine Treffer | | | | | | | |');
+    if (run.soll) {
+      lines.push('', `Soll-Abdeckung: ${run.soll.found}/${run.soll.soll}`);
+      for (const miss of run.soll.missing) lines.push(`- fehlt ${miss.courseId} (${sourceId(miss.courseId)}): ${miss.stage}${miss.score !== undefined ? `, Score ${miss.score}` : ''}${miss.fusedRank ? `, Fusionsrang ${miss.fusedRank}` : ''}${miss.semanticRank !== undefined ? `, Bedeutungsrang ${miss.semanticRank ?? '–'}` : ''}`);
+    }
     lines.push('');
   }
   return lines.join('\n');
@@ -259,6 +287,7 @@ async function main() {
   if (!guard.ok) { console.error(`Abbruch: ${guard.reason}`); process.exit(2); }
 
   const { cases, errors } = loadQualityCases(JSON.parse(readFileSync(CASES_PATH, 'utf8')), JSON.parse(readFileSync(STARTSET_PATH, 'utf8')));
+  const sollLists = JSON.parse(readFileSync(SOLL_PATH, 'utf8')).cases ?? {};
   if (errors.length) { errors.forEach((e) => console.error(`Fälle: ${e}`)); process.exit(2); }
   const env = { ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST };
   const config = readModelConfig(env);
@@ -295,7 +324,7 @@ async function main() {
     const started = Date.now();
     const run = { case: testCase, cards: [], checks: null, error: null };
     try {
-      const result = await runAiSearch(service, { query: testCase.query, musts: sanitizeMusts(testCase.form), models: { gateway, embeddingVersion: config.embeddingVersion } });
+      const result = await runAiSearch(service, { query: testCase.query, musts: sanitizeMusts(testCase.form), models: { gateway, embeddingVersion: config.embeddingVersion }, diagnostics: true });
       run.cards = [
         ...result.results.map((c) => ({ ...c, section: 'Treffer' })),
         ...result.incompleteResults.map((c) => ({ ...c, section: 'unvollständig' })),
@@ -304,6 +333,9 @@ async function main() {
       run.stats = result.stats;
       run.method = { semantic: result.method.semantic, luna: result.method.luna };
       run.timings = result.timings;
+      run.language = result.criteria?.language ?? null;
+      run.diagnostics = result.diagnostics ?? null;
+      run.soll = analyzeSoll(sollLists[testCase.id]?.soll ?? [], run.cards, run.diagnostics);
     } catch (error) {
       errorCount += 1;
       run.error = String(error?.message ?? error).slice(0, 300);
@@ -316,6 +348,10 @@ async function main() {
     runs.push(run);
     const top = run.cards.slice(0, 10).map((c) => `${c.courseId}:${c.score}`).join(' ');
     console.log(`${testCase.id}: ${run.error ? `FEHLER ${run.error}` : `Treffer ${run.checks.confirmed}, unvollständig ${run.checks.incomplete}, semantisch ${run.method.semantic ? 'ja' : 'NEIN'}, Luna ${run.method.luna ? 'ja' : 'NEIN'}`} | ${run.ms} ms | Tokens ${run.usage.lunaInputTokens}/${run.usage.lunaOutputTokens} | ≈ USD ${cost.usd.toFixed(4)} | ${top}`);
+    if (run.soll && run.soll.soll > 0) {
+      const stages = run.soll.missing.reduce((acc, m) => ({ ...acc, [m.stage]: (acc[m.stage] ?? 0) + 1 }), {});
+      console.log(`  Soll ${run.soll.found}/${run.soll.soll}${run.soll.missing.length ? ` | fehlend nach Stufe ${JSON.stringify(stages)}` : ''}`);
+    }
     if (run.checks) {
       const flags = [];
       if (run.checks.explanationsTooLong.length) flags.push(`zu lang ${run.checks.explanationsTooLong.join(',')}`);

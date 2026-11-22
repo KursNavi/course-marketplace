@@ -75,10 +75,47 @@ function detectPlaces(lowerQuery) {
   for (const name of PLACE_NAMES) {
     const variants = [name, name.replace('ü', 'ue').replace('è', 'e').replace('â', 'a')]
       .map((v) => v.toLowerCase());
-    const pattern = variants.some((v) => new RegExp(`(^|[^\\p{L}])${escapeRegExp(v)}([^\\p{L}]|$)`, 'u').test(lowerQuery));
-    if (pattern) found.push(name);
+    let index = -1;
+    for (const v of variants) {
+      const match = new RegExp(`(^|[^\\p{L}])${escapeRegExp(v)}([^\\p{L}]|$)`, 'u').exec(lowerQuery);
+      if (match) { index = match.index + match[1].length; break; }
+    }
+    if (index >= 0) found.push({ name, index });
   }
   return found;
+}
+
+// Verneinung (K1, 22.11.2026): ein Ausschlusswort höchstens vier Wörter vor
+// der Angabe, ohne Satzgrenze dazwischen („aber nicht online“, „nicht in der
+// Stadt Zürich“, „pas en ligne“, „non online“). Wird erkannt, entsteht ein
+// verneinter Wunsch, nie der gegenteilige.
+const NEGATION_WORDS = new Set(['nicht', 'kein', 'keine', 'keinen', 'keinem', 'ohne', 'ausser',
+  'pas', 'sans', 'non', 'ni', 'hors', 'senza', 'niente', 'not', 'no']);
+
+export function isNegatedAt(lowerQuery, index) {
+  const before = String(lowerQuery ?? '').slice(0, Math.max(0, index));
+  const clause = before.split(/[.,;:!?()]|\b(?:aber|sondern|mais|ma|but)\b/u).pop() ?? '';
+  const words = clause.match(/[\p{L}]+/gu) ?? [];
+  return words.slice(-4).some((word) => NEGATION_WORDS.has(word));
+}
+
+const ONLINE_PATTERN = /\bonline\b|\bvirtuell\b|\bremote\b|\bzoom\b|\ben ligne\b|\bà distance\b|\bin linea\b|\ba distanza\b/u;
+
+// Sprache der Anfrage (K4): einfache Wortzählung, Standard Deutsch.
+const LANGUAGE_MARKERS = {
+  fr: new Set(['le', 'la', 'les', 'des', 'du', 'un', 'une', 'pour', 'avec', 'cours', 'formation', 'enfant', 'enfants', 'mon', 'ma', 'mes', 'je', 'pas', 'en', 'ligne', 'débutant', 'débutants', 'ans', 'de', 'et', 'à', 'au', 'aux', 'cherche', 'apprendre']),
+  it: new Set(['il', 'lo', 'gli', 'per', 'con', 'corso', 'corsi', 'bambini', 'bambino', 'anni', 'di', 'un', 'una', 'mio', 'mia', 'principianti', 'principiante', 'non', 'anche', 'imparare', 'cerco', 'e', 'a', 'del', 'della', 'nel']),
+  de: new Set(['der', 'die', 'das', 'und', 'für', 'mit', 'ich', 'ein', 'eine', 'kurs', 'nicht', 'lernen', 'möchte', 'für', 'meine', 'meinen', 'am', 'im', 'auf', 'oder', 'jährige', 'jahren', 'anfänger']),
+};
+
+export function detectQueryLanguage(text) {
+  const words = String(text ?? '').toLowerCase().match(/[\p{L}]+/gu) ?? [];
+  const scores = { de: 0, fr: 0, it: 0 };
+  for (const word of words) {
+    for (const [lang, markers] of Object.entries(LANGUAGE_MARKERS)) if (markers.has(word)) scores[lang] += 1;
+  }
+  const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  return best[1] > scores.de ? best[0] : 'de';
 }
 
 function escapeRegExp(text) {
@@ -95,11 +132,21 @@ export function parseQuery(query) {
   const lower = normalized.toLowerCase();
   const wishes = [];
 
-  const places = detectPlaces(lower);
-  for (const place of places) wishes.push({ type: 'location', label: place, value: place });
+  const found = detectPlaces(lower);
+  const places = found.map((place) => place.name);
+  for (const place of found) {
+    if (isNegatedAt(lower, place.index)) {
+      wishes.push({ type: 'location', label: `nicht ${place.name}`, value: place.name, negated: true });
+    } else {
+      wishes.push({ type: 'location', label: place.name, value: place.name });
+    }
+  }
 
-  if (/\bonline\b|\bvirtuell\b|\bremote\b|\bzoom\b/u.test(lower)) {
-    wishes.push({ type: 'online', label: 'Online', value: true });
+  const onlineMatch = ONLINE_PATTERN.exec(lower);
+  if (onlineMatch) {
+    wishes.push(isNegatedAt(lower, onlineMatch.index)
+      ? { type: 'online', label: 'nicht online', value: false, negated: true }
+      : { type: 'online', label: 'Online', value: true });
   }
 
   const budgetMatch = lower.match(/(?:chf|fr\.?|franken)\s*(\d{1,5})|(\d{1,5})\s*(?:chf|fr\.?|franken)/u);
@@ -114,11 +161,14 @@ export function parseQuery(query) {
   if (/selbststudium|selbstlern|im eigenen tempo|e-learning|videokurs|on.?demand/u.test(lower)) {
     wishes.push({ type: 'format', label: 'Selbststudium', value: 'self_study' });
   }
-  if (/\bvor ort\b|präsenz/u.test(lower)) {
+  const presenceMatch = /\bvor ort\b|präsenz/u.exec(lower);
+  if (presenceMatch && !isNegatedAt(lower, presenceMatch.index)) {
     wishes.push({ type: 'format', label: 'vor Ort', value: 'presence' });
   }
 
-  if (BEGINNER_WORDS.some((word) => lower.includes(word))) {
+  // „nicht bloss Einführung“ ist kein Einsteigerwunsch.
+  const beginnerIndex = BEGINNER_WORDS.map((word) => lower.indexOf(word)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
+  if (beginnerIndex !== undefined && !isNegatedAt(lower, beginnerIndex)) {
     wishes.push({ type: 'level', label: 'Für Einsteiger', value: 'beginner' });
   }
 
@@ -137,7 +187,7 @@ export function parseQuery(query) {
   // bestehen nur aus Buchstaben/Ziffern (keine Operatoren aus Nutzertext).
   const tsQuery = terms.slice(0, 12).join(' or ');
 
-  return { normalized, terms: terms.slice(0, 12), wishes, tsQuery };
+  return { normalized, terms: terms.slice(0, 12), wishes, tsQuery, language: detectQueryLanguage(normalized) };
 }
 
 /**

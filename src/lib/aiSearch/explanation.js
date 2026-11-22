@@ -12,26 +12,119 @@
  */
 
 import { WISH_CLAIM_PATTERNS } from './wishCheck.js';
-import { ADULT_CLAIM, CHILD_MENTION } from './audience.js';
+import { ADULT_CLAIM, CHILD_MENTION, audienceLabel } from './audience.js';
+import { PRICE_STATUS } from './priceStatus.js';
+
+/**
+ * Serverhinweise in der Sprache der Anfrage (K4, 22.11.2026). Kurstitel,
+ * Orte und Zitate bleiben unverändert; die Sprache sagt nichts über die
+ * Unterrichtssprache des Kurses aus.
+ */
+export const EXPLANATION_LANGUAGES = Object.freeze(['de', 'fr', 'it']);
+const q = { de: (t) => `„${t}“`, fr: (t) => `« ${t} »`, it: (t) => `«${t}»` };
+const MESSAGES = {
+  de: {
+    sections: { title: 'im Titel', description: 'in der Beschreibung', objectives: 'in den Lernzielen', prerequisites: 'in den Voraussetzungen', keywords: 'in den Stichworten', free_reason: 'im Hinweis des Anbieters', category: 'in der Kategorie', location: 'bei den Ortsangaben', price_status: 'bei den Preisangaben', level: 'beim Niveau', languages: 'bei der Sprache' },
+    titleHit: (term) => `Schon der Kurstitel greift ${q.de(term)} auf.`,
+    termQuote: (term, where, quote) => `Zu ${q.de(term)} heisst es ${where}: ${q.de(quote)}.`,
+    lunaQuote: (where, quote) => `${capitalize(where)} steht: ${q.de(quote)}.`,
+    audience: (label) => `Zielgruppe laut Kursangaben: ${label}.`,
+    place: (where) => `Ort laut Kursangaben: ${where}.`,
+    canton: (name) => `Kanton ${name}`,
+    placeDeviates: (wish, place) => `Abweichung vom Wunsch ${q.de(wish)}: Ort ist ${place}.`,
+    placeOpen: (wish) => `Offen, ob in ${wish}: kein Ort angegeben.`,
+    excluded: (name) => `nicht in ${name}`,
+    wishUnconfirmed: (label, detail) => `Wunsch ${q.de(label)} nicht bestätigt: Die Kursangaben nennen ${detail}.`,
+    wishDeviates: (label, detail) => `Abweichung vom Wunsch ${q.de(label)}: Die Kursangaben nennen ${detail}.`,
+    levelIs: (a) => `als Niveau ${a}`, noLevel: 'kein Niveau', formIs: (a) => `als Lernform nur ${a}`, noForm: 'keine Lernform',
+    event: (loc) => `Nicht bestätigt: ein Termin${loc ? ` in ${loc}` : ' passend zur Ortsvorgabe'}.`,
+    location: (loc) => `Nicht bestätigt: Kursort in ${loc}.`,
+    budget: (price) => `Nicht bestätigt: Preis im Budget (${price}).`,
+    language: 'Nicht bestätigt: Kurssprache.',
+    priceLine: (price) => `Preis laut Angaben: ${price}.`,
+    nextDate: (day) => `Nächster Termin: ${day}.`,
+    locale: 'de-CH',
+    prices: { unknown: 'Preis auf Anfrage', free: 'Kostenlos', from: (a) => `ab CHF ${a}`, perUnit: (a) => `CHF ${a} pro Einheit` },
+    wishLabels: { online: 'Online', not_online: 'nicht online', self_study: 'Selbststudium', presence: 'vor Ort', beginner: 'Für Einsteiger' },
+    values: {},
+  },
+  fr: {
+    sections: { title: 'dans le titre', description: 'dans la description', objectives: 'dans les objectifs', prerequisites: 'dans les prérequis', keywords: 'dans les mots-clés', free_reason: 'dans la remarque du prestataire', category: 'dans la catégorie', location: 'dans les indications de lieu', price_status: 'dans les indications de prix', level: 'au niveau', languages: 'à la langue' },
+    titleHit: (term) => `Le titre du cours reprend déjà ${q.fr(term)}.`,
+    termQuote: (term, where, quote) => `À propos de ${q.fr(term)}, on lit ${where} : ${q.fr(quote)}.`,
+    lunaQuote: (where, quote) => `${capitalize(where)} : ${q.fr(quote)}.`,
+    audience: (label) => `Public cible selon les indications du cours : ${label}.`,
+    place: (where) => `Lieu selon les indications du cours : ${where}.`,
+    canton: (name) => `canton ${name}`,
+    placeDeviates: (wish, place) => `Écart par rapport au souhait ${q.fr(wish)} : le lieu est ${place}.`,
+    placeOpen: (wish) => `Incertain si à ${wish} : aucun lieu indiqué.`,
+    excluded: (name) => `pas à ${name}`,
+    wishUnconfirmed: (label, detail) => `Souhait ${q.fr(label)} non confirmé : les indications du cours mentionnent ${detail}.`,
+    wishDeviates: (label, detail) => `Écart par rapport au souhait ${q.fr(label)} : les indications du cours mentionnent ${detail}.`,
+    levelIs: (a) => `comme niveau ${a}`, noLevel: 'aucun niveau', formIs: (a) => `comme forme d’apprentissage uniquement ${a}`, noForm: 'aucune forme d’apprentissage',
+    event: (loc) => `Non confirmé : une date${loc ? ` à ${loc}` : ' correspondant au lieu exigé'}.`,
+    location: (loc) => `Non confirmé : lieu du cours à ${loc}.`,
+    budget: (price) => `Non confirmé : prix dans le budget (${price}).`,
+    language: 'Non confirmé : langue du cours.',
+    priceLine: (price) => `Prix selon les indications : ${price}.`,
+    nextDate: (day) => `Prochaine date : ${day}.`,
+    locale: 'fr-CH',
+    prices: { unknown: 'prix sur demande', free: 'gratuit', from: (a) => `dès CHF ${a}`, perUnit: (a) => `CHF ${a} par unité` },
+    wishLabels: { online: 'en ligne', not_online: 'pas en ligne', self_study: 'autoformation', presence: 'sur place', beginner: 'pour débutants' },
+    values: { 'Präsenz': 'présentiel', 'Online live': 'en ligne en direct', 'Online': 'en ligne', 'Selbststudium': 'autoformation', 'für Einsteiger': 'pour débutants', 'alle Niveaus': 'tous niveaux', 'Mittelstufe': 'niveau intermédiaire', 'Fortgeschrittene': 'avancés' },
+  },
+  it: {
+    sections: { title: 'nel titolo', description: 'nella descrizione', objectives: 'negli obiettivi', prerequisites: 'nei prerequisiti', keywords: 'nelle parole chiave', free_reason: 'nella nota del fornitore', category: 'nella categoria', location: 'nelle indicazioni sul luogo', price_status: 'nelle indicazioni sul prezzo', level: 'al livello', languages: 'alla lingua' },
+    titleHit: (term) => `Già il titolo del corso riprende ${q.it(term)}.`,
+    termQuote: (term, where, quote) => `Su ${q.it(term)} si legge ${where}: ${q.it(quote)}.`,
+    lunaQuote: (where, quote) => `${capitalize(where)}: ${q.it(quote)}.`,
+    audience: (label) => `Destinatari secondo le indicazioni del corso: ${label}.`,
+    place: (where) => `Luogo secondo le indicazioni del corso: ${where}.`,
+    canton: (name) => `cantone ${name}`,
+    placeDeviates: (wish, place) => `Differenza rispetto al desiderio ${q.it(wish)}: il luogo è ${place}.`,
+    placeOpen: (wish) => `Non è chiaro se a ${wish}: nessun luogo indicato.`,
+    excluded: (name) => `non a ${name}`,
+    wishUnconfirmed: (label, detail) => `Desiderio ${q.it(label)} non confermato: le indicazioni del corso riportano ${detail}.`,
+    wishDeviates: (label, detail) => `Differenza rispetto al desiderio ${q.it(label)}: le indicazioni del corso riportano ${detail}.`,
+    levelIs: (a) => `come livello ${a}`, noLevel: 'nessun livello', formIs: (a) => `come forma di apprendimento solo ${a}`, noForm: 'nessuna forma di apprendimento',
+    event: (loc) => `Non confermato: una data${loc ? ` a ${loc}` : ' adatta al luogo richiesto'}.`,
+    location: (loc) => `Non confermato: sede del corso a ${loc}.`,
+    budget: (price) => `Non confermato: prezzo entro il budget (${price}).`,
+    language: 'Non confermato: lingua del corso.',
+    priceLine: (price) => `Prezzo secondo le indicazioni: ${price}.`,
+    nextDate: (day) => `Prossima data: ${day}.`,
+    locale: 'it-CH',
+    prices: { unknown: 'prezzo su richiesta', free: 'gratuito', from: (a) => `da CHF ${a}`, perUnit: (a) => `CHF ${a} per unità` },
+    wishLabels: { online: 'online', not_online: 'non online', self_study: 'autoapprendimento', presence: 'in presenza', beginner: 'per principianti' },
+    values: { 'Präsenz': 'in presenza', 'Online live': 'online dal vivo', 'Online': 'online', 'Selbststudium': 'autoapprendimento', 'für Einsteiger': 'per principianti', 'alle Niveaus': 'tutti i livelli', 'Mittelstufe': 'livello intermedio', 'Fortgeschrittene': 'avanzati' },
+  },
+};
+
+function messagesFor(language) {
+  return MESSAGES[EXPLANATION_LANGUAGES.includes(language) ? language : 'de'];
+}
+
+function translateValues(text, m) {
+  return String(text ?? '').split(' / ').map((part) => m.values[part] ?? part).join(' / ');
+}
+
+/** Preisangabe für den Hinweistext in der Sprache der Begründung. */
+export function localizedPrice(priceStatus, language = 'de') {
+  const m = messagesFor(language);
+  switch (priceStatus?.status) {
+    case PRICE_STATUS.FREE: return m.prices.free;
+    case PRICE_STATUS.FIXED: return `CHF ${priceStatus.amount}`;
+    case PRICE_STATUS.FROM: return m.prices.from(priceStatus.amount);
+    case PRICE_STATUS.PER_UNIT: return m.prices.perUnit(priceStatus.amount);
+    case PRICE_STATUS.INFO_TEXT: return priceStatus.infoText;
+    default: return m.prices.unknown;
+  }
+}
 
 // Nachtrag 12 (18.11.2026): normal 25–40 Wörter, höchstens 50 einschliesslich
 // serverseitiger Hinweise (ersetzt 40–70/100 aus Nachtrag 10).
 export const MAX_EXPLANATION_WORDS = 50;
 const QUOTE_MAX_WORDS = 12;
-
-const IN_SECTION = {
-  title: 'im Titel',
-  description: 'in der Beschreibung',
-  objectives: 'in den Lernzielen',
-  prerequisites: 'in den Voraussetzungen',
-  keywords: 'in den Stichworten',
-  free_reason: 'im Hinweis des Anbieters',
-  category: 'in der Kategorie',
-  location: 'bei den Ortsangaben',
-  price_status: 'bei den Preisangaben',
-  level: 'beim Niveau',
-  languages: 'bei der Sprache',
-};
 
 export function countWords(text) {
   return String(text ?? '').trim().split(/\s+/).filter(Boolean).length;
@@ -55,18 +148,18 @@ export function shortenQuote(quote, term, maxWords = QUOTE_MAX_WORDS) {
   return `${prefix}${words.slice(from, to).join(' ')}${suffix}`;
 }
 
-function formatDay(value) {
+function formatDay(value, locale = 'de-CH') {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString('de-CH', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Zurich' });
+  return date.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Zurich' });
 }
 
 // Wortfelder je Aspekt: Ein Satzteil, der den Aspekt überhaupt anspricht
 // (positiv ODER verneinend), wird durch den einen Serverhinweis ersetzt.
 const ASPECT_PATTERNS = {
   Lernform: [WISH_CLAIM_PATTERNS.self_study, WISH_CLAIM_PATTERNS.presence, WISH_CLAIM_PATTERNS.online],
-  Niveau: [WISH_CLAIM_PATTERNS.beginner, /fortgeschritten|mittelstufe|\bniveau\b/i],
+  Niveau: [WISH_CLAIM_PATTERNS.beginner, /fortgeschritten|mittelstufe|\bniveau\b|avancé|intermédiaire|avanzat|intermedi|\blivello\b/i],
 };
 
 function mentionsAny(text, patterns) {
@@ -132,13 +225,18 @@ export function removeUnbackedAdultClaims(lead, audience) {
  * wieder, was die Kursangaben nennen; aus „Präsenz“ wird kein Ausschluss von
  * Selbststudium gefolgert.
  */
-export function wishCheckSentence(check) {
+export function wishCheckSentence(check, language = 'de') {
   if (!check || check.status === 'confirmed') return null;
+  const m = messagesFor(language);
   const field = check.aspect === 'Niveau' ? 'Niveau' : 'Lernform';
-  const detail = check.actual
-    ? (field === 'Niveau' ? `als Niveau ${check.actual}` : `als Lernform nur ${check.actual}`)
-    : (field === 'Niveau' ? 'kein Niveau' : 'keine Lernform');
-  return `Wunsch „${check.wishLabel}“ nicht bestätigt: Die Kursangaben nennen ${detail}.`;
+  const actual = check.actual ? translateValues(check.actual, m) : null;
+  const detail = actual
+    ? (field === 'Niveau' ? m.levelIs(actual) : m.formIs(actual))
+    : (field === 'Niveau' ? m.noLevel : m.noForm);
+  const label = (check.key && m.wishLabels[check.key]) ?? check.wishLabel;
+  // Verneinter Wunsch („nicht online“): eine Abweichung wird als solche
+  // benannt, nie als nicht bestätigter Gegenwunsch (K1).
+  return check.negated && check.status === 'deviating' ? m.wishDeviates(label, detail) : m.wishUnconfirmed(label, detail);
 }
 
 function capitalize(text) {
@@ -149,14 +247,21 @@ function capitalize(text) {
  * @param {object} input
  * @param {Array} input.reasons  belegte Gründe (kind text|luna|location)
  * @param {Array} input.wishes   erkannte Wünsche aus der Vorinterpretation
+ *   (verneinte Wünsche mit negated: true, K1)
  * @param {object} input.musts   aktive Muss-Vorgaben ({location, maxBudget})
  * @param {string[]} input.mustUnknowns  nicht bestätigbare Muss-Vorgaben
  * @param {string|null} input.place  Ort laut Kursangaben
+ * @param {string[]} [input.cities]  Orte (Städte) laut Kursorten/Terminen
  * @param {object|null} input.event  nächster passender Termin
- * @param {string} input.price   Preisdarstellung laut Kursangaben
+ * @param {string} input.price   Preisdarstellung (in der Sprache der Begründung)
+ * @param {string} [input.language]  'de' | 'fr' | 'it' (Sprache der Anfrage, K4)
  * @returns {string}
  */
-export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, event = null, price = '', audience = null }) {
+export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], event = null, price = '', audience = null, language = 'de' }) {
+  const m = messagesFor(language);
+  // Strukturierte Zielgruppe (childAudience) in der Sprache der Begründung;
+  // ältere Aufrufer mit nur einem Label behalten dieses.
+  const audienceText = audience?.child ? ('minAge' in audience ? audienceLabel(audience, language) : audience.label) : null;
   // priority: 0 = nie kürzen (Einschränkungen), höhere Zahl = zuerst weglassen
   const parts = [];
   const add = (order, priority, text) => { if (text) parts.push({ order, priority, text, lead: false }); };
@@ -169,35 +274,47 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   if (leadText) parts.push({ order: 10, priority: 1, text: leadText, lead: true });
   const evidence = leadText ? [] : reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');
   evidence.forEach((reason, index) => {
-    const where = IN_SECTION[reason.section] ?? `bei „${reason.sectionLabel ?? reason.section}“`;
+    const where = m.sections[reason.section] ?? m.sections.category;
     let sentence;
     if (reason.section === 'title' && reason.kind === 'text') {
-      sentence = `Schon der Kurstitel greift „${reason.term}“ auf.`;
+      sentence = m.titleHit(reason.term);
     } else if (reason.kind === 'text') {
-      sentence = `Zu „${reason.term}“ heisst es ${where}: „${shortenQuote(reason.quote, reason.term)}“.`;
+      sentence = m.termQuote(reason.term, where, shortenQuote(reason.quote, reason.term));
     } else {
-      sentence = `${capitalize(where)} steht: „${shortenQuote(reason.quote, '')}“.`;
+      sentence = m.lunaQuote(where, shortenQuote(reason.quote, ''));
     }
     add(10 + index, index === 0 ? 1 : 3 + index, sentence);
   });
 
   // Kinder-/Jugendkurs: Zielgruppe muss erkennbar sein. Nennt der Text sie
   // nicht selbst, ergänzt der Server einen nie gekürzten Hinweis.
-  if (audience?.child && audience.label) {
+  if (audienceText) {
     const shown = parts.map((p) => p.text).join(' ');
-    if (!CHILD_MENTION.test(shown)) add(15, 0, `Zielgruppe laut Kursangaben: ${audience.label}.`);
+    if (!CHILD_MENTION.test(shown)) add(15, 0, m.audience(audienceText));
   }
 
   const locationReason = reasons.find((r) => r.kind === 'location');
-  const locationWishes = wishes.filter((w) => w.type === 'location');
+  const positivePlaces = wishes.filter((w) => w.type === 'location' && !w.negated);
+  const excludedPlaces = wishes.filter((w) => w.type === 'location' && w.negated);
   if (locationReason) {
     const where = String(locationReason.quote ?? '').replace(/^Ort laut Kursangaben:\s*/, '');
-    add(20, 2, `Ort laut Kursangaben: ${where}.`);
-  } else if (locationWishes.length > 0) {
-    const wish = locationWishes.map((w) => w.label).join(' / ');
-    add(20, 0, place
-      ? `Abweichung vom Wunsch „${wish}“: Ort ist ${place}.`
-      : `Offen, ob in ${wish}: kein Ort angegeben.`);
+    add(20, 2, m.place(where));
+  } else if (positivePlaces.length > 0) {
+    const wish = positivePlaces.map((w) => w.value).join(' / ');
+    add(20, 0, place ? m.placeDeviates(wish, place) : m.placeOpen(wish));
+  } else if (excludedPlaces.length > 0) {
+    // Verneinter Ortswunsch (K1): Abweichung nur, wenn ein bekannter Ort
+    // genau dem Ausgeschlossenen entspricht; sonst neutral der Ort laut
+    // Kursangaben, ohne Kanton und Stadt zu verwechseln.
+    const known = (cities ?? []).filter(Boolean);
+    const hit = excludedPlaces.find((w) => known.some((c) => String(c).toLowerCase().includes(String(w.value).toLowerCase())));
+    if (hit) {
+      add(20, 0, m.placeDeviates(m.excluded(hit.value), known.join(', ')));
+    } else if (known.length > 0) {
+      add(20, 2, m.place(known.join(', ')));
+    } else if (place) {
+      add(20, 2, m.place(m.canton(place)));
+    }
   }
 
   // Wünsche zu Lernform/Niveau: nur strukturierte Kursangaben entscheiden.
@@ -207,22 +324,23 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
     const key = `${check.aspect}|${check.wishLabel}`;
     if (seenWishes.has(key)) return;
     seenWishes.add(key);
-    add(25 + index, 0, wishCheckSentence(check));
+    add(25 + index, 0, wishCheckSentence(check, language));
   });
 
   for (const unknown of mustUnknowns) {
-    if (unknown === 'event') add(30, 0, `Nicht bestätigt: ein Termin${musts.location ? ` in ${musts.location}` : ' passend zur Ortsvorgabe'}.`);
-    if (unknown === 'budget') add(31, 0, `Nicht bestätigt: Preis im Budget (${price || 'kein Preis angegeben'}).`);
-    if (unknown === 'language') add(32, 0, 'Nicht bestätigt: Kurssprache.');
+    if (unknown === 'event') add(30, 0, m.event(musts.location ?? null));
+    if (unknown === 'location') add(30, 0, m.location(musts.location));
+    if (unknown === 'budget') add(31, 0, m.budget(price || m.prices.unknown));
+    if (unknown === 'language') add(32, 0, m.language);
   }
 
   const budgetWish = wishes.find((w) => w.type === 'budget');
   if ((budgetWish || musts.maxBudget) && !mustUnknowns.includes('budget') && price) {
-    add(40, 2, `Preis laut Angaben: ${price}.`);
+    add(40, 2, m.priceLine(price));
   }
 
-  const day = formatDay(event?.startDate ?? event?.start_date);
-  add(41, 6, day ? `Nächster Termin: ${day}.` : null);
+  const day = formatDay(event?.startDate ?? event?.start_date, m.locale);
+  add(41, 6, day ? m.nextDate(day) : null);
 
   // Kürzen: am wenigsten wichtige Bausteine zuerst, Einschränkungen nie.
   const kept = [...parts];
@@ -249,8 +367,8 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   };
   shrink();
   // Ging die Zielgruppen-Nennung beim Kürzen verloren, Hinweis nachträglich sichern.
-  if (audience?.child && audience.label && !CHILD_MENTION.test(kept.map((p) => p.text).join(' '))) {
-    kept.push({ order: 15, priority: 0, text: `Zielgruppe laut Kursangaben: ${audience.label}.`, lead: false });
+  if (audienceText && !CHILD_MENTION.test(kept.map((p) => p.text).join(' '))) {
+    kept.push({ order: 15, priority: 0, text: m.audience(audienceText), lead: false });
     shrink();
   }
   let text = kept.sort((a, b) => a.order - b.order).map((p) => p.text).join(' ');

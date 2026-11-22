@@ -131,7 +131,7 @@ const SYSTEM_INSTRUCTIONS = [
   'Für Kurse mit Score ab 70: explanation mit 20 bis 35 Wörtern in zwei kurzen Sätzen, Du-Form, Schweizer Rechtschreibung (immer ss, nie Eszett).',
   'Satz 1: was man konkret lernt. Satz 2: warum das zum Wunsch passt (Niveau, Format, Zielgruppe).',
   'Wiederhole den Suchwunsch nicht, keine Einleitung, keine Füllwörter.',
-  'Nennt das Feld target_group Kinder und Jugendliche, mache diese Zielgruppe in der Begründung erkennbar (z. B. für Kinder ab 8 Jahren); behaupte nie eine Eignung für Erwachsene, wenn der Kurstext sie nicht ausdrücklich belegt.',
+  'Nennt das Feld target_group eine Kinder- oder Jugendzielgruppe, mache genau diese Zielgruppe mit genau dieser Altersangabe erkennbar und weite sie nicht aus (z. B. nicht „Kinder und Jugendliche“, wenn nur Kinder genannt sind); behaupte nie eine Eignung für Erwachsene, wenn der Kurstext sie nicht ausdrücklich belegt.',
   'Wünsche zu Lernform (z. B. Selbststudium, online, vor Ort), Niveau oder Zeit gelten nur als erfüllt, wenn die Felder delivery_types bzw. level oder ein wörtliches Zitat sie ausdrücklich belegen; thematische Passung belegt keine Lernform. Ist ein solcher Wunsch nicht belegt, erwähne ihn im Text gar nicht (weder als passend noch als ausgeschlossen): Das System ergänzt dazu selbst einen Hinweis. Schliesse aus einer genannten Lernform nicht auf den Ausschluss einer anderen.',
   'Belege den Text mit ein bis zwei kurzen wörtlichen Zitaten (höchstens 10 Wörter) in reasons.',
   'Nenne im Text keine Preise, Daten, Zahlen, Orte, Abschlüsse, Zertifikate, Pakete oder Garantien; Ort, Preis und Termin ergänzt das System selbst.',
@@ -192,11 +192,25 @@ const EXPLAIN_INSTRUCTIONS = [
   'explanation: 20 bis 35 Wörter in zwei kurzen Sätzen, Du-Form, Schweizer Rechtschreibung (immer ss, nie Eszett).',
   'Satz 1: was man konkret lernt. Satz 2: warum das zum Wunsch passt (Niveau, Format, Zielgruppe).',
   'Wiederhole den Suchwunsch nicht, keine Einleitung, keine Füllwörter.',
-  'Nennt das Feld target_group Kinder und Jugendliche, mache diese Zielgruppe in der Begründung erkennbar (z. B. für Kinder ab 8 Jahren); behaupte nie eine Eignung für Erwachsene, wenn der Kurstext sie nicht ausdrücklich belegt.',
+  'Nennt das Feld target_group eine Kinder- oder Jugendzielgruppe, mache genau diese Zielgruppe mit genau dieser Altersangabe erkennbar und weite sie nicht aus (z. B. nicht „Kinder und Jugendliche“, wenn nur Kinder genannt sind); behaupte nie eine Eignung für Erwachsene, wenn der Kurstext sie nicht ausdrücklich belegt.',
   'Wünsche zu Lernform (z. B. Selbststudium, online, vor Ort), Niveau oder Zeit gelten nur als erfüllt, wenn die Felder delivery_types bzw. level oder ein wörtliches Zitat sie ausdrücklich belegen; thematische Passung belegt keine Lernform. Ist ein solcher Wunsch nicht belegt, erwähne ihn im Text gar nicht (weder als passend noch als ausgeschlossen): Das System ergänzt dazu selbst einen Hinweis. Schliesse aus einer genannten Lernform nicht auf den Ausschluss einer anderen.',
   'Belege den Text mit ein bis zwei kurzen wörtlichen Zitaten (höchstens 10 Wörter) in reasons; jedes quote ist ein wörtlicher Ausschnitt aus genau diesem Feld.',
   'Nenne im Text keine Preise, Daten, Zahlen, Orte, Abschlüsse, Zertifikate, Pakete oder Garantien.',
 ].join(' ');
+/**
+ * Sprache der Begründung (K4, 22.11.2026): wie die Anfrage (DE/FR/IT).
+ * Kurstitel und Zitate bleiben unverändert; die Sprache der Begründung sagt
+ * nichts über die Unterrichtssprache des Kurses aus.
+ */
+export const EXPLANATION_LANGUAGES = Object.freeze(['de', 'fr', 'it']);
+export function languageInstruction(language) {
+  const lang = EXPLANATION_LANGUAGES.includes(language) ? language : 'de';
+  const common = 'Nenne in explanation keine Unterrichtssprache des Kurses und deute keine an; die Sprache deines Textes sagt nichts darüber aus, in welcher Sprache der Kurs stattfindet. Zitate in reasons bleiben wörtlich in der Sprache der Kursangaben.';
+  if (lang === 'fr') return `Schreibe explanation auf Französisch, in der tu-Form, sonst gelten dieselben Regeln. ${common}`;
+  if (lang === 'it') return `Schreibe explanation auf Italienisch, in der tu-Form, sonst gelten dieselben Regeln. ${common}`;
+  return `Schreibe explanation auf Deutsch. ${common}`;
+}
+
 // Stufe 2: höchstens so viele Kurse begründen, wie angezeigt werden können
 // (10 Haupttreffer + 10 „Angaben unvollständig“), je Teilaufruf wenige.
 export const EXPLAIN_MAX_COURSES = 20;
@@ -273,7 +287,8 @@ function normalizeForQuote(text) {
 
 // Begriffe, die nur aus Kursdaten (vom Server) kommen dürfen, nie aus dem
 // Modelltext: Preise/Abschlüsse/Pakete/Garantien (Nachtrag 10, Vorlage 3a).
-const FORBIDDEN_EXPLANATION = /(https?:\/\/|www\.|@|\bCHF\b|\bFr\.|franken|preis|kosten|gratis|kostenlos|rabatt|zertifi|diplom|abschluss|anerkannt|garant|premium|gesponsert|sponsor|paket|prio|empfohlen von kursnavi)/i;
+// K4: dieselben Verbote gelten für Begründungen auf Französisch und Italienisch.
+const FORBIDDEN_EXPLANATION = /(https?:\/\/|www\.|@|\bCHF\b|\bFr\.|franken|preis|kosten|gratis|kostenlos|rabatt|zertifi|diplom|abschluss|anerkannt|garant|premium|gesponsert|sponsor|paket|prio|empfohlen von kursnavi|\bprix\b|co[uû]t|gratuit|r[ée]duction|certific|dipl[oô]m|reconnu|prezz|\bcost[oi]\b|sconto|riconosciut)/i;
 
 /**
  * Prüft Lunas Begründungstext serverseitig. Verworfen wird er, wenn
@@ -354,7 +369,7 @@ export function createOpenAiGateway(options) {
     explain: { instructions: EXPLAIN_INSTRUCTIONS, schema: EXPLAIN_SCHEMA, task: 'justify' },
   };
 
-  async function callLuna(query, batch, stageName = 'rank') {
+  async function callLuna(query, batch, stageName = 'rank', language = 'de') {
     const stage = STAGES[stageName];
     const request = buildRerankRequest(query, batch);
     const ids = batch.map((c) => String(c.courseId));
@@ -364,7 +379,7 @@ export function createOpenAiGateway(options) {
     const started = Date.now();
     const body = await postJson(fetchImpl, '/responses', apiKey, {
       model: request.model,
-      instructions: stage.instructions,
+      instructions: stageName === 'score' ? stage.instructions : `${stage.instructions} ${languageInstruction(language)}`,
       input: JSON.stringify({ ...request.input, task: stage.task }),
       tools: [],
       // Keine Speicherung der Antwort beim Anbieter für spätere Abrufe
@@ -449,12 +464,12 @@ export function createOpenAiGateway(options) {
      * @param {string} query
      * @param {Array<{courseId, evidence}>} candidates - nur öffentliche Felder
      */
-    async rerank(query, candidates) {
+    async rerank(query, candidates, options = {}) {
       const limited = candidates.slice(0, RERANK_MAX_CANDIDATES);
       // Alle ausgewählten Kandidaten werden bewertet; bei batchSize < Anzahl
       // in parallelen Teilaufrufen (gleiche Anweisungen, absolute Skala).
       const batches = distributeCandidates(limited, batchSize, distribution);
-      const parsed = { results: (await Promise.all(batches.map((batch) => callLuna(query, batch, 'rank')))).flatMap((p) => p.results ?? []) };
+      const parsed = { results: (await Promise.all(batches.map((batch) => callLuna(query, batch, 'rank', options.language)))).flatMap((p) => p.results ?? []) };
       const callUsage = { inputTokens: usage.lunaInputTokens, outputTokens: usage.lunaOutputTokens, reasoningTokens: usage.lunaReasoningTokens };
       const { accepted, rejected } = validateRerankResponse(parsed, limited.map((c) => c.courseId));
       const grounded = groundExplanations(accepted, limited, rejected);
@@ -479,11 +494,11 @@ export function createOpenAiGateway(options) {
      * (nach Mindestpassung, Muss-Vorgaben und Paketregeln; höchstens
      * EXPLAIN_MAX_COURSES). Gleiche Beleg- und Textprüfung wie einstufig.
      */
-    async explainCandidates(query, candidates) {
+    async explainCandidates(query, candidates, options = {}) {
       const limited = candidates.slice(0, EXPLAIN_MAX_COURSES);
       if (limited.length === 0) return { accepted: [], rejected: [] };
       const batches = distributeCandidates(limited, EXPLAIN_BATCH_SIZE, 'stripe');
-      const results = (await Promise.all(batches.map((batch) => callLuna(query, batch, 'explain')))).flatMap((p) => p.results ?? []);
+      const results = (await Promise.all(batches.map((batch) => callLuna(query, batch, 'explain', options.language)))).flatMap((p) => p.results ?? []);
       // Score wird hier nicht neu vergeben: Platzhalter nur für die Validierung.
       const { accepted, rejected } = validateRerankResponse({ results: results.map((r) => ({ ...r, score: 0 })) }, limited.map((c) => c.courseId));
       const grounded = groundExplanations(accepted, limited, rejected);
