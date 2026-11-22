@@ -11,7 +11,7 @@ import {
   sealBackup, verifyBackup, compareIndexToBackup, planEmbeddingRestore, inAcceptanceRange, textMd5,
 } from '../src/lib/aiSearch/acceptanceCatalog.js';
 import {
-  parseArgs, checkProdSource, checkWriteConfirm, switchPreconditions, restorePreconditions,
+  parseArgs, checkProdSource, checkWriteConfirm, switchPreconditions, restorePreconditions, backupClosed, archiveFolder,
 } from '../scripts/ai-search-acceptance.mjs';
 
 const SECRET = 'a'.repeat(64);
@@ -242,7 +242,7 @@ describe('Ablaufsteuerung und Abbruchbedingungen', () => {
   });
 
   it('Austausch bricht bei jeder verletzten Vorbedingung ab', () => {
-    const base = { state: okState, validation: okValidation, taxonomy: okTaxonomy, backupExists: false, indexCheck: { hashMismatch: 0, chunkFailures: 0 } };
+    const base = { state: okState, validation: okValidation, taxonomy: okTaxonomy, backupState: 'none', indexCheck: { hashMismatch: 0, chunkFailures: 0 } };
     expect(switchPreconditions(base)).toEqual([]);
     const cases = [
       [{ state: { ...okState, coursesInRange: 1 } }, /Abnahmebereich/],
@@ -251,7 +251,8 @@ describe('Ablaufsteuerung und Abbruchbedingungen', () => {
       [{ state: { ...okState, failedJobs: 1 } }, /fehlgeschlagene/],
       [{ state: { ...okState, activeOpsLease: true } }, /Laufsperre/],
       [{ state: { ...okState, chunksEmbedded: 9 } }, /ohne Embedding/],
-      [{ backupExists: true }, /Sicherung/],
+      [{ backupState: 'open' }, /offenen Rückweg/],
+      [{ backupState: 'invalid' }, /ungültig/],
       [{ validation: { ok: false, errors: ['x'] } }, /ungültig/],
       [{ taxonomy: { differing: { ...okTaxonomy.differing, taxonomy_level3: [5] } } }, /Taxonomie/],
       [{ indexCheck: { hashMismatch: 2, chunkFailures: 0 } }, /aktuellen Code/],
@@ -342,5 +343,23 @@ describe('Rückweg bei Änderungen von aussen (CI schreibt in dieselbe TESTumgeb
     // Eine echte Abweichung bleibt trotz Ausnahmen sichtbar.
     const changed = compareIndexToBackup(backup, [{ course_id: 10022, content_hash: 'x' }], chunks, { ignoreCourseIds: [93, 10950] });
     expect(changed.hashMismatch).toEqual([10022]);
+  });
+});
+
+describe('frühere Sicherung: archivieren statt blockieren, nur bei abgeschlossenem Rückweg', () => {
+  const clean = { coursesInRange: 0, markedProfiles: 0 };
+  it('abgeschlossener Rückweg erlaubt einen neuen Austausch (alte Sicherung wird archiviert)', () => {
+    expect(switchPreconditions({ state: { ...clean, pendingJobs: 0, failedJobs: 0, activeOpsLease: false, chunksTotal: 1, chunksEmbedded: 1 }, validation: { ok: true, errors: [] }, taxonomy: { differing: {} }, backupState: 'closed', indexCheck: { hashMismatch: 0, chunkFailures: 0 } })).toEqual([]);
+  });
+  it('geschlossen nur, wenn alle gesicherten Kurse wieder veröffentlicht (oder gelöscht) und kein Abnahmebestand', () => {
+    const ids = [1, 2, 3];
+    expect(backupClosed({ state: clean, publishedIds: ids, currentRows: [{ id: 1, status: 'published' }, { id: 2, status: 'published' }, { id: 3, status: 'published' }] })).toBe(true);
+    expect(backupClosed({ state: clean, publishedIds: ids, currentRows: [{ id: 1, status: 'published' }, { id: 2, status: 'published' }] })).toBe(true); // 3 seither gelöscht
+    // Abbruch nach S4 (bisherige Kurse noch Entwurf): Rückweg offen → nie archivieren.
+    expect(backupClosed({ state: clean, publishedIds: ids, currentRows: [{ id: 1, status: 'draft' }, { id: 2, status: 'draft' }, { id: 3, status: 'draft' }] })).toBe(false);
+    expect(backupClosed({ state: { ...clean, coursesInRange: 5 }, publishedIds: ids, currentRows: ids.map((id) => ({ id, status: 'published' })) })).toBe(false);
+  });
+  it('Archivordner aus dem Sicherungszeitpunkt', () => {
+    expect(archiveFolder('2026-11-22T19:37:50.165Z')).toBe('abnahme-katalog/archiv/2026-11-22T19-37-50-165Z');
   });
 });

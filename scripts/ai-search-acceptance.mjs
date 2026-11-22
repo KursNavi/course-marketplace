@@ -38,7 +38,7 @@ import { buildCourseChunks } from '../src/lib/aiSearch/chunking.js';
 import { estimateEmbeddingUsd } from '../src/lib/aiSearch/ops.js';
 import {
   PRODUCTION_REF, ACCEPTANCE_RANGE, EXPORT_FIELDS, TAXONOMY_TABLES, PROVIDER_NAME_PREFIX,
-  PROVIDER_SLUG_PREFIX, BACKUP_BUCKET, BACKUP_PATH, IMPORT_LOG_PATH, QUALITY_PREFIX,
+  PROVIDER_SLUG_PREFIX, BACKUP_BUCKET, BACKUP_PATH, IMPORT_LOG_PATH,
   classifySupabaseKey, validateSnapshot, buildImportRows, diffTaxonomy, buildBackup, sealBackup,
   verifyBackup, compareIndexToBackup, planEmbeddingRestore, importFingerprint, inAcceptanceRange,
 } from '../src/lib/aiSearch/acceptanceCatalog.js';
@@ -83,7 +83,7 @@ export function checkWriteConfirm(env, execute) {
  * Vorbedingungen für den Austausch (S3–S6). Reine Funktion über den gelesenen
  * Zustand, damit die Abbruchbedingungen getestet sind.
  */
-export function switchPreconditions({ state, validation, taxonomy, backupExists, indexCheck }) {
+export function switchPreconditions({ state, validation, taxonomy, backupState = 'none', indexCheck }) {
   const problems = [];
   // Der Rückweg wird streng gegen die Sicherung geprüft (gleiche Prüfsummen,
   // gleiche Abschnitte). Das geht nur, wenn der heutige Index dem heutigen
@@ -98,7 +98,10 @@ export function switchPreconditions({ state, validation, taxonomy, backupExists,
   if (state.pendingJobs > 0) problems.push(`${state.pendingJobs} offene Indexaufträge`);
   if (state.failedJobs > 0) problems.push(`${state.failedJobs} fehlgeschlagene Indexaufträge`);
   if (state.activeOpsLease) problems.push('Betriebsrunner hält gerade die Laufsperre');
-  if (backupExists) problems.push(`Sicherung ${BACKUP_PATH} existiert bereits (Austausch lief schon oder Rückweg offen)`);
+  // Eine frühere Sicherung blockiert nur, wenn ihr Rückweg offen ist; eine
+  // abgeschlossene wird vor dem neuen Austausch archiviert (nicht gelöscht).
+  if (backupState === 'open') problems.push(`Sicherung ${BACKUP_PATH} gehört zu einem offenen Rückweg (bisherige Testkurse nicht vollständig wiederhergestellt)`);
+  if (backupState === 'invalid') problems.push(`Sicherung ${BACKUP_PATH} ist nicht lesbar oder ungültig`);
   const differing = Object.entries(taxonomy?.differing ?? {}).filter(([, ids]) => ids.length > 0);
   if (differing.length) problems.push(`Taxonomie weicht bei gleicher ID ab: ${differing.map(([t, ids]) => `${t} ${ids.slice(0, 5).join(',')}`).join('; ')}`);
   if (state.chunksTotal !== state.chunksEmbedded) problems.push(`${state.chunksTotal - state.chunksEmbedded} Abschnitte ohne Embedding (Sicherung wäre unvollständig)`);
@@ -383,10 +386,11 @@ async function cmdPlanOrSwitch(env, { execute, command }) {
   printState('TEST vorher', state);
   const bucket = await bucketReachable(test);
   const backupExists = bucket.exists ? await storageExists(test, BACKUP_PATH) : false;
-  console.log(`Privater Speicher ${BACKUP_BUCKET}: ${bucket.exists ? (bucket.public ? 'ÖFFENTLICH (Abbruch)' : 'vorhanden') : 'wird angelegt'}; Sicherung vorhanden: ${backupExists ? 'ja' : 'nein'}`);
+  const previous = backupExists ? await previousBackupState(test, state) : { state: 'none' };
+  console.log(`Privater Speicher ${BACKUP_BUCKET}: ${bucket.exists ? (bucket.public ? 'ÖFFENTLICH (Abbruch)' : 'vorhanden') : 'wird angelegt'}; frühere Sicherung: ${backupExists ? `${previous.state}${previous.createdAt ? ` (${previous.createdAt})` : ''}` : 'keine'}`);
   const indexCheck = await checkIndexCurrent(test);
   console.log(`Bisheriger Index gegen aktuellen Code: ${indexCheck.documents} Dokumente, ${indexCheck.hashMismatch} Prüfsummen abweichend${indexCheck.firstMismatches.length ? ` (Kurs-IDs ${indexCheck.firstMismatches.join(', ')})` : ''}, ${indexCheck.chunkFailures} Abschnittslisten abweichend`);
-  const problems = switchPreconditions({ state, validation, taxonomy, backupExists, indexCheck });
+  const problems = switchPreconditions({ state, validation, taxonomy, backupState: previous.state, indexCheck });
   if (bucket.public) problems.push(`Bucket ${BACKUP_BUCKET} ist öffentlich`);
   console.log(`\nVom Austausch betroffen: ${state.publishedOutside} veröffentlichte Testkurse → Entwurf; ${state.docsTotal} Dokumente, ${state.chunksTotal} Abschnitte, ${state.chunksEmbedded} Embeddings werden aus dem Index entfernt (Sicherung vorher).`);
   if (problems.length) { problems.forEach((p) => console.log(`Vorbedingung NICHT erfüllt: ${p}`)); }
@@ -399,6 +403,10 @@ async function cmdPlanOrSwitch(env, { execute, command }) {
 
   // S3: Sicherung
   console.log(`\n=== S3 Sicherung (${await ensurePrivateBucket(test)}) ===`);
+  if (previous.state === 'closed') {
+    const moved = await archivePreviousBackup(test, previous.createdAt);
+    console.log(`Frühere Sicherung archiviert (Rückweg war abgeschlossen): ${moved.join(', ')}`);
+  }
   const backup = await takeBackup(test);
   if (backup.counts.documents !== state.docsTotal || backup.counts.chunks !== state.chunksTotal || backup.counts.publishedCourses !== state.publishedTotal) {
     stop(`Sicherung unvollständig (${JSON.stringify(backup.counts)}) — keine Änderung.`); return;
@@ -556,22 +564,59 @@ async function cmdRestore(env, { execute }) {
   }
 }
 
+/**
+ * Zustand einer früheren Sicherung: 'closed' = Rückweg abgeschlossen (alle
+ * gesicherten Kurse wieder veröffentlicht oder seither gelöscht, kein
+ * Abnahmebestand); 'open' = Rückweg offen; 'invalid' = nicht verwendbar.
+ */
+export function backupClosed({ state, publishedIds, currentRows }) {
+  const published = currentRows.filter((c) => c.status === 'published').length;
+  const deleted = publishedIds.length - currentRows.length;
+  return state.coursesInRange === 0 && state.markedProfiles === 0 && published + deleted === publishedIds.length;
+}
+
+async function previousBackupState(db, state) {
+  let backup;
+  try { backup = await downloadJson(db, BACKUP_PATH, { gzip: true }); } catch { return { state: 'invalid' }; }
+  if (!verifyBackup(backup).ok) return { state: 'invalid', createdAt: backup?.createdAt ?? null };
+  const currentRows = await fetchByIds(db, 'courses', 'id, status', 'id', backup.publishedCourseIds, 200);
+  return { state: backupClosed({ state, publishedIds: backup.publishedCourseIds, currentRows }) ? 'closed' : 'open', createdAt: backup.createdAt };
+}
+
+export function archiveFolder(createdAt) {
+  return `abnahme-katalog/archiv/${String(createdAt ?? 'unbekannt').replace(/[:.]/g, '-')}`;
+}
+
+async function archivePreviousBackup(db, createdAt) {
+  const folder = archiveFolder(createdAt);
+  const moved = [];
+  for (const path of [BACKUP_PATH, IMPORT_LOG_PATH]) {
+    if (!(await storageExists(db, path))) continue;
+    const target = `${folder}/${path.split('/').pop()}`;
+    const { error } = await db.storage.from(BACKUP_BUCKET).move(path, target);
+    if (error) throw new Error(`Archivieren ${path}: ${error.message}`);
+    moved.push(target);
+  }
+  return moved;
+}
+
+async function listRecursive(db, folder, depth = 0) {
+  const { data, error } = await db.storage.from(BACKUP_BUCKET).list(folder, { limit: 1000 });
+  if (error) throw new Error(`Liste ${folder}: ${error.message}`);
+  const paths = [];
+  for (const entry of data ?? []) {
+    if (entry.id) paths.push(`${folder}/${entry.name}`);
+    else if (depth < 4) paths.push(...await listRecursive(db, `${folder}/${entry.name}`, depth + 1));
+  }
+  return paths;
+}
+
 async function cmdPurge(env, { execute }) {
   const test = client(env.SUPABASE_URL_TEST, env.SUPABASE_SECRET_KEY_TEST);
   const bucket = await bucketReachable(test);
   if (!bucket.exists) { console.log(`Bucket ${BACKUP_BUCKET} existiert nicht.`); return; }
-  const folders = ['abnahme-katalog', QUALITY_PREFIX];
-  const paths = [];
-  for (const folder of folders) {
-    const { data, error } = await test.storage.from(BACKUP_BUCKET).list(folder, { limit: 1000 });
-    if (error) throw new Error(`Liste ${folder}: ${error.message}`);
-    for (const entry of data ?? []) if (entry.id) paths.push(`${folder}/${entry.name}`);
-    for (const entry of data ?? []) {
-      if (entry.id) continue;
-      const sub = await test.storage.from(BACKUP_BUCKET).list(`${folder}/${entry.name}`, { limit: 1000 });
-      for (const file of sub.data ?? []) paths.push(`${folder}/${entry.name}/${file.name}`);
-    }
-  }
+  // Alle Dateien unter abnahme-katalog/ (Sicherung, Archiv, Ergebnisse), rekursiv.
+  const paths = await listRecursive(test, 'abnahme-katalog');
   const state = await readTestState(test);
   console.log(`Zu löschen: ${paths.length} Dateien im Bucket ${BACKUP_BUCKET}`);
   if (state.coursesInRange > 0) { stop('Abnahmebestand ist noch vorhanden — Sicherung wird für den Rückweg gebraucht.'); return; }
