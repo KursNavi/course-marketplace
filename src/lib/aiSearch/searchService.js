@@ -154,14 +154,71 @@ async function lexicalChunkChannel(client, tsQuery) {
   return (data ?? []).map((row) => ({ courseId: row.course_id }));
 }
 
-async function lexicalDocumentChannel(client, tsQuery) {
-  const { data, error } = await client
-    .from('ai_search_documents')
-    .select('course_id')
-    .textSearch('tsv', tsQuery, { type: 'websearch', config: 'german' })
-    .limit(CANDIDATE_LIMIT);
-  if (error) throw new Error(`Abruf (Titel): ${error.message}`);
-  return (data ?? []).map((row) => ({ courseId: row.course_id }));
+/** Höchstens so viele Treffer liest der Titel-Kanal, bevor er sortiert. */
+export const TITLE_CHANNEL_MAX_ROWS = 5000;
+const TITLE_CHANNEL_PAGE = 1000;
+
+function compareCourseIds(a, b) {
+  const x = Number(a);
+  const y = Number(b);
+  if (Number.isFinite(x) && Number.isFinite(y) && x !== y) return x - y;
+  return String(a).localeCompare(String(b));
+}
+
+/**
+ * Relevanzfolge des Titel-Kanals (Korrektur 22.11.2026, Abnahme-Befund):
+ * Die Volltextsuche auf ai_search_documents trifft Titel UND Beschreibung,
+ * liefert aber keine Rangfolge. Sortiert wird deshalb nachvollziehbar und
+ * reproduzierbar:
+ *   1. Anzahl der Suchbegriffe im Titel (wortstammtolerant wie findTermInText),
+ *   2. frühere erste Fundstelle im Titel,
+ *   3. Kurs-ID aufsteigend.
+ * Kurse ohne Begriff im Titel fallen aus diesem Kanal heraus; sie passen nur
+ * über die Beschreibung, und die bewertet der Abschnitts-Kanal mit ts_rank.
+ */
+export function rankTitleMatches(rows, terms) {
+  const unique = [...new Set((terms ?? []).map((t) => String(t).toLowerCase()).filter(Boolean))];
+  return (rows ?? [])
+    .map((row) => {
+      let titleHits = 0;
+      let firstHit = Number.POSITIVE_INFINITY;
+      for (const term of unique) {
+        const match = findTermInText(term, row?.title ?? '');
+        if (match) {
+          titleHits += 1;
+          firstHit = Math.min(firstHit, match.index);
+        }
+      }
+      return { courseId: row?.course_id, titleHits, firstHit };
+    })
+    .filter((row) => row.courseId !== undefined && row.courseId !== null && row.titleHits > 0)
+    .sort((a, b) => (b.titleHits - a.titleHits) || (a.firstHit - b.firstHit) || compareCourseIds(a.courseId, b.courseId));
+}
+
+/**
+ * Titel-Kanal: liest ALLE Treffer seitenweise in stabiler Reihenfolge
+ * (course_id), erst danach wird sortiert und auf CANDIDATE_LIMIT begrenzt.
+ * Früher schnitt limit(100) auf eine unsortierte Treffermenge relevante
+ * Kurse ab und gab der Fusion eine zufällige Reihenfolge als Rang.
+ */
+export async function lexicalDocumentChannel(client, tsQuery, terms, meta = {}) {
+  const rows = [];
+  let truncated = false;
+  for (let offset = 0; ; offset += TITLE_CHANNEL_PAGE) {
+    if (offset >= TITLE_CHANNEL_MAX_ROWS) { truncated = true; break; }
+    const { data, error } = await client
+      .from('ai_search_documents')
+      .select('course_id, title')
+      .textSearch('tsv', tsQuery, { type: 'websearch', config: 'german' })
+      .order('course_id', { ascending: true })
+      .range(offset, offset + TITLE_CHANNEL_PAGE - 1);
+    if (error) throw new Error(`Abruf (Titel): ${error.message}`);
+    rows.push(...(data ?? []));
+    if ((data ?? []).length < TITLE_CHANNEL_PAGE) break;
+  }
+  const ranked = rankTitleMatches(rows, terms);
+  Object.assign(meta, { matched: rows.length, withTitleHits: ranked.length, truncated });
+  return ranked.slice(0, CANDIDATE_LIMIT).map((row) => ({ courseId: row.courseId }));
 }
 
 async function fetchAllIds(client, table, column, applyFilter) {
@@ -377,7 +434,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
  * Auswahlstufen je Kandidat für den Prüfbericht (K3): Rang je Abrufkanal,
  * fusionierter Rang, Muss-Ergebnis, an Luna gesendet, Score, angezeigt.
  */
-export function buildSelectionDiagnostics({ channels, candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults }) {
+export function buildSelectionDiagnostics({ channels, candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults, titleChannelMeta = null }) {
   const rankIn = (list) => new Map((list ?? []).map((row, index) => [String(row.courseId ?? row.course_id), index + 1]));
   const ranks = { lexicalChunks: rankIn(channels.lexicalChunks), lexicalDocuments: rankIn(channels.lexicalDocuments), semantic: channels.semantic ? rankIn(channels.semantic) : null };
   const sent = new Set((lunaSentIds ?? []).map(String));
@@ -386,6 +443,7 @@ export function buildSelectionDiagnostics({ channels, candidateIds, mustLog, sco
   return {
     minScore: MIN_SCORE,
     semanticUsed: Boolean(channels.semantic),
+    titleChannel: titleChannelMeta,
     candidates: candidateIds.map((id, index) => {
       const key = String(id);
       const must = mustLog.get(key) ?? null;
@@ -439,10 +497,12 @@ export async function runAiSearch(client, input) {
   // Unabhängige Schritte PARALLEL: Abdeckungsnachweis, lexikalischer Abruf
   // (Abschnitte + Titel) und Bedeutungssuche (Konfiguration → Query-
   // Embedding → semantischer Abruf). Alle bleiben katalogweit.
+  // Kennzahlen des Titel-Kanals (nur Zahlen) für Diagnose und Prüfbericht.
+  const titleChannelMeta = {};
   const lexicalPath = parsed.tsQuery
     ? timed('lexical', () => Promise.all([
       lexicalChunkChannel(client, parsed.tsQuery),
-      lexicalDocumentChannel(client, parsed.tsQuery),
+      lexicalDocumentChannel(client, parsed.tsQuery, parsed.terms, titleChannelMeta),
     ]))
     : Promise.resolve([]);
   const semanticPath = models?.gateway
@@ -621,7 +681,7 @@ export async function runAiSearch(client, input) {
   // Anforderung (Qualitätsprüfung). Nur IDs, Ränge, Codes und Scores.
   const diagnostics = input.diagnostics === true ? buildSelectionDiagnostics({
     channels: { lexicalChunks: lexicalChannels[0] ?? [], lexicalDocuments: lexicalChannels[1] ?? [], semantic: semanticUsed ? semanticChannel : null },
-    candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults,
+    candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults, titleChannelMeta,
   }) : null;
 
   return {
