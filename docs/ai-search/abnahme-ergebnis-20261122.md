@@ -218,3 +218,76 @@ Geprüft wurden nur Zugriffsregeln, Code und Zählungen. Es wurden keine Inhalte
    - Schutzschalter bewusst umstellen.
 4. **Rückweg P7** im TEST nach deiner Sichtprüfung. Vor dem erneuten Lauf aus Schritt 2 kann
    der Abnahmebestand dafür auch bestehen bleiben.
+
+## 8. Korrekturrunde K1–K5 (22.11.2026, abends)
+
+Lokal umgesetzt und getestet (Commit `fb410f2`): K1 Verneinungen, K2 bekannte Widersprüche
+ausschliessen, K3 Auswahlstufen im privaten Prüfbericht, K4 Begründung in der Sprache der
+Anfrage, K5 präzise Zielgruppe. Gezielte Tests stehen in
+[tests/ai-search-korrekturen-k1-k5.test.js](../../tests/ai-search-korrekturen-k1-k5.test.js).
+Soll-Listen und Kriterien sind unverändert; der Test prüft sie per sha256.
+
+### 8.1 Untersuchung: Warum fehlen Soll-Kurse? (K3, aus Code und bestehenden Daten)
+
+**Belegt** (Code; lesende SQL-Nachstellung auf dem Abnahmebestand vor dem Rückweg):
+
+1. **Ungeordneter Titel-Kanal.** `lexicalDocumentChannel` holt bis zu 100 Treffer aus
+   `ai_search_documents` mit `textSearch(...).limit(100)`, aber **ohne Sortierung nach
+   Relevanz** ([searchService.js](../../src/lib/aiSearch/searchService.js),
+   `lexicalDocumentChannel`). Die Fusion (`fuseRankedLists`, RRF) behandelt diese beliebige
+   Reihenfolge als Rang.
+   - Folge in der Nachstellung: Für „Yoga oder Pilates für Anfänger“ stehen zuerst ein
+     Matcha-Bowl-Workshop, Origami und ein Mal-Retreat.
+   - Die Soll-Kurse verlieren dadurch viele Ränge:
+
+     | Kurs | Rang im Abschnitts-Kanal | lexikalischer Fusionsrang |
+     |---|---:|---:|
+     | 20798 (Fotografie Grundlagen) | 7 | 59 |
+     | 20800 | 8 | 62 |
+     | 20610 | 29 | 95 |
+     | 20751 (Yoga Bern) | 12 | 33 |
+     | 20331 / 20579 (Kinderschwimmen Zürich) | 9 / 17 | 21 / 25 |
+
+2. **Nur die 30 bestplatzierten Kandidaten gehen an Luna.** Liegt ein Kurs nach der Fusion
+   ausserhalb dieser Gruppe, wird er nie bewertet.
+3. **Französische und italienische Anfragen:** Der Textabruf nutzt die deutsche
+   Textsuche-Konfiguration. „Cours d'anglais pour mon fils de 10 ans“ findet lexikalisch
+   2 Kurse, keinen der Soll-Kurse. Diese Fälle hängen fast ganz an der Bedeutungssuche.
+
+**Nicht belegt:**
+- Ob die fehlenden Soll-Kurse im ersten Lauf an Luna gingen und welchen Score sie erhielten,
+  ist nicht bekannt. Damals wurde das nicht gespeichert; der Bedeutungsrang lässt sich ohne
+  Modellaufruf nicht nachstellen.
+- Eine zu strenge Luna-Bewertung bleibt deshalb eine **Vermutung**. Der nächste Lauf
+  speichert diese Stufen (K3) und ordnet jeden fehlenden Soll-Kurs einer Stufe zu.
+
+**Nicht verändert** (keine Ausweitung ohne Freigabe):
+- der Titel-Kanal und die Fusion;
+- die Mindestpassung 70;
+- die Soll-Listen.
+
+### 8.2 Katalogstand für die Wiederholung
+
+Fingerabdrücke über alle übernommenen Felder (md5; Kurse, Termine, Orte, Kategorien,
+Anbieter), am 22.11.2026 vor dem Rückweg gebildet. Abnahmebestand und Produktion sind
+**identisch**:
+
+| Teil | md5 |
+|---|---|
+| Kurse | `f745583bdf5d02ca04e12b3e6843ed13` |
+| Termine | `b470eaf40dc0f540bf908ea038436061` |
+| Orte | `323462991b2d69ba8350f02f07fa2660` |
+| Kategorien | `58d872e2351c74ccc660cfd5d7e32c52` |
+| Anbieter | `cdcd4f579c2a087849e71dc50de3d1f7` |
+
+Vor einem erneuten Austausch wird die Produktion wieder so geprüft. Weicht ein Wert ab, ist
+es nicht mehr derselbe Katalogstand: Stopp.
+
+### 8.3 Rückweg P7 (ausgeführt)
+
+Ergebnis:
+- 803 Testkurse wieder veröffentlicht.
+- Dokumente, Prüfsummen und Abschnitte gleich der Sicherung (0 Abweichungen).
+- 2 771 Embeddings aus der Sicherung zurückgeschrieben, ohne Modellaufruf.
+- Kategorie-Ergänzungen, E1-Profile und Paketzeilen entfernt.
+- 0 offene Aufträge.
