@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   parseOpsArgs, runOps, collectStatus, runEmbedStep, estimateEmbeddingUsd,
-  OPS_LIMITS, OpsError,
+  OPS_LIMITS, OpsError, classifyStep, stepResultOf,
 } from '../src/lib/aiSearch/ops.js';
 import { drainOutbox } from '../src/lib/aiSearch/worker.js';
 import { LeaseSession } from '../src/lib/aiSearch/opsLease.js';
@@ -683,6 +683,97 @@ describe('Betriebsbericht: Löschrückstand, Laufprotokoll, Überwachung', () =>
     const calm = makeClient(fixture({ failed: 0, oldestPending: '2026-11-21T13:00:00Z', oldestExpired: null, resultsExpired: 0 }));
     const r2 = await runOps(calm.client, parse(['--alarm-exit']).options, { embeddingVersion: VERSION, holder: 'h', clock: () => NOW });
     expect(r2).toMatchObject({ outcome: 'ok', exitCode: 0 });
+  });
+});
+
+describe('Bericht „letzte erfolgreiche Verarbeitung“: nur echte Ergebnisse je Schritt', () => {
+  const deps = (extra = {}) => ({ embeddingVersion: VERSION, holder: 'holder-1', clock: () => NOW, now: () => NOW.getTime(), ...extra });
+  const releaseSummary = (calls) => calls.find((c) => c.table === 'ai_search_ops_lease_release').payload.p_summary;
+
+  it('classifyStep: verarbeitet, geprüft ohne Arbeitsbedarf und übersprungen werden unterschieden', () => {
+    expect(classifyStep('index', { reconciliation: { enqueued: 0 }, worker: { fetchedJobs: 100 } })).toBe('processed');
+    expect(classifyStep('index', { reconciliation: { enqueued: 2 }, worker: null, stoppedBy: 'runtime' })).toBe('processed');
+    expect(classifyStep('index', { reconciliation: { enqueued: 0 }, worker: { fetchedJobs: 0, drained: true } })).toBe('no-work');
+    expect(classifyStep('index', { reconciliation: { enqueued: 0 }, worker: null, stoppedBy: 'runtime' })).toBe('skipped');
+    expect(classifyStep('embed', { embedded: 3, calls: 1 })).toBe('processed');
+    expect(classifyStep('embed', { skipped: true, noWork: true, planned: 0, calls: 0 })).toBe('no-work');
+    expect(classifyStep('embed', { skipped: true, reason: 'andere Version' })).toBe('skipped');
+    expect(classifyStep('embed', { skipped: true, reason: 'Laufzeitgrenze erreicht' })).toBe('skipped');
+    expect(classifyStep('embed', { planned: 2, embedded: 0, changedMeanwhile: 2, calls: 1 })).toBe('skipped');
+    expect(classifyStep('embed', { failed: true })).toBeNull();
+    expect(classifyStep('cleanup', { deleted: 4, batch: 100 })).toBe('processed');
+    expect(classifyStep('cleanup', { deleted: 0, batch: 100 })).toBe('no-work');
+    expect(classifyStep('cleanup', { skipped: true, reason: 'Laufzeitgrenze erreicht' })).toBe('skipped');
+    expect(classifyStep('cleanup', undefined)).toBeNull();
+  });
+
+  it('stepResultOf: nicht ausgewählt → null; ältere Protokolle nur mit eindeutigem Beleg', () => {
+    // Form des echten Laufs Nr. 4 (21.11.2026): Embedding übersprungen, nichts gelöscht.
+    const run4 = { modes: ['index', 'embed', 'cleanup'], outcome: 'ok', summary: { index: { enqueued: 0, jobs: 100, failures: 0, stoppedBy: 'limit' }, embed: { calls: 0, actualUsd: null }, cleanup: { deleted: 0 } } };
+    expect(stepResultOf(run4, 'index')).toBe('processed');
+    expect(stepResultOf(run4, 'embed')).toBeNull();
+    expect(stepResultOf(run4, 'cleanup')).toBe('no-work');
+    expect(stepResultOf({ modes: ['index'], summary: { index: { jobs: 5 } } }, 'embed')).toBeNull();
+    expect(stepResultOf({ modes: ['index'], summary: { index: { enqueued: 0 } } }, 'index')).toBeNull();
+    expect(stepResultOf({ modes: ['embed'], summary: { stepResults: { embed: 'skipped' }, embed: { embedded: 9 } } }, 'embed')).toBe('skipped');
+    expect(stepResultOf({ modes: ['embed'], summary: { stepResults: { embed: 'erfunden' } } }, 'embed')).toBeNull();
+    expect(stepResultOf({ modes: ['cleanup-scheduled'], summary: { deleted: 0, expired_left: 0 } }, 'cleanup-scheduled')).toBe('no-work');
+  });
+
+  it('collectStatus: übersprungene, nicht ausgewählte und fehlgeschlagene Schritte aktualisieren nichts', async () => {
+    const run = (id, modes, finished, outcome, summary) => ({ id, modes, started_at: finished, finished_at: finished, outcome, lease_until: finished, summary });
+    const runs = [
+      // neuester: nur Index ausgewählt → Embeddings/Bereinigung bleiben unberührt
+      run(14, ['index'], '2026-11-21T13:50:00Z', 'ok', { stepResults: { index: 'no-work' }, index: { jobs: 0, enqueued: 0 } }),
+      // fehlgeschlagen trotz verarbeiteter Daten → zählt nicht
+      run(13, ['index'], '2026-11-21T13:40:00Z', 'failed', { stepResults: { index: 'processed' }, index: { jobs: 50 } }),
+      // Embedding übersprungen (Laufzeit), Bereinigung ohne Arbeitsbedarf
+      run(12, ['index', 'embed', 'cleanup'], '2026-11-21T13:30:00Z', 'ok', { stepResults: { index: 'processed', embed: 'skipped', cleanup: 'no-work' } }),
+      // ältester: Embeddings tatsächlich gespeichert, Bereinigung gelöscht
+      run(11, ['embed', 'cleanup'], '2026-11-21T12:00:00Z', 'ok', { stepResults: { embed: 'processed', cleanup: 'processed' }, embed: { embedded: 7, actualUsd: 0 } }),
+    ];
+    const { client } = makeClient(fixture({ opsRuns: runs }));
+    const s = await collectStatus(client, { embeddingVersion: VERSION, now: NOW });
+    expect(s.ops.lastProcessed).toEqual({ index: '2026-11-21T13:30:00Z', embed: '2026-11-21T12:00:00Z', cleanup: '2026-11-21T12:00:00Z', 'cleanup-scheduled': null });
+    expect(s.ops.lastNoWork).toEqual({ index: '2026-11-21T13:50:00Z', embed: null, cleanup: '2026-11-21T13:30:00Z', 'cleanup-scheduled': null });
+    expect(s.ops.lastOk).toBeUndefined();
+    const text = formatReport({ mode: 'dry-run', outcome: 'ok', before: s, plan: (await runOps(client, parse([]).options, deps())).plan });
+    expect(text).toMatch(/übersprungene oder nicht ausgewählte Schritte zählen nicht/);
+    expect(text).toMatch(/Index: Daten verarbeitet 2026-11-21 13:30:00 UTC · geprüft ohne Arbeitsbedarf 2026-11-21 13:50:00 UTC/);
+    expect(text).toMatch(/Embeddings: Daten verarbeitet 2026-11-21 12:00:00 UTC · geprüft ohne Arbeitsbedarf —/);
+    expect(text).not.toMatch(/Letzter erfolgreicher Lauf/);
+  });
+
+  it('Laufprotokoll: stepResults nur für ausgewählte Schritte; Embedding ohne Lücke = geprüft, Bereinigung 0 = geprüft', async () => {
+    const fx = fixture({ candidates: [], cleanupDeleted: 0, workerJobs: [{ id: 1, course_id: 42, reason: 'course_delete', priority: 5, source_version: 7, attempts: 0 }] });
+    const { client, calls } = makeClient(fx);
+    const report = await runOps(client, parse(['--execute-index', '--execute-embed', '--max-usd=0.01', '--execute-cleanup'], confirm).options,
+      deps({ modelsEnabled: true, createGateway: () => fakeGateway() }));
+    expect(report.outcome).toBe('ok');
+    expect(report.stepResults).toEqual({ index: 'processed', embed: 'no-work', cleanup: 'no-work' });
+    expect(releaseSummary(calls).stepResults).toEqual({ index: 'processed', embed: 'no-work', cleanup: 'no-work' });
+    const text = formatReport(report);
+    expect(text).toMatch(/Index: Daten verarbeitet – 1 Aufträge gelesen/);
+    expect(text).toMatch(/Embeddings: erfolgreich geprüft, kein Arbeitsbedarf – Keine fehlenden/);
+    expect(text).toMatch(/Bereinigung: erfolgreich geprüft, kein Arbeitsbedarf – 0 gelöscht/);
+
+    const only = makeClient(fixture({ published: [1, 2], documents: [1, 2] }));
+    const r2 = await runOps(only.client, parse(['--execute-index'], confirm).options, deps());
+    expect(r2.stepResults).toEqual({ index: 'no-work' });
+    expect(Object.keys(releaseSummary(only.calls).stepResults)).toEqual(['index']);
+    const perStep = formatReport(r2).split('Ergebnis je Schritt:')[1].split('Schritte (Details)')[0];
+    expect(perStep).toMatch(/Index: erfolgreich geprüft, kein Arbeitsbedarf/);
+    expect(perStep).not.toMatch(/Embeddings|Bereinigung/);
+  });
+
+  it('Laufzeitgrenze: übersprungener Schritt wird als „skipped“ protokolliert und im Bericht so benannt', async () => {
+    const clock = fakeClock();
+    const { client, calls } = makeClient(fixture({ clockNow: clock.now }));
+    const options = parse(['--execute-index', '--execute-cleanup', '--max-runtime-sec=60'], confirm).options;
+    const report = await runOps(client, options, deps({ now: () => { const t = clock.now(); clock.advance(30_000); return t; } }));
+    expect(report.outcome).toBe('ok');
+    expect(releaseSummary(calls).stepResults.cleanup).toBe('skipped');
+    expect(formatReport(report)).toMatch(/Bereinigung: übersprungen \(zählt nicht als Verarbeitung\) – Laufzeitgrenze erreicht/);
   });
 });
 

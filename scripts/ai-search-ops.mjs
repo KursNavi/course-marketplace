@@ -37,10 +37,39 @@ import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { checkTestTarget, EXPECTED_TEST_REF } from './ai-search-db-tests.mjs';
 import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openaiGateway.js';
-import { parseOpsArgs, runOps, OpsError, OPS_LIMITS, STEP_MS } from '../src/lib/aiSearch/ops.js';
+import { parseOpsArgs, runOps, OpsError, OPS_LIMITS, STEP_MS, STEP_RESULTS } from '../src/lib/aiSearch/ops.js';
 
 const usd = (value) => (value === null || value === undefined ? '—' : `USD ${Number(value).toFixed(4)}`);
 const when = (iso) => (iso ? String(iso).replace('T', ' ').replace(/\.\d+/, '').replace(/\+00:00$|Z$/, ' UTC') : '—');
+
+const STEP_LABELS = [['index', 'Index'], ['embed', 'Embeddings'], ['cleanup', 'Bereinigung'], ['cleanup-scheduled', 'Zeitgesteuerte Löschung']];
+const RESULT_TEXT = {
+  [STEP_RESULTS.processed]: 'Daten verarbeitet',
+  [STEP_RESULTS.noWork]: 'erfolgreich geprüft, kein Arbeitsbedarf',
+  [STEP_RESULTS.skipped]: 'übersprungen (zählt nicht als Verarbeitung)',
+};
+
+/** Eine verständliche Zeile je ausgewähltem Schritt dieses Laufs. */
+export function describeStep(mode, step, result) {
+  if (!step) return 'nicht ausgeführt (Lauf vorher beendet)';
+  if (step.failed || !result) return 'fehlgeschlagen bzw. ohne gesichertes Ergebnis';
+  const head = RESULT_TEXT[result] ?? result;
+  if (mode === 'index') {
+    const w = step.worker;
+    const enq = step.reconciliation?.enqueued ?? 0;
+    if (!w) return `${head} – ${enq} eingereiht, Auftragsverarbeitung nicht begonnen (${step.stoppedBy ?? '—'})`;
+    return `${head} – ${w.fetchedJobs} Aufträge gelesen, ${w.courses} Kurse (eingefügt ${w.inserted}, aktualisiert ${w.updated}, aufgefrischt ${w.refreshed}, repariert ${w.repaired}, entfernt ${w.deleted}, veraltet übersprungen ${w.staleSkipped}, Fehler ${w.failures}), ${enq} eingereiht${w.drained ? ', Warteschlange leer' : ''}`;
+  }
+  if (mode === 'embed') {
+    if (step.skipped) return `${head} – ${step.reason ?? ''}`.trim();
+    return `${head} – ${step.embedded} gespeichert, ${step.changedMeanwhile ?? 0} zwischenzeitlich geändert, ${step.calls} Aufruf(e)`;
+  }
+  if (mode === 'cleanup') {
+    if (step.skipped) return `${head} – ${step.reason ?? ''}`.trim();
+    return `${head} – ${step.deleted} gelöscht (höchstens ${step.batch})`;
+  }
+  return head;
+}
 
 export function formatReport(report) {
   const lines = [];
@@ -61,7 +90,12 @@ export function formatReport(report) {
   lines.push(`  Letzte Indexierung: ${when(b.freshness.lastIndexedAt)}`);
   lines.push(`  Ältester offener Auftrag: ${when(b.freshness.oldestPendingAt)}${b.freshness.oldestPendingHours !== null ? ` (${b.freshness.oldestPendingHours} h)` : ''}`);
   if (ops.applied) {
-    lines.push(`  Letzter erfolgreicher Lauf – Index: ${when(ops.lastOk.index)} · Embeddings: ${when(ops.lastOk.embed)} · Bereinigung: ${when(ops.lastOk.cleanup)} · zeitgesteuerte Löschung: ${when(ops.lastOk['cleanup-scheduled'])}`);
+    // Getrennt: tatsächlich verarbeitet vs. erfolgreich geprüft ohne Arbeits-
+    // bedarf. Nicht ausgewählte/übersprungene Schritte erscheinen in keinem.
+    lines.push('  Letzte erfolgreiche Schritte (nur Läufe mit Ergebnis „ok“; übersprungene oder nicht ausgewählte Schritte zählen nicht):');
+    for (const [mode, label] of STEP_LABELS) {
+      lines.push(`    ${label}: Daten verarbeitet ${when(ops.lastProcessed?.[mode])} · geprüft ohne Arbeitsbedarf ${when(ops.lastNoWork?.[mode])}`);
+    }
   }
   lines.push('2. Abdeckung');
   lines.push(`  Veröffentlichte Kurse: ${b.coverage.published} · im Index: ${b.coverage.documents} · fehlend: ${b.coverage.missingInIndex} · verwaist: ${b.coverage.orphanedInIndex} · ohne Status: ${b.coverage.nullStatus}`);
@@ -105,7 +139,12 @@ export function formatReport(report) {
     lines.push(`Lauf ${report.runId ?? '—'} · Dauer ${report.durationMs ?? 0} ms · Abschluss in der Datenbank: ${report.lease?.status ?? '—'}`);
     if (report.message) lines.push(report.message);
     if (report.error) lines.push(`FEHLER: ${report.error}`);
-    lines.push(`Schritte: ${JSON.stringify(report.steps)}`);
+    lines.push('Ergebnis je Schritt:');
+    for (const [mode, label] of STEP_LABELS) {
+      if (mode === 'cleanup-scheduled' || !report.plan?.[mode]?.execute) continue;
+      lines.push(`  ${label}: ${describeStep(mode, report.steps?.[mode], report.stepResults?.[mode])}`);
+    }
+    lines.push(`Schritte (Details): ${JSON.stringify(report.steps)}`);
   }
   return lines.join('\n');
 }

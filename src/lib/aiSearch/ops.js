@@ -243,6 +243,65 @@ export async function fetchEmbeddingCandidates(client, version) {
   return fetchAll(client, 'ai_search_chunks', 'id, course_id, content_hash, text', embeddingCandidateFilter(version));
 }
 
+/**
+ * Ergebnis eines Schritts im Laufprotokoll (summary.stepResults):
+ *  - processed: Daten tatsächlich verarbeitet (Aufträge übernommen/eingereiht,
+ *    Embeddings gespeichert, Ergebnisse gelöscht)
+ *  - no-work:   erfolgreich geprüft, kein Arbeitsbedarf
+ *  - skipped:   nicht ausgeführt (Laufzeitgrenze, andere Modellversion,
+ *    nichts gespeichert) – zählt NIE als erfolgreiche Verarbeitung
+ * Nicht ausgewählte Schritte haben kein Ergebnis (null).
+ */
+export const STEP_RESULTS = Object.freeze({ processed: 'processed', noWork: 'no-work', skipped: 'skipped' });
+
+const num = (value) => (Number.isFinite(Number(value)) && value !== null && value !== undefined ? Number(value) : null);
+
+/** Ergebnis eines in DIESEM Lauf ausgeführten Schritts (steps.<mode>). */
+export function classifyStep(mode, step) {
+  if (!step || step.failed) return null;
+  if (mode === 'index') {
+    const handled = (num(step.reconciliation?.enqueued) ?? 0) + (num(step.worker?.fetchedJobs) ?? 0);
+    if (handled > 0) return STEP_RESULTS.processed;
+    return step.worker ? STEP_RESULTS.noWork : STEP_RESULTS.skipped;
+  }
+  if (mode === 'embed') {
+    if ((num(step.embedded) ?? 0) > 0) return STEP_RESULTS.processed;
+    return step.noWork === true ? STEP_RESULTS.noWork : STEP_RESULTS.skipped;
+  }
+  if (mode === 'cleanup') {
+    if (step.skipped) return STEP_RESULTS.skipped;
+    const deleted = num(step.deleted);
+    if (deleted === null) return STEP_RESULTS.skipped;
+    return deleted > 0 ? STEP_RESULTS.processed : STEP_RESULTS.noWork;
+  }
+  return null;
+}
+
+/**
+ * Ergebnis eines Modus in einem protokollierten Lauf. Neue Läufe tragen
+ * summary.stepResults; ältere Protokolle werden nur bei eindeutigem Beleg
+ * gewertet (sonst null = nicht gezählt). Nicht ausgewählt → null.
+ */
+export function stepResultOf(run, mode) {
+  if (!Array.isArray(run?.modes) || !run.modes.includes(mode)) return null;
+  const s = run.summary ?? {};
+  const explicit = s.stepResults?.[mode];
+  if (explicit) return Object.values(STEP_RESULTS).includes(explicit) ? explicit : null;
+  if (mode === 'index') {
+    const jobs = num(s.index?.jobs);
+    const enqueued = num(s.index?.enqueued) ?? 0;
+    if ((jobs ?? 0) + enqueued > 0) return STEP_RESULTS.processed;
+    return jobs === 0 ? STEP_RESULTS.noWork : null;
+  }
+  if (mode === 'embed') return (num(s.embed?.embedded) ?? 0) > 0 ? STEP_RESULTS.processed : null;
+  if (mode === 'cleanup' || mode === 'cleanup-scheduled') {
+    const deleted = num(mode === 'cleanup' ? s.cleanup?.deleted : s.deleted);
+    if (deleted === null) return null;
+    return deleted > 0 ? STEP_RESULTS.processed : STEP_RESULTS.noWork;
+  }
+  return null;
+}
+
 const runUsd = (run) => {
   const value = Number(run?.summary?.embed?.actualUsd ?? run?.summary?.late_summary?.embed?.actualUsd);
   return Number.isFinite(value) ? value : 0;
@@ -276,10 +335,15 @@ export async function readOpsState(client, now = new Date()) {
   const stale = open.filter((r) => new Date(r.lease_until) <= now);
   const problemRuns = runs.filter((r) => r.finished_at && ['failed', 'expired', 'lost', 'aborted'].includes(r.outcome)
     && new Date(r.started_at) >= problemFloor);
-  const lastOk = {};
+  // Nur erfolgreiche Läufe; je Modus getrennt: zuletzt tatsächlich Daten
+  // verarbeitet vs. zuletzt erfolgreich geprüft ohne Arbeitsbedarf.
+  // Nicht ausgewählte oder übersprungene Schritte zählen für keines von beiden.
+  const lastProcessed = {};
+  const lastNoWork = {};
   for (const mode of [...MODES, 'cleanup-scheduled']) {
-    const hit = runs.find((r) => r.outcome === 'ok' && Array.isArray(r.modes) && r.modes.includes(mode));
-    lastOk[mode] = hit ? hit.finished_at : null;
+    const okRuns = runs.filter((r) => r.outcome === 'ok');
+    lastProcessed[mode] = okRuns.find((r) => stepResultOf(r, mode) === STEP_RESULTS.processed)?.finished_at ?? null;
+    lastNoWork[mode] = okRuns.find((r) => stepResultOf(r, mode) === STEP_RESULTS.noWork)?.finished_at ?? null;
   }
   const monthRuns = runs.filter((r) => monthKeyZurich(new Date(r.started_at)) === monthKey);
   const embedUsdMonth = monthRuns.reduce((sum, r) => sum + runUsd(r), 0);
@@ -292,7 +356,8 @@ export async function readOpsState(client, now = new Date()) {
       .map((r) => ({ id: r.id, modes: r.modes, startedAt: r.started_at, outcome: r.outcome ?? (r.finished_at ? null : 'läuft'), error: r.summary?.error ?? null })),
     problemRuns: problemRuns.slice(0, 10).map((r) => ({ id: r.id, modes: r.modes, startedAt: r.started_at, outcome: r.outcome, error: r.summary?.error ?? null })),
     problemCount: problemRuns.length,
-    lastOk,
+    lastProcessed,
+    lastNoWork,
     lastCleanupTick: lastTick ? { at: lastTick.finished_at, deleted: lastTick.summary?.deleted ?? null, expiredLeft: lastTick.summary?.expired_left ?? null } : null,
     embedUsdMonth,
   };
@@ -486,7 +551,7 @@ export async function runEmbedStep(client, gateway, session, {
     return { skipped: true, reason: `Konfigurierte Version ${version ?? '—'} ≠ aktive ${activeVersion ?? '—'}; kein Modellwechsel im Betriebsrunner.` };
   }
   const planned = candidates.slice(0, maxChunks);
-  if (planned.length === 0) return { skipped: true, reason: 'Keine fehlenden oder veralteten Embeddings – kein Modellaufruf.', planned: 0, calls: 0 };
+  if (planned.length === 0) return { skipped: true, noWork: true, reason: 'Keine fehlenden oder veralteten Embeddings – kein Modellaufruf.', planned: 0, calls: 0 };
   const chars = planned.reduce((sum, row) => sum + String(row.text ?? '').length, 0);
   const estimate = estimateEmbeddingUsd(chars, prices);
   if (estimate.usd > maxUsd) {
@@ -664,10 +729,16 @@ export async function runOps(client, options, deps) {
 
   const outcome = outcomeFor(failure);
   const durationMs = now() - startedAt;
+  const stepResults = {};
+  for (const mode of modes) {
+    const result = classifyStep(mode, steps[mode]);
+    if (result) stepResults[mode] = result;
+  }
   const summary = {
     modes,
     durationMs,
     renewals: session.renewals,
+    stepResults,
     index: steps.index ? { enqueued: steps.index.reconciliation?.enqueued, enqueuedBy: steps.index.reconciliation?.enqueuedBy, jobs: steps.index.worker?.fetchedJobs, failures: steps.index.worker?.failures, stoppedBy: steps.index.stoppedBy } : undefined,
     embed: steps.embed ? { embedded: steps.embed.embedded, calls: steps.embed.calls, actualUsd: steps.embed.actualUsd ?? null } : undefined,
     cleanup: steps.cleanup ? { deleted: steps.cleanup.deleted } : undefined,
@@ -694,6 +765,7 @@ export async function runOps(client, options, deps) {
     before,
     plan,
     steps,
+    stepResults,
     after,
   };
 }

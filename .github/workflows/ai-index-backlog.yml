@@ -1,0 +1,58 @@
+name: KI-Suche Indexrückstand
+
+# Kontrollierter Abbau des Indexrückstands AUSSCHLIESSLICH auf der
+# TESTumgebung KursNavi (omoapbvfligjfznzivyu). NUR Index: kein
+# Modellschlüssel, keine Modellfreigabe, keine Embeddings, keine Ergebnis-
+# oder Kontingentbereinigung, kein Mailversand, kein Zeitplan.
+#
+# Auslöser: bewusstes Setzen des Labels "ki-index-rueckstand" an einem Pull
+# Request dieses Repositorys (ein Label = ein Lauf). NICHT Teil der normalen
+# CI, kein Zeitplan, kein Push-Auslöser.
+#
+# Ein Lauf = Anfangszustand lesend → höchstens 10 serielle Zyklen mit je
+#   npm run ops:ai-test -- --execute-index --max-runtime-sec=180 --max-index-batches=2 --max-enqueue=50
+# (≤ 100 gelesene Aufträge je Zyklus, zusammen ≤ 1 000), lesende
+# Zustandsprüfung zwischen den Zyklen, sofortiger Halt bei leerer
+# Warteschlange, Fehler, Sperrverlust, anderem Lauf, fehlendem Fortschritt
+# oder Grenze; keine Neustartschleife → lesender Abschlussbericht.
+# Gleiche Concurrency-Gruppe wie der Betriebszyklus: nie parallel zu ihm;
+# zusätzlich schützt die Laufsperre v2 in der Datenbank.
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ki-betrieb-zyklus
+  cancel-in-progress: false
+
+jobs:
+  backlog:
+    if: >-
+      github.event.label.name == 'ki-index-rueckstand' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Indexrückstand abbauen (nur Index, nur TESTumgebung)
+        env:
+          SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+          SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+          AI_OPS_CONFIRM: omoapbvfligjfznzivyu
+        run: npm run ops:ai-index-backlog
