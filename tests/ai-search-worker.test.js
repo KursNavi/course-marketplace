@@ -48,7 +48,7 @@ function makeRespond({ jobs, course, upsertOutcome = 'inserted', overrides = {} 
     }
     if (key === 'ai_search_jobs:select') return { data: jobs, error: null };
     if (key === 'courses:select') return { data: course ?? null, error: null };
-    if (key === 'profiles:select') return { data: profileRow, error: null };
+    if (key === 'public_teacher_profiles:select') return { data: profileRow, error: null };
     if (key === 'v_course_full_categories:select') return { data: [], error: null };
     if (key === 'rpc:ai_search_apply_upsert') return { data: upsertOutcome, error: null };
     if (key === 'rpc:ai_search_apply_delete') return { data: 'deleted', error: null };
@@ -192,7 +192,7 @@ describe('drainOutbox', () => {
         return { data: fetchCount === 1 ? [job()] : [], error: null };
       }
       if (call.table === 'courses') return { data: publishedCourse(), error: null };
-      if (call.table === 'profiles') return { data: profileRow, error: null };
+      if (call.table === 'public_teacher_profiles') return { data: profileRow, error: null };
       if (call.op === 'rpc' && call.table === 'ai_search_apply_upsert') return { data: 'inserted', error: null };
       return { data: null, error: null };
     });

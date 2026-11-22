@@ -124,9 +124,12 @@ describe('Migrationsentwurf: keine unnötigen Aufträge, echte Änderungen weite
     expect(service).toMatch(/course\.is_prio === true/);
   });
 
-  it('Profil-Trigger beobachtet genau die indexierten Profilfelder', () => {
-    const projection = read('src/lib/aiSearch/projection.js');
-    const profileFields = JSON.parse(/PROFILE_FIELDS = (\[[^\]]+\])/.exec(projection)[1].replace(/'/g, '"'));
+  it('Profil-Trigger beobachtet genau die indexierten Profilfelder', async () => {
+    // Feldliste liegt seit E1 in providerPublic.js (Quelle public_teacher_profiles);
+    // die Sichtbarkeitsspalte role ergänzt Entwurf 20261122170000
+    // (tests/ai-search-provider-public.test.js).
+    const { PUBLIC_PROFILE_FIELDS: profileFields } = await import('../src/lib/aiSearch/providerPublic.js');
+    expect(read('src/lib/aiSearch/projection.js')).toMatch(/PROFILE_FIELDS = PUBLIC_PROFILE_FIELDS/);
     const trigger = /AFTER UPDATE OF ([a-z_, ]+) ON public\.profiles/.exec(up)[1].split(',').map((s) => s.trim());
     expect(trigger.sort()).toEqual([...profileFields].sort());
     for (const field of profileFields) expect(up).toContain(`NEW.${field}`);

@@ -1,0 +1,59 @@
+{
+  "version": "2026-11-22-abnahme",
+  "note": "Abschliessender Prüfumfang der Abnahme (Entscheidung 22.11.2026): 24 Startaufgaben aus tests/fixtures/ai-search-goldstandard/tasks-initial.json (per ref, Suchtext von dort) plus 12 Ergänzungen. Formular-Muss (canton/onlineAllowed/maxBudget) wie in der Oberfläche: bei Startaufgaben aus expected.musts abgeleitet (Ort -> Kanton; online nur zusammen mit Kanton; Budget > 0), bei Ergänzungen ausdrücklich angegeben. Alles andere steht nur im Suchtext.",
+  "groups": {
+    "alltag": 10,
+    "fr_it": 10,
+    "muss": 4,
+    "verneinung": 2,
+    "preis_unbekannt": 2,
+    "kinder": 4,
+    "lernform_niveau": 2,
+    "nulltreffer": 2
+  },
+  "cases": [
+    { "id": "de-beruf-001", "group": "alltag", "ref": "de-beruf-001" },
+    { "id": "de-beruf-002", "group": "alltag", "ref": "de-beruf-002" },
+    { "id": "de-beruf-003", "group": "alltag", "ref": "de-beruf-003" },
+    { "id": "de-beruf-005", "group": "alltag", "ref": "de-beruf-005" },
+    { "id": "de-beruf-007", "group": "alltag", "ref": "de-beruf-007" },
+    { "id": "de-beruf-008", "group": "alltag", "ref": "de-beruf-008" },
+    { "id": "de-privat-002", "group": "alltag", "ref": "de-privat-002" },
+    { "id": "de-privat-003", "group": "alltag", "ref": "de-privat-003" },
+    { "id": "de-privat-005", "group": "alltag", "ref": "de-privat-005" },
+    { "id": "de-privat-006", "group": "alltag", "ref": "de-privat-006" },
+
+    { "id": "fr-beruf-001", "group": "fr_it", "ref": "fr-beruf-001" },
+    { "id": "fr-beruf-002", "group": "fr_it", "ref": "fr-beruf-002" },
+    { "id": "fr-privat-001", "group": "fr_it", "ref": "fr-privat-001" },
+    { "id": "fr-kinder-001", "group": "fr_it", "ref": "fr-kinder-001" },
+    { "id": "it-beruf-001", "group": "fr_it", "ref": "it-beruf-001" },
+    { "id": "it-privat-001", "group": "fr_it", "ref": "it-privat-001" },
+    { "id": "it-kinder-001", "group": "fr_it", "ref": "it-kinder-001" },
+    { "id": "q-fr-001", "group": "fr_it", "language": "fr", "query": "Cours de photographie pour débutants, de préférence le week-end", "form": {}, "focus": "Sprache verstanden; Wochenende nur als Wunsch" },
+    { "id": "q-fr-002", "group": "fr_it", "language": "fr", "query": "Cours d'anglais pour mon fils de 10 ans", "form": {}, "focus": "Sprache verstanden; Kinderkurs erkennbar, keine Erwachsenenkurse als passend" },
+    { "id": "q-it-001", "group": "fr_it", "language": "it", "query": "Corso di yoga per principianti, anche online", "form": {}, "focus": "Sprache verstanden; online nur belegt als erfüllt" },
+
+    { "id": "q-muss-001", "group": "muss", "language": "de", "query": "Yoga oder Pilates für Anfänger", "form": { "canton": "Bern", "onlineAllowed": false }, "focus": "0 Treffer ausserhalb Bern; Online-Kurse ausgeschlossen" },
+    { "id": "q-muss-002", "group": "muss", "language": "de", "query": "Excel-Kurs für den Beruf", "form": { "canton": "Zürich", "onlineAllowed": true }, "focus": "nur Zürich oder online" },
+    { "id": "q-muss-003", "group": "muss", "language": "de", "query": "Englisch auffrischen für die nächste Reise", "form": { "maxBudget": 300 }, "focus": "kein Treffer mit belegtem Preis über 300; unbekannter Preis nur als unvollständig" },
+    { "id": "q-muss-004", "group": "muss", "language": "de", "query": "Kochkurs italienische Küche", "form": { "canton": "Luzern", "onlineAllowed": false, "maxBudget": 200 }, "focus": "Ort und Budget zugleich; derselbe Termin muss den Ort erfüllen" },
+
+    { "id": "de-beruf-004", "group": "verneinung", "ref": "de-beruf-004" },
+    { "id": "de-privat-004", "group": "verneinung", "ref": "de-privat-004" },
+
+    { "id": "de-beruf-006", "group": "preis_unbekannt", "ref": "de-beruf-006" },
+    { "id": "de-privat-001", "group": "preis_unbekannt", "ref": "de-privat-001" },
+
+    { "id": "de-kinder-001", "group": "kinder", "ref": "de-kinder-001" },
+    { "id": "de-kinder-002", "group": "kinder", "ref": "de-kinder-002" },
+    { "id": "de-kinder-003", "group": "kinder", "ref": "de-kinder-003" },
+    { "id": "q-kinder-004", "group": "kinder", "language": "de", "query": "Malkurs für Kinder ab 7 Jahren", "form": {}, "focus": "Zielgruppe Kinder in jeder Begründung erkennbar; keine unbelegte Erwachseneneignung" },
+
+    { "id": "q-lernform-001", "group": "lernform_niveau", "language": "de", "query": "Spanisch online im Selbststudium für Fortgeschrittene", "form": {}, "focus": "Online/Selbststudium und Niveau nur als erfüllt, wenn belegt" },
+    { "id": "q-lernform-002", "group": "lernform_niveau", "language": "de", "query": "Gitarre lernen vor Ort, Einzelunterricht für Anfänger", "form": {}, "focus": "vor Ort/Einzelunterricht/Anfänger nur als erfüllt, wenn belegt" },
+
+    { "id": "q-null-001", "group": "nulltreffer", "language": "de", "query": "xqzv blorp fnord", "form": {}, "expectEmpty": true, "focus": "ehrliche Leermeldung, keine Füller" },
+    { "id": "q-null-002", "group": "nulltreffer", "language": "de", "query": "Ausbildung zur Raumschiffpilotin mit Schwerelosigkeitstraining", "form": {}, "expectEmpty": true, "focus": "ehrliche Leermeldung statt entfernt passender Kurse" }
+  ]
+}

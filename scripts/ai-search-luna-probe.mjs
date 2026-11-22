@@ -94,10 +94,11 @@ async function runOne(service, config, testCase, round) {
     console.log(`Alle Bewertungen (ID:Score) ${(record.scores ?? []).map(([id, sc]) => `${id}:${sc}`).join(' ')}`);
     summary[key].slowestOut = [...(summary[key].slowestOut ?? []), slowest?.out ?? null];
     summary[key].runs = [...(summary[key].runs ?? []), { round, hits: shown.map((c) => String(c.courseId)) }];
+    // Öffentliches Repository: nur IDs, Scores und Wortzahlen ins Log — keine
+    // Titel und keine Begründungstexte (TEST kann aktuelle Katalogdaten enthalten).
     for (const card of shown.slice(0, 10)) {
-      console.log(`- ${result.incompleteResults.includes(card) ? '(unvollst.) ' : ''}[${card.score}] #${card.courseId} ${card.title} — ${countWords(card.explanation)} W.`);
+      console.log(`- ${result.incompleteResults.includes(card) ? '(unvollst.) ' : ''}[${card.score}] #${card.courseId} — ${countWords(card.explanation)} W.`);
     }
-    if (shown[0]) console.log(`  Beispieltext: ${shown[0].explanation}`);
   } catch (error) {
     summary[key].errors += 1;
     console.log(`FEHLER nach ${Date.now() - started} ms: ${error?.message ?? error}`);

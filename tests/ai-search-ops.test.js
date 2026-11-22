@@ -142,7 +142,7 @@ function makeClient(fx) {
     }
     if (table === 'ai_search_config') return { data: { active_model_version: fx.active }, error: null };
     if (table === 'ai_search_chunks') return { data: fx.candidates, error: null };
-    if (table === 'profiles' || table === 'v_course_full_categories') return { data: null, error: null };
+    if (table === 'public_teacher_profiles' || table === 'v_course_full_categories') return { data: null, error: null };
     return { data: null, error: null };
   });
 }

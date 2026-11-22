@@ -1,0 +1,123 @@
+name: KI-Suche Abnahmebestand
+
+# Abnahme der KI-Suche mit dem aktuellen oeffentlichen Katalog (Paket 2),
+# AUSSCHLIESSLICH auf der TESTumgebung KursNavi (omoapbvfligjfznzivyu).
+# Laeuft NICHT automatisch und NICHT in der allgemeinen CI. Ausloeser ist das
+# bewusste Setzen EINES Labels an einem Pull Request, Schritt fuer Schritt:
+#
+#   ki-abnahme-trocken     nur Lesen: Katalog (oeffentlicher Schluessel),
+#                          TEST-Zustand, Vorbedingungen, Kostenschaetzungen
+#   ki-abnahme-umstellen   S3-S6: Sicherung, bisherige Testkurse auf Entwurf
+#                          (Testindex wird ENTFERNT), Import, Indexaufbau
+#   ki-abnahme-einbetten   S7: Ersteinbettung, Stoppschwelle USD 0.05
+#   ki-abnahme-qualitaet   S9: 36 Faelle je 1 Lauf, Stoppschwelle USD 0.50
+#   ki-abnahme-status      nur Lesen: Zaehlungen im TEST
+#   ki-abnahme-rueckweg    S11: bisheriger Zustand aus der Sicherung
+#   ki-abnahme-aufraeumen  Sicherung und Ergebnisse loeschen (nach Rueckweg)
+#
+# Schutz: Zieladressen strikt geprueft, Produktion nur mit dem OEFFENTLICHEN
+# Schluessel (Dienstschluessel werden abgelehnt), Bestaetigungsvariablen,
+# Kostengrenzen, kein automatischer Wiederholungslauf. Das Repository ist
+# oeffentlich: Logs enthalten nur Zaehlungen, IDs und Pruefsummen; Ergebnisse
+# mit Kurstexten liegen im privaten Storage-Bucket des TEST-Projekts.
+
+on:
+  pull_request:
+    types: [labeled]
+
+concurrency:
+  group: ki-abnahme
+  cancel-in-progress: false
+
+env:
+  SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+  SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+  SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+  AI_SEARCH_EMBEDDING_MODEL: text-embedding-3-small
+
+jobs:
+  abnahme:
+    if: startsWith(github.event.label.name, 'ki-abnahme-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Trockenlauf (nur Lesen)
+        if: github.event.label.name == 'ki-abnahme-trocken'
+        env:
+          SUPABASE_URL_PROD_PUBLIC: ${{ secrets.SUPABASE_URL_PROD_PUBLIC }}
+          SUPABASE_PUBLISHABLE_KEY_PROD: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_PROD }}
+        run: |
+          node scripts/ai-search-acceptance.mjs plan
+          node scripts/ai-search-quality-run.mjs || true
+          npm run embed:ai-test
+
+      - name: Austausch S3-S6 (Schreiben im TEST, keine Modellaufrufe)
+        if: github.event.label.name == 'ki-abnahme-umstellen'
+        env:
+          SUPABASE_URL_PROD_PUBLIC: ${{ secrets.SUPABASE_URL_PROD_PUBLIC }}
+          SUPABASE_PUBLISHABLE_KEY_PROD: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_PROD }}
+          AI_ACCEPTANCE_CONFIRM: omoapbvfligjfznzivyu
+        run: node scripts/ai-search-acceptance.mjs switch --execute
+
+      - name: Ersteinbettung S7 (max. USD 0.05)
+        if: github.event.label.name == 'ki-abnahme-einbetten'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          AI_SEARCH_MODELS_ENABLED: '1'
+          AI_EMBED_CONFIRM: omoapbvfligjfznzivyu
+        run: |
+          node scripts/ai-search-model-check.mjs
+          npm run embed:ai-test -- --execute --max-usd=0.05 --activate
+
+      - name: Qualitaetslauf S9 (36 Faelle, max. USD 0.50)
+        if: github.event.label.name == 'ki-abnahme-qualitaet'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          AI_SEARCH_MODELS_ENABLED: '1'
+          AI_QUALITY_CONFIRM: omoapbvfligjfznzivyu
+          # Konfiguration wie die Preview (Entscheidung 20.11.2026).
+          AI_SEARCH_LUNA_BATCH: '5'
+          AI_SEARCH_LUNA_EFFORT: none
+          AI_SEARCH_LUNA_DISTRIBUTION: stripe
+          AI_SEARCH_LUNA_MODE: single
+          # Verschluesselte Kopie fuer die Auswertung (privater Schluessel nicht im Repo).
+          AI_RESULTS_PUBLIC_KEY_PATH: scripts/keys/ai-acceptance-results.pub.pem
+          AI_RESULTS_OUT: abnahme-ergebnisse.enc.json
+        run: node scripts/ai-search-quality-run.mjs --execute --max-usd=0.50
+
+      - name: Verschluesselte Ergebnisse ablegen
+        if: always() && github.event.label.name == 'ki-abnahme-qualitaet'
+        uses: actions/upload-artifact@v7
+        with:
+          name: abnahme-ergebnisse-verschluesselt
+          path: abnahme-ergebnisse.enc.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Status (nur Lesen)
+        if: github.event.label.name == 'ki-abnahme-status'
+        run: node scripts/ai-search-acceptance.mjs status
+
+      - name: Rueckweg S11 (Schreiben im TEST, keine Modellaufrufe)
+        if: github.event.label.name == 'ki-abnahme-rueckweg'
+        env:
+          AI_ACCEPTANCE_CONFIRM: omoapbvfligjfznzivyu
+        run: node scripts/ai-search-acceptance.mjs restore --execute
+
+      - name: Aufraeumen (Sicherung und Ergebnisse loeschen)
+        if: github.event.label.name == 'ki-abnahme-aufraeumen'
+        env:
+          AI_ACCEPTANCE_CONFIRM: omoapbvfligjfznzivyu
+        run: node scripts/ai-search-acceptance.mjs purge --execute

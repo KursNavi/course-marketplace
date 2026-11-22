@@ -19,6 +19,7 @@
 import { isPubliclySearchable } from './publication.js';
 import { derivePriceStatus } from './priceStatus.js';
 import { cleanText, buildCourseChunks } from './chunking.js';
+import { PUBLIC_PROFILE_FIELDS } from './providerPublic.js';
 
 /** FNV-1a 64-bit als hex — deterministisch, ohne Abhängigkeiten. */
 export function contentHash(input) {
@@ -36,8 +37,12 @@ export function contentHash(input) {
   return `${hashHigh.toString(16).padStart(8, '0')}${(hashLow >>> 0).toString(16).padStart(8, '0')}`;
 }
 
-/** Zulässige öffentliche Anbieterfelder (Datenvertrag §2). */
-const PROFILE_FIELDS = ['slug', 'city', 'canton', 'verification_status', 'bio_text'];
+/**
+ * Zulässige öffentliche Anbieterfelder (Datenvertrag §2). Der Worker liefert
+ * das Profil nur, wenn die Plattform es öffentlich zeigt (Ansicht
+ * public_teacher_profiles); sonst ist context.profile null → provider null.
+ */
+const PROFILE_FIELDS = PUBLIC_PROFILE_FIELDS;
 
 /**
  * Baut die Suchprojektion eines Kurses.

@@ -28,6 +28,7 @@
  */
 
 import { buildProjection } from './projection.js';
+import { PUBLIC_PROFILE_SOURCE, PUBLIC_PROFILE_FIELDS } from './providerPublic.js';
 
 export const DEFAULT_BATCH_SIZE = 50;
 export const DEFAULT_MAX_ATTEMPTS = 5;
@@ -67,9 +68,11 @@ export function coalesceJobs(jobs) {
 }
 
 /**
- * Laedt die Quelldaten eines Kurses fuer die Projektion. Beim Profil werden
- * NUR die laut Datenvertrag §2 zulaessigen oeffentlichen Felder selektiert —
- * private Felder (E-Mail, Stripe, Pakete) erreichen den Worker-Prozess nicht.
+ * Laedt die Quelldaten eines Kurses fuer die Projektion. Profilangaben kommen
+ * aus der oeffentlichen Ansicht public_teacher_profiles (dieselbe Quelle wie
+ * die Profilseite /profil/…), nicht aus profiles: Was die Plattform nicht
+ * oeffentlich zeigt, erreicht den Index nicht. Selektiert werden NUR die
+ * laut Datenvertrag §2 zulaessigen Felder (providerPublic.js).
  */
 export async function loadCourseSource(client, courseId) {
   const { data: course, error } = await client
@@ -83,8 +86,8 @@ export async function loadCourseSource(client, courseId) {
   let profile = null;
   if (course.user_id) {
     const { data: profileRow, error: profileError } = await client
-      .from('profiles')
-      .select('slug, city, canton, verification_status, bio_text')
+      .from(PUBLIC_PROFILE_SOURCE)
+      .select(PUBLIC_PROFILE_FIELDS.join(', '))
       .eq('id', course.user_id)
       .maybeSingle();
     if (profileError) throw new Error(`Profil zu Kurs ${courseId}: ${profileError.message}`);

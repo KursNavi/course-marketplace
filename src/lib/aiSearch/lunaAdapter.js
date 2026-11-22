@@ -20,12 +20,18 @@
 
 export const LUNA_MODEL_ID = 'gpt-6-luna';
 
-/** Felder, auf die sich eine Begründung beziehen darf (Datenvertrag §2). */
+/**
+ * Felder, auf die sich eine Begründung beziehen darf (Datenvertrag §2).
+ * Bewusst OHNE Anbieterprofiltext (früher 'provider_bio'): buildEvidence
+ * sendet ihn nicht, also darf keine Begründung auf ihn verweisen (E1,
+ * 22.11.2026). Soll er später als Evidenz dienen, nur aus der öffentlichen
+ * Projektion (facts.provider, Quelle public_teacher_profiles).
+ */
 export const ALLOWED_EVIDENCE_FIELDS = Object.freeze([
   'title', 'description', 'objectives', 'prerequisites', 'keywords', 'free_reason',
   'level', 'languages', 'delivery_types', 'target_age_groups', 'min_age',
   'target_group', 'session_count', 'session_length', 'price_status', 'event',
-  'category', 'location', 'provider_bio',
+  'category', 'location',
 ]);
 
 /**

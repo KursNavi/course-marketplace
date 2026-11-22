@@ -36,7 +36,18 @@ Aus `courses` (Quelle: öffentliche Kursdetailseite; nur Felder, die dort angeze
 | `canton`, `address`, `course_locations.*` (city/canton/street/location_type) | Ort |
 | Kategoriepfade (`v_course_full_categories` bzw. Zuordnungstabellen) | Thema/Segment |
 | `is_prio`, `plan_tier`-Ableitung | **nur** Paid-Stufe nach fachlicher Bewertung, nie als Modell-Evidenz |
-| `user_id` → `profiles`: `slug`, `city`, `canton`, `verification_status`, `bio_text` | zulässige öffentliche Anbieterangaben |
+| `instructor_name` | Anbietername auf der Ergebniskarte, wie auf der Kursdetailseite; ohne Wert kein Name. **Nie** `profiles.full_name` |
+| `user_id` → **`public_teacher_profiles`** (nicht `profiles`): `slug`, `city`, `canton`, `verification_status`, `bio_text` | zulässige öffentliche Anbieterangaben, nur im Index (`facts.provider`); weder Modell-Evidenz noch zulässiges Begründungsfeld |
+
+Nachtrag 22.11.2026 (E1): Massgeblich ist, was die Plattform tatsächlich öffentlich
+zeigt. Profilangaben sind öffentlich genau dann, wenn die Ansicht
+`public_teacher_profiles` (Migration `20261104120000`, Filter `role = 'teacher'`) eine
+Zeile liefert. Diese Ansicht speist die Profilseite `/profil/…`, auf die jede
+Kursdetailseite verlinkt. Liefert sie keine Zeile, übernimmt die Projektion keine
+Anbieterangaben (`facts.provider = null`). Weil die Sichtbarkeit an `role` hängt, muss
+der Profil-Trigger auch `role` beobachten (Entwurf
+`supabase/drafts/20261122170000_ai_search_profile_visibility_trigger.sql`).
+Umsetzung: `src/lib/aiSearch/providerPublic.js`.
 
 **Ausgeschlossen (nie in Projektion, Index oder Modellkontext):** `courses.contact_email`,
 sämtliche Lead-/Anfrageinhalte und -scores, `basic_lead_ranking_factor`, `booking_factor`,

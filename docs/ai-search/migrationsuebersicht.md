@@ -36,6 +36,7 @@ Rückwege angewendeter Migrationen: `supabase/rollback/ai_search_down.sql`
 |---|---|---|---|
 | angewendet → `supabase/migrations/20261121225750_ai_search_ops_lease_v2.sql` (vormals Entwurf `20261122090000`) | Laufsperre mit Besitz, Verlängerung, Abbruch, Übernahme, Schreibschutz (`ai_search_ops_fenced_*`), Laufprotokoll, Löschfunktion `ai_search_ops_cleanup_tick`. Nur neue Objekte. | `supabase/rollback/20261121225750_…_down.sql` (nicht ausgeführt) | `supabase/drafts/tests/20261121225750_…_test.sql`: **KNT00 28/28** am 21.11.2026 (vor Anwendung) |
 | `20261122090100_ai_search_ops_cleanup_schedule.sql` | **Schalter**: pg_cron-Job `ai-search-ops-cleanup`, stündlich Minute 7 | `…_schedule_down.sql` | kein eigener (nur ein `cron.schedule`); Anwendung (T7) noch nicht freigegeben |
+| `20261122170000_ai_search_profile_visibility_trigger.sql` (E1) | Profil-Trigger beobachtet zusätzlich `role` (Sichtbarkeit über `public_teacher_profiles`). Nur Funktion + Trigger ersetzt, keine Daten. | `…_profile_visibility_trigger_down.sql` (Stand `20261120205856`) | noch keiner; statische Prüfung in `tests/ai-search-provider-public.test.js`. Rollback-Test und Anwendung auf TEST nicht freigegeben |
 
 Der Entwurf `20261121160000_ai_search_ops_lease` (Rollback-Test 12/12 am
 21.11.2026) ist **ersetzt und entfernt**; er wurde nie angewendet. Sein

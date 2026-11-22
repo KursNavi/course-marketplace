@@ -32,6 +32,7 @@ import { buildCanonicalCoursePath } from '../courseUrl.js';
 import { buildExplanation } from './explanation.js';
 import { checkWishes, deliveryEvidence } from './wishCheck.js';
 import { childAudience, adultsBackedByText } from './audience.js';
+import { providerDisplayName } from './providerPublic.js';
 export const CANDIDATE_LIMIT = 100;
 export const RESULT_LIMIT = 10;
 
@@ -212,8 +213,9 @@ async function loadCandidates(client, courseIds) {
   const [chunkResult, profileResult, categoryResult] = await Promise.all([
     client.from('ai_search_chunks').select('course_id, section, chunk_index, text').in('course_id', courseIds).order('chunk_index'),
     userIds.length > 0
-      // Nur öffentliche Anbieterfelder + Paketfelder für die Paid-Stufe.
-      ? client.from('profiles').select('id, full_name, slug, city, canton, verification_status, package_tier, package_expires_at').in('id', userIds)
+      // Nur die Paketfelder für die serverseitige Paid-Stufe (Datenvertrag §2);
+      // der Anbietername kommt wie auf der Kursseite aus courses.instructor_name.
+      ? client.from('profiles').select('id, package_tier, package_expires_at').in('id', userIds)
       : Promise.resolve({ data: [], error: null }),
     client.from('v_course_full_categories').select('*').in('course_id', courseIds),
   ]);
@@ -305,7 +307,6 @@ function buildCard(course, ranked, mustResult, context, now, request) {
   const priceStatus = derivePriceStatus(course);
   const price = describePrice(priceStatus);
   const event = mustResult.matchingEvent ?? nextUpcomingEvent(course, now);
-  const profile = context.profilesById.get(String(course.user_id)) ?? null;
   const gaps = [];
   if (price.gap) gaps.push(price.gap);
   if (!event) gaps.push('Kein künftiger Termin hinterlegt.');
@@ -352,7 +353,8 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     url: buildCanonicalCoursePath(courseForUrl),
     imageUrl: courseImageUrl(course.image_url),
     explanation,
-    provider: profile?.full_name ?? null,
+    // Gleiche Quelle wie die Kursdetailseite; nie profiles.full_name.
+    provider: providerDisplayName(course),
     category: categoryLabel(categoryRows),
     score: ranked.score,
     reasons: ranked.reasons,
