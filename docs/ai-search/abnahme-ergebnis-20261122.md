@@ -291,3 +291,85 @@ Ergebnis:
 - 2 771 Embeddings aus der Sicherung zurückgeschrieben, ohne Modellaufruf.
 - Kategorie-Ergänzungen, E1-Profile und Paketzeilen entfernt.
 - 0 offene Aufträge.
+
+## 9. Erneute Abnahme nach K1–K5 und Titel-Kanal (22.11.2026, 22:59 MEZ)
+
+| | |
+|---|---|
+| Code | Commit `590ba8b`, inkl. Titel-Kanal-Korrektur `21b004f` |
+| Katalog | derselbe Stand: alle 5 Fingerabdrücke aus §8.2 vor dem Austausch in Produktion und nach dem Import im TEST identisch |
+| Kriterien, Soll-Listen | unverändert (sha256-Test) |
+| Lauf | 36 von 36, 0 Fehler, keine Wiederholung |
+| Ergebnisse | privater Bucket, Ordner `abnahme-katalog/s9-qualitaet/2026-11-22T21-59-16-424Z` |
+
+### 9.1 Ergebnis: **nicht bestanden**. Nur die Abdeckung ist verfehlt.
+
+Zählung: 50 Karten. Je Karte gilt die strengere von Erst- und Zweitbewertung.
+
+| Kennzahl | Schwelle | Ergebnis | |
+|---|---|---|---|
+| Verstösse gegen zwingende Vorgaben | 0 | **0** (Treffer 0, unvollständig 0) | erfüllt |
+| Schwere unbelegte Aussagen | 0 | **0** | erfüllt |
+| Leichte unbelegte Aussagen | ≤ 5 % | 2 von 50 = **4 %** (20194: Kurs nur für Ärztinnen und Ärzte, nicht erwähnt; 20224: Firmenformat nicht erwähnt) | erfüllt |
+| Mittlere Relevanz Top 5 | ≥ 1,5 | **1,70** | erfüllt |
+| Abdeckung der Soll-Kurse je Fall | ≥ 80 % je Fall | **12 von 18 Fällen** (Mittel 80,0 %) | **verfehlt** |
+| Zielgruppenkennzeichnung Kinderkurse | 100 % | **100 %** | erfüllt |
+| Ehrliche Nulltreffer | 2 von 2 | **2 von 2** | erfüllt |
+
+**Anmerkung zu den leichten Fehlern:** In der ersten Abnahme hatte die Zweitbewertung eine Masterclass mit Feld `level = beginner` als „leicht“ gewertet. Nach dem eingefrorenen Wortlaut („aus Kurstext oder Kursfeldern“) ist das ein Beleg. In der strengeren Lesart wären es 5 von 50 (10 %); am Gesamtergebnis ändert das nichts.
+
+**Wirksamkeit der Korrekturen:**
+- **K1:** keine verkehrten Verneinungen mehr.
+- **K2:** 0 Muss-Verstösse; der Berner Yogakurs ist jetzt Treffer, die Töpferkurse Basel ebenfalls.
+- **K4:** alle FR/IT-Begründungen in der Sprache der Anfrage, Serverhinweise eingeschlossen.
+- **K5:** Altersangaben präzise, zum Beispiel „Kinder von 3 bis 11 Jahren“.
+
+### 9.2 Warum Soll-Kurse fehlen (belegt aus den gespeicherten Auswahlstufen)
+
+Von 15 fehlenden Soll-Kursen:
+- **12 gingen an Luna und lagen unter 70** (Score 20–68).
+- **2 kamen nicht an Luna** (Fusionsrang 34 und 46, > 30).
+- **1 ist korrekt ausgeschlossen:** 20422, „ab CHF 315 pro Trimester“ bei Budget 300.
+
+**Direkter Vergleich derselben Kurse:**
+
+| Kurs | q-fr-001 („débutants, de préférence le week-end“) | de-privat-002 („nach der Arbeit … am liebsten in Bern“) |
+|---|---:|---:|
+| 20610 | 92 | 66 |
+| 20592 | 91 | 41 |
+| 20594 | 78 | 65 |
+| 20611 | 78 | 62 |
+| 20612 | 76 | 64 |
+| 20587 | 75 | 55 |
+
+Bei gleichen Kursen fallen die Scores also unter 70, sobald ein nicht erfüllbarer Orts- oder Zeitwunsch hinzukommt; alle Fotokurse liegen in Zürich. Dasselbe Muster zeigen:
+- 20120 (Basel bei „Nähe Bern, abends“): 68;
+- 20579 (Ferienkurs Horgen bei „samstags, Winterthur“): 58;
+- 20751 (Präsenz bei „anche online“): 65.
+
+**Fehler in den eingefrorenen Soll-Listen**, nicht geändert, aber hier benannt:
+- 20809 (ab 10 Jahren) war für „Kinder ab 7“ falsch als Soll gesetzt; Luna gab 45, was zutrifft.
+- 20422 verletzt die Budget-Vorgabe.
+
+Ohne diese zwei würden q-kinder-004 (4/4) und de-kinder-002 (2/2) voll abdecken. Es blieben 4 verfehlte Fälle: de-beruf-001, de-privat-002, q-fr-002, q-it-001; de-kinder-001 läge mit 1/2 ebenfalls darunter.
+
+**FR/IT:** Die bestehende Bedeutungssuche liefert 97–100 der 100 Kandidaten. Alle fehlenden FR/IT-Soll-Kurse wurden an Luna gesendet; sie scheitern an der Bewertung (q-fr-002: 62 und 20), nicht am Abruf. Eine Erweiterung des Textabrufs ist dafür **nicht nötig**.
+
+### 9.3 Notwendige Entscheidung vor einer weiteren Abnahme
+
+Die verbleibende Ursache ist eine **Produktregel der Bewertung**: Wie stark darf ein nicht erfüllter Wunsch (Ort, Zeit, Lernform) den fachlichen Score drücken?
+- **Heute:** Luna senkt fachlich passende Kurse unter die Mindestpassung, und sie erscheinen gar nicht.
+- **Option:** Wünsche senken den Score nur innerhalb des Bands, ohne unter 70 zu fallen. Die Abweichung wird wie heute in der Begründung genannt; Muss-Vorgaben bleiben unberührt.
+
+Das ist eine Änderung der Bewertungsanweisung, also einer Produktregel, und braucht deine Entscheidung. Mindestpassung, Soll-Listen und Schwellen bleiben dabei unverändert.
+
+### 9.4 Kosten
+
+| Posten | Umfang | USD |
+|---|---|---|
+| Einbettung | 228 295 Tokens | ≈ 0.0046 (Grenze 0.05) |
+| 36 Suchen | 434 417 Eingabe- und 20 506 Ausgabetokens | Schätzung 0.108 (Grenze 0.50) |
+
+Die Schätzung der Suchen ist konservativ: mindestens 0.003 je Suche, auch bei Fällen ohne Luna-Aufruf. Massgeblich ist die Abrechnung von OpenAI; das Projektlimit von USD 10 ist unverändert.
+
+**Gesamt heute (beide Abnahmen):** ≈ USD 0.23 geschätzt.
