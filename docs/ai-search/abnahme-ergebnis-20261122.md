@@ -182,7 +182,10 @@ Geprüft wurden nur Zugriffsregeln, Code und Zählungen. Es wurden keine Inhalte
     ausdrücklich: Entwurf ist ein Such- bzw. Indexstatus, keine Schutzgrenze. Wer die
     Kurs-URL kennt, darf die Kursdetails sehen. Der Test
     `tests/course-draft-preview-visibility.test.js` sichert das ab.
-  - Die Lesbarkeit von Entwürfen ist also eine **bewusste Plattformentscheidung**.
+  - ~~Die Lesbarkeit von Entwürfen ist also eine **bewusste Plattformentscheidung**.~~
+    **Korrigiert:** Sie ist eine im Code begründete technische Entscheidung, aber keine
+    nachgewiesene Datenschutzfreigabe. Eigener Befund:
+    [befund-datenschutz-kursfelder-20261122.md](befund-datenschutz-kursfelder-20261122.md).
 - **`contact_email`:**
   - Zählung in Produktion: 0 von 203 Entwürfen, aber 47 von 697 veröffentlichten Kursen haben
     das Feld gefüllt.
