@@ -507,3 +507,123 @@ Weiterhin nicht bestanden.
 | Drei Abnahmen bisher | | ≈ USD 0.34 geschätzt |
 
 Massgeblich ist die Abrechnung von OpenAI; das Projektlimit von USD 10 ist unverändert.
+
+## 11. Vierte Abnahme nach Korrekturrunde 4 (23.11.2026, 20:43 MEZ)
+
+| | |
+|---|---|
+| Code | Commit `6153081` |
+| Katalog | derselbe Stand (alle fünf Fingerabdrücke §8.2 vor dem Austausch erneut identisch) |
+| Kriterien, Soll-Listen | unverändert; Auslegung nach [abnahme-auslegung.md](abnahme-auslegung.md) |
+| Rückweg vor dem Push | ausgeführt, 0 Abweichungen zur Sicherung (803 Kurse, 2771 Abschnitte mit Embeddings) |
+| Lauf | 36 von 36, 0 Fehler, keine Wiederholung |
+| Ergebnisse | privater Bucket, Ordner `abnahme-katalog/s9-qualitaet/2026-11-23T19-43-34-452Z` |
+| Zweitbewertung | unabhängig, dieselben 12 kritischen Fälle, 26 Karten |
+
+### 11.1 Korrekturen dieser Runde (je einem belegten Befund der dritten Abnahme zugeordnet)
+
+- **Fachliche Passung getrennt:** Luna erhält nur das fachliche Anliegen; optionale Wünsche
+  zu Ort, Zeit und Lernform gehen getrennt als `optional_wishes` mit und zählen nur für die
+  Reihenfolge. Textabruf unverändert.
+- **Zeitwünsche** werden erkannt; bestätigt nur bei Beleg in Kurstext oder Terminbeschreibung,
+  sonst „nicht bestätigt“. Unbelegte Zeitbehauptungen werden aus Lunas Text entfernt.
+- **Kinderanfragen:** Kurse, deren Text ausdrücklich nur Erwachsene oder Jugendliche nennt,
+  sind ausgeschlossen (in diesem Lauf 6 Kurse).
+- **Luna-Anweisung:** Ausbildungen zum Anleiten passen nicht zu Personen, die selbst lernen.
+- **Angebotsformen** berufliche Aus-/Weiterbildung und Selbststudium; **Altersgrenzen** werden
+  genannt.
+- **Preis-, Budget- und Abschlussbehauptungen** werden satzweise aus Lunas Text entfernt.
+- **Sprache:** Luna-Text in einer anderen Sprache als die Anfrage wird durch belegte
+  Zitatsätze ersetzt.
+
+### 11.2 Ergebnis: **nicht bestanden**
+
+Zählung: 64 Karten. Je Karte gilt die strengere von Erst- und Zweitbewertung.
+
+| Kennzahl (unveränderte Schwelle) | Schwelle | Ergebnis | |
+|---|---|---|---|
+| Verstösse gegen zwingende Vorgaben | 0 | **0** | **bestanden** |
+| Schwere unbelegte Aussagen | 0 | **2** (20120, 20177) | **nicht bestanden** |
+| Leichte unbelegte Aussagen | ≤ 5 % | **17 von 64 = 27 %**; vergleichbare Lesart 8 von 64 = 12,5 % (siehe 11.3) | **nicht bestanden** |
+| Mittlere Relevanz Top 5 | ≥ 1,5 | **1,66** (mit den strengeren Werten der Zweitbewertung; Erstbewertung allein 1,82) | **bestanden** |
+| Abdeckung der Soll-Kurse je Fall | ≥ 80 % je Fall | **13 von 18** (Originallisten); fachlich korrigiert ebenfalls 13 von 18 | **nicht bestanden** |
+| Zielgruppenkennzeichnung Kinderkurse | 100 % | **100 %** | **bestanden** |
+| Ehrliche Nulltreffer | 2 von 2 | **2 von 2** | **bestanden** |
+
+### 11.3 Befunde
+
+**Schwere Fehler:**
+- **20120** (de-beruf-001, Erstbewertung): Workshop laut Text „für Teams … ebenso für
+  Organisationen“. Luna schreibt „unterstützt so deinen beruflichen Wechsel“, also eine
+  Eignung für eine Einzelperson. Nach der Auslegungsnotiz schwer; mildere Lesart leicht, weil
+  „für Teams“ genannt ist. Die serverseitige Firmen-Erkennung erfasst „eignet sich für Teams“
+  nicht.
+- **20177** (de-kinder-002, Zweitbewertung, von mir nachgeprüft): „Der projektorientierte
+  Ferienkurs“ ist nicht belegt (Kursart `events_workshops`, kein Ferienbezug im Text). Luna
+  übernimmt das Wort „Ferienkurs“ aus der Anfrage. Von mir in der Erstbewertung übersehen.
+
+**Leichte Fehler (17, strengere Lesart):**
+- Aussage nur aus dem Niveaufeld bei einer Masterclass: 20094 (q-muss-001), 20099 (q-muss-001,
+  q-it-001, de-privat-001; bei de-privat-001 zusätzlich „Ort ist Online“ trotz widersprüchlicher
+  Ortsangaben).
+- Wiedereinstiegskurs nicht als solcher benannt, Eignung überzeichnet: 20389.
+- „zum gewünschten Niveau“, obwohl die Anfrage keines nennt: 20887.
+- Ortsangabe „Zürich“ statt Horgen bzw. Langnau, Abweichung vom Wunsch „Winterthur“ nicht
+  sichtbar: 20331, 20579. Ursache: Der Ortsabgleich wertet den Kanton Zürich als Treffer für
+  „Winterthur“. Das bestand schon in früheren Läufen.
+- Wunsch „abends“ fälschlich als bestätigt behandelt, Hinweis fehlte: 20610, 20611. Ursache:
+  Fehler in der neuen Abendprüfung („15.00 – 17.00 Uhr“ als Abendbeleg gewertet). Lokal
+  behoben (Commit `5d1ab22`, nicht gepusht), im Lauf noch wirksam.
+- Zeitraum-Wunsch nicht als „nicht bestätigt“ genannt: „im März“ bei 20268, 20258, 20263, 20264,
+  20022, 20224; „Ferienkurs Sommer 2027“ bei 20178. Zeiträume werden bewusst nicht geprüft
+  (Termine fehlen weitgehend), daher erscheint dazu kein Hinweis.
+
+**Vergleichbarkeit mit Abnahme 3:** Die Regel „ein nicht bestätigter optionaler Wunsch muss
+sichtbar sein, sonst mindestens leicht“ stand in dieser Runde erstmals ausdrücklich in der
+Anweisung an die Zweitbewertung. Ohne die nur daran hängenden Befunde (6 × „im März“, 20178,
+20610, 20611) bleiben **8 von 64 = 12,5 %**. Die Schwelle ist in beiden Lesarten verfehlt.
+
+**Behoben gegenüber Abnahme 3 (im Lauf bestätigt):**
+- 20377: keine Preis- und CAS-Behauptung mehr.
+- 20798: keine Zeitbehauptung mehr, „abends nicht bestätigt“ sichtbar.
+- 20402: Begründung jetzt auf Italienisch.
+- 20426 (Erwachsenen-/Jugendkurs bei Kinderanfrage): ausgeschlossen.
+- 20706 (Ausbildung zur Leitung) bei „Krafttraining für Senioren“: nicht mehr angezeigt.
+- 20888: Altersgrenze 3–11 genannt.
+- Leermeldungen q-muss-004, de-beruf-006, de-kinder-003 laut Zweitbewertung vertretbar.
+
+**Ohne Luna-Text** (nur Serverhinweise oder Zitatsätze): 20594 (q-fr-001) und 20127
+(fr-beruf-001), Text von der Prüfung verworfen; 20223 (q-it-001), vermutlich durch die neue
+Sprachprüfung ersetzt. Lunas Rohtext wird nicht gespeichert, ein Fehlalarm ist daher nicht
+auszuschliessen.
+
+### 11.4 Abdeckung
+
+| Fall | Abnahme 3 | Abnahme 4 | Ursache in Abnahme 4 |
+|---|---:|---:|---|
+| de-privat-002 | 5/10 | **8/10** | Trennung wirkt: Fotokurse jetzt 77–96 statt 55–66; 20588 und 20869 weiterhin nicht an Luna (§9.6) |
+| de-beruf-001 | 1/2 | **2/2** | 20120 jetzt 88 statt 65 |
+| q-fr-001 | 7/8 | 6/8 | 20611 Score 55 (vorher 82), 20588 nicht an Luna |
+| de-kinder-002 | 2/3 | 1/3 | 20613 Score 55 (vorher 88); 20422 korrekt ausgeschlossen |
+| de-beruf-002 | 0/1 | 0/1 | 20380 Score 61 |
+| q-fr-002 | 1/3 | 1/3 | 20112 Score 64, 20531 Score 0 |
+| q-it-001 | 3/4 | 3/4 | 20751 Score 65 |
+
+Die Trennung von Anliegen und Wünschen hat die belegte Wunsch-Abwertung behoben. Die übrigen
+Ausfälle sind Luna-Scores unter 70, die zwischen den Läufen schwanken (20611: 82 → 55; 20613:
+88 → 55), sowie die zwei nicht an Luna gesendeten Kurse (Textabruf, unverändert).
+
+**Fachlich korrigierte Auswertung (zusätzlich):** ohne 20422 de-kinder-002 1/2, ohne 20809
+q-kinder-004 4/4 (schon im Original erfüllt). Neuer Soll-Listen-Befund 20120 (siehe
+[abnahme-soll-listen-befunde.md](abnahme-soll-listen-befunde.md)): de-beruf-001 1/1. In
+allen Lesarten 13 von 18, nicht bestanden.
+
+### 11.5 Kosten
+
+| Posten | Umfang | USD |
+|---|---|---|
+| Einbettung | 228 295 Tokens | ≈ 0.0046 (Grenze 0.05) |
+| 36 Suchen | 495 067 Eingabe- und 25 773 Ausgabetokens | Schätzung 0.1094 (Grenze 0.50; konservativ, mindestens 0.003 je Suche) |
+| Vier Abnahmen bisher | | ≈ USD 0.46 geschätzt |
+
+Massgeblich ist die Abrechnung von OpenAI; das Projektlimit von USD 10 ist unverändert.
