@@ -77,3 +77,22 @@ export function fuseRankedLists(rankedLists, options = {}) {
   });
   return Number.isFinite(options.limit) ? fused.slice(0, Math.max(0, options.limit)) : fused;
 }
+
+/**
+ * Hybride Zusammenführung mit gleichem Gewicht für Text und Bedeutung
+ * (Korrektur 23.11.2026, Befund Abnahme 3/4): Die beiden Textkanäle
+ * (Abschnitte, Titel) beruhen auf denselben Suchbegriffen. Früher zählten sie
+ * als zwei von drei gleichberechtigten Listen; ein Kurs, der nur ein Füllwort
+ * in beiden Textkanälen traf, schlug so einen Kurs, den nur die
+ * Bedeutungssuche weit vorne fand. Jetzt werden die Textkanäle zuerst zu
+ * EINER Textliste zusammengeführt und diese dann 1:1 mit der
+ * Bedeutungsliste kombiniert. Ohne Bedeutungsliste bleibt die Textliste.
+ *
+ * @param {{lexical: Array<Array<{courseId}>>, semantic?: Array<{courseId}>|null}} channels
+ * @param {{k?: number, limit?: number}} [options]
+ */
+export function fuseHybrid(channels, options = {}) {
+  const lexical = fuseRankedLists((channels?.lexical ?? []).filter(Array.isArray), { k: options.k });
+  const semantic = Array.isArray(channels?.semantic) ? channels.semantic : null;
+  return fuseRankedLists(semantic ? [lexical, semantic] : [lexical], options);
+}

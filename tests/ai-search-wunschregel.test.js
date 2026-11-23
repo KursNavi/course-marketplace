@@ -67,7 +67,8 @@ describe('Optionaler Wunsch schliesst nicht aus, zwingende Vorgabe schon', () =>
     expect(ohne.results.map((r) => r.courseId)).toEqual([1]);
     expect(mitWunsch.results.map((r) => r.courseId)).toEqual([1]);
     // Abweichung bleibt sichtbar.
-    expect(mitWunsch.results[0].explanation).toMatch(/Abweichung vom Wunsch „Bern“: Ort ist Zürich\./);
+    // Ort mit Kanton gekennzeichnet (Stabilisierung 23.11.2026).
+    expect(mitWunsch.results[0].explanation).toMatch(/Abweichung vom Wunsch „Bern“: Ort ist Kanton Zürich\./);
   });
 
   it('eine zwingende Vorgabe (Kanton Bern) schliesst denselben Kurs aus', async () => {
@@ -143,13 +144,18 @@ describe('Begrenzter Wunschbeitrag; Paketregel unverändert', () => {
 });
 
 describe('Wesentliche Teilnahmebeschränkungen und Angebotsformen (Punkt 4)', () => {
-  it('Anweisung verlangt Beschränkungen wie „nur für Ärztinnen und Ärzte“ und Firmenangebote', async () => {
+  it('Stabilisierung: Luna schreibt keine Eignung; Beschränkungen setzt der Server aus dem Kurstext', async () => {
+    // Ersetzt die frühere Anweisung an Luna, Beschränkungen selbst zu nennen.
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', usage: {}, output_text: JSON.stringify({ results: [] }) }) }));
     await createOpenAiGateway({ apiKey: 'k', fetchImpl }).rerank('Führung', [{ courseId: 1, evidence: { title: 'x' } }]);
     const { instructions } = JSON.parse(fetchImpl.mock.calls[0][1].body);
-    expect(instructions).toMatch(/nur für Ärztinnen und Ärzte/);
-    expect(instructions).toMatch(/Firmen oder Teams/);
-    expect(instructions).toMatch(/behaupte keine Eignung für allgemein Suchende/);
+    expect(instructions).toMatch(/genau EIN Satz/);
+    expect(instructions).toMatch(/Keine Aussage dazu, ob oder warum der Kurs passt/);
+    const text = buildExplanation({
+      lead: 'Du lernst, Lernende in der Praxis zu führen und auszubilden.',
+      description: 'Dieser Berufsbildner-Kurs richtet sich an Ärztinnen und Ärzte, die als Praxisbesitzer/innen Mitarbeitende führen und Lernende in der Praxis ausbilden.',
+    });
+    expect(text).toMatch(/Laut Kursbeschreibung: „richtet sich an Ärztinnen und Ärzte, die als…“\./);
   });
 
   it('Firmenangebot und Kindergeburtstag werden erkannt; allgemeine Kurse nicht', () => {
@@ -166,7 +172,9 @@ describe('Wesentliche Teilnahmebeschränkungen und Angebotsformen (Punkt 4)', ()
     expect(buildExplanation({ lead, offerForm: 'company' })).toMatch(/Angebotsform laut Kursangaben: Angebot für Firmen und Teams\./);
     expect(buildExplanation({ lead: 'Tu apprends le yoga doux.', offerForm: 'company', language: 'fr' })).toMatch(/Forme de l’offre selon les indications du cours : offre pour entreprises et équipes\./);
     expect(buildExplanation({ lead: 'Impari a dipingere.', offerForm: 'birthday', language: 'it' })).toMatch(/festa di compleanno per bambini/);
-    expect(buildExplanation({ lead: 'Das Angebot richtet sich an Firmen und Teams.', offerForm: 'company' })).not.toMatch(/Angebotsform laut Kursangaben/);
+    // Stabilisierung: Ein Luna-Satz mit Zielgruppenaussage entfällt; der
+    // Server-Hinweis steht dann genau einmal.
+    expect(buildExplanation({ lead: 'Das Angebot richtet sich an Firmen und Teams.', offerForm: 'company' }).match(/Angebotsform laut Kursangaben/g)).toHaveLength(1);
   });
 
   it('Ende-zu-Ende: Firmenkurs-Karte nennt das Firmenformat', async () => {

@@ -97,13 +97,14 @@ describe('Zeitwünsche', () => {
       wishChecks, wishes: [{ type: 'time', label: 'abends', value: 'evening' }],
     });
     expect(text).not.toMatch(/nach der Arbeit zu verbessern/);
-    expect(text).toMatch(/Wunsch „abends“ nicht bestätigt: Die Kursangaben belegen das nicht\./);
+    expect(text).toMatch(/Wunsch „abends“ nicht belegt\./);
   });
 
   it('belegte Zeitaussage bleibt (Samstagskurs bei Wochenendwunsch)', () => {
     const wishChecks = [checkWish({ title: 'Nähkurs', description: 'Samstags-Tageskurs', course_events: [] }, { type: 'time', label: 'am Wochenende', value: 'weekend' })];
-    const text = buildExplanation({ lead: 'Du nähst eine Jacke. Der Samstags-Tageskurs passt zeitlich.', wishChecks });
-    expect(text).toMatch(/Samstags-Tageskurs passt zeitlich/);
+    const text = buildExplanation({ lead: 'Du nähst eine Jacke aus Walkloden mit Unterstützung. Der Samstags-Tageskurs passt zeitlich.', wishChecks });
+    // Stabilisierung 23.11.2026: die belegte Zeitangabe nennt der Server wörtlich.
+    expect(text).toMatch(/Zeitangabe laut Kursangaben: „Samstags-Tageskurs“\./);
     expect(text).not.toMatch(/nicht bestätigt/);
   });
 
@@ -161,8 +162,10 @@ describe('Angebotsformen und Teilnahmebeschränkungen (Punkt 4)', () => {
     const audience = { child: true, minAge: 3, maxAge: 11, teens: false };
     const text = buildExplanation({ lead: 'Du lernst Farben kennen. Das Malangebot richtet sich an Kinder, auch ab sieben Jahren.', audience });
     expect(text).toMatch(/Zielgruppe laut Kursangaben: Kinder von 3 bis 11 Jahren\./);
+    // Stabilisierung 23.11.2026: Lunas Zielgruppensatz entfällt, die
+    // Altersgrenzen nennt immer der Server (genau einmal).
     const ok = buildExplanation({ lead: 'Du lernst Farben kennen. Für Kinder von drei bis elf Jahren.', audience });
-    expect(ok).not.toMatch(/Zielgruppe laut Kursangaben/);
+    expect(ok.match(/Zielgruppe laut Kursangaben: Kinder von 3 bis 11 Jahren\./g)).toHaveLength(1);
     expect(ageMentioned('ab vier Jahren', 4)).toBe(true);
     expect(ageMentioned('ab 14 Jahren', 4)).toBe(false);
   });

@@ -26,7 +26,7 @@ import { parseQuery, findTermInText, excerptAround, cantonForPlace } from './que
 import { checkCourseMusts, MUST_RESULT, zurichDayString } from './mussCheck.js';
 import { derivePriceStatus, PRICE_STATUS } from './priceStatus.js';
 import { isPubliclySearchable } from './publication.js';
-import { fuseRankedLists } from './retrieval.js';
+import { fuseHybrid } from './retrieval.js';
 import { rankWithPaidPriority, MIN_SCORE, wishAdjustment } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
 import { buildExplanation, localizedPrice, offerFormsOf } from './explanation.js';
@@ -131,9 +131,19 @@ export function scoreTextFit(course, terms, chunksByCourse, wishes) {
       ...(Array.isArray(course.course_locations) ? course.course_locations.flatMap((l) => [l.canton, l.city]) : []),
       ...(Array.isArray(course.course_events) ? course.course_events.flatMap((e) => [e.canton, e.location]) : []),
     ].filter(Boolean).map((p) => String(p).toLowerCase());
+    // Stadt und Kanton unterscheiden (Stabilisierung 23.11.2026, Befund
+    // 20331/20579): Ein Stadtwunsch („Winterthur“) ist nur durch dieselbe
+    // Stadt erfüllt, nicht durch den Kanton; ein Kantonswunsch durch den Kanton.
+    const cityPlaces = [
+      ...(Array.isArray(course.course_locations) ? course.course_locations.map((l) => l.city) : []),
+      ...(Array.isArray(course.course_events) ? course.course_events.map((e) => e.location) : []),
+    ].filter(Boolean).map((p) => String(p).toLowerCase());
     for (const wish of locationWishes) {
-      const canton = cantonForPlace(wish.value);
-      const hit = places.find((p) => p.includes(String(wish.value).toLowerCase()) || (canton && p === canton.toLowerCase()));
+      const isCanton = cantonForPlace(wish.value) === wish.value;
+      const wanted = String(wish.value).toLowerCase();
+      const hit = isCanton
+        ? places.find((p) => p === wanted || p.includes(wanted))
+        : cityPlaces.find((p) => p.includes(wanted));
       if (hit) {
         wishBonus = 5;
         reasons.push({ kind: 'location', section: 'location', sectionLabel: 'Ort', term: wish.label, quote: `Ort laut Kursangaben: ${hit.replace(/^\w/, (c) => c.toUpperCase())}` });
@@ -390,7 +400,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
   })) };
 
   // Lernform-/Niveau-Wünsche nur aus strukturierten Kursangaben bestätigen.
-  const wishChecks = checkWishes(course, request.wishes);
+  const wishChecks = checkWishes(course, request.wishes, { now });
   const childInfo = childAudience(course, categoryRows);
   const audience = childInfo.child
     ? { ...childInfo, adultsBacked: adultsBackedByText(buildEvidence(course, context)) }
@@ -407,6 +417,11 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     // Städte laut Kursorten/Termin: für verneinte Ortswünsche (K1), damit
     // Kanton und Stadt nicht verwechselt werden.
     cities: [...new Set([event?.location, ...(course.course_locations ?? []).map((l) => l.city)].filter(Boolean))],
+    // Kanton getrennt von der Stadt (Stabilisierung 23.11.2026).
+    canton: event?.canton || course.canton || null,
+    // Voraussetzungen als wesentliche Teilnahmebeschränkung (wörtlich, gekürzt).
+    prerequisites: Array.isArray(course.prerequisites) ? course.prerequisites.join(' ') : (course.prerequisites ?? null),
+    description: course.description ?? null,
     event: cardEvent,
     price: localizedPrice(priceStatus, request.language),
     audience,
@@ -543,11 +558,12 @@ export async function runAiSearch(client, input) {
     lexicalPath,
     semanticPath,
   ]);
-  const channels = [...lexicalChannels];
   const semanticUsed = Array.isArray(semanticChannel);
-  if (semanticUsed) channels.push(semanticChannel);
-  const candidateIds = channels.length > 0
-    ? fuseRankedLists(channels, { limit: CANDIDATE_LIMIT }).map((c) => c.courseId)
+  // Textkanäle zuerst zu einer Textliste, dann 1:1 mit der Bedeutungsliste
+  // (fuseHybrid, Korrektur 23.11.2026): Füllworttreffer erhalten kein
+  // doppeltes Gewicht mehr gegenüber der Bedeutungssuche.
+  const candidateIds = (lexicalChannels.length > 0 || semanticUsed)
+    ? fuseHybrid({ lexical: lexicalChannels, semantic: semanticUsed ? semanticChannel : null }, { limit: CANDIDATE_LIMIT }).map((c) => c.courseId)
     : [];
 
   const context = await timed('loadCandidates', () => loadCandidates(client, candidateIds));

@@ -47,6 +47,17 @@ const STOPWORDS = new Set([
   'höchstens', 'maximal', 'max', 'chf', 'franken', 'fr', 'sfr', 'online', 'jemand',
   'irgendwo', 'irgendwas', 'the', 'and', 'for', 'with', 'le', 'la', 'les', 'des', 'et',
   'il', 'di', 'per', 'con',
+  // Füllwörter (Korrektur 23.11.2026, Befund §9.6): treffen viele fremde Kurse
+  // und verdrängten im Textabruf passende Kurse. DE/FR/IT.
+  'etwas', 'liebsten', 'lieber', 'richtung', 'bloss', 'mehr', 'meinen', 'meiner', 'meinem',
+  'pour', 'cours', 'avec', 'une', 'mon', 'mes', 'son', 'sur', 'dans', 'pas', 'qui', 'que', 'aux',
+  'cherche', 'apprendre', 'corso', 'corsi', 'una', 'mio', 'mia', 'del', 'della', 'anche',
+  'cerco', 'imparare',
+  // Budget-, Pflicht- und Altersangaben: werden im Formular bzw. serverseitig
+  // geprüft und sind keine fachlichen Suchbegriffe.
+  'budget', 'preis', 'maximum', 'massimo', 'francs', 'franchi', 'zwingend', 'exigé', 'obbligatorio',
+  'pendant', 'ans', 'anni', 'jahre', 'jahren', 'jährige', 'jährigen', 'jähriger', 'tochter', 'sohn',
+  'fils', 'fille', 'figlio', 'figlia',
 ]);
 
 const BEGINNER_WORDS = ['anfänger', 'anfaenger', 'einsteiger', 'einstieg', 'grundkurs', 'beginner', 'débutant', 'principiante'];
@@ -141,6 +152,41 @@ const MONTHS = 'januar|februar|märz|maerz|april|mai|juni|juli|august|september|
 const SEASONS = 'frühling|fruehling|sommer|herbst|winter|printemps|été|automne|hiver|primavera|estate|autunno|inverno';
 // Nicht nach Apostroph („vacances d'automne“ bleibt Teil des Anliegens).
 const PERIOD_PATTERN = new RegExp(`(?<![\\p{L}'’])(?:(?:start|beginn|ab|im|in|diesen|nächsten|naechsten|kommenden|en|au|cet|cette|ce|dès|début|debut|inizio|dal|da|questo|quest|prossimo|prossima)\\s+)*(?:${MONTHS}|${SEASONS})(?:\\s+\\d{4})?(?![\\p{L}])`, 'gu');
+
+// Monate (1–12) und Jahreszeiten je Sprache für Zeitraum-Wünsche.
+const MONTH_NUMBERS = {
+  januar: 1, janvier: 1, gennaio: 1, februar: 2, février: 2, febbraio: 2, märz: 3, maerz: 3, mars: 3, marzo: 3,
+  april: 4, avril: 4, aprile: 4, mai: 5, maggio: 5, juni: 6, juin: 6, giugno: 6, juli: 7, juillet: 7, luglio: 7,
+  august: 8, août: 8, agosto: 8, september: 9, septembre: 9, settembre: 9, oktober: 10, octobre: 10, ottobre: 10,
+  november: 11, novembre: 11, dezember: 12, décembre: 12, dicembre: 12,
+};
+const SEASON_MONTHS = {
+  frühling: [3, 4, 5], fruehling: [3, 4, 5], printemps: [3, 4, 5], primavera: [3, 4, 5],
+  sommer: [6, 7, 8], été: [6, 7, 8], estate: [6, 7, 8],
+  herbst: [9, 10, 11], automne: [9, 10, 11], autunno: [9, 10, 11],
+  winter: [12, 1, 2], hiver: [12, 1, 2], inverno: [12, 1, 2],
+};
+
+/**
+ * Zeitraum-Wünsche („im März“, „Sommer 2027“, „diesen Winter“; Stabilisierung
+ * 23.11.2026): optionale Zeitwünsche, geprüft gegen die Termine (wishCheck).
+ * @returns {Array<{type: 'period', label: string, value: {months: number[], year: number|null}}>}
+ */
+export function detectPeriodWishes(normalized) {
+  const text = String(normalized ?? '');
+  const lower = text.toLowerCase();
+  const found = [];
+  for (const match of lower.matchAll(PERIOD_PATTERN)) {
+    if (isNegatedAt(lower, match.index)) continue;
+    const words = match[0].split(/\s+/);
+    const key = words.find((w) => MONTH_NUMBERS[w] || SEASON_MONTHS[w]);
+    if (!key) continue;
+    const months = MONTH_NUMBERS[key] ? [MONTH_NUMBERS[key]] : SEASON_MONTHS[key];
+    const year = Number(/\d{4}/.exec(match[0])?.[0]) || null;
+    found.push({ type: 'period', label: text.slice(match.index, match.index + match[0].length).trim(), value: { months, year } });
+  }
+  return found;
+}
 
 // Wörter, die zu einer Orts-, Zeit- oder Lernform-Angabe gehören und mit ihr
 // aus dem fachlichen Anliegen gelöst werden („am liebsten in Bern“,
@@ -260,6 +306,7 @@ export function parseQuery(query) {
     const match = wish.pattern.exec(lower);
     if (match && !isNegatedAt(lower, match.index)) wishes.push({ type: 'time', label: wish.label, value: wish.value });
   }
+  wishes.push(...detectPeriodWishes(normalized));
 
   // „nicht bloss Einführung“ ist kein Einsteigerwunsch.
   const beginnerIndex = BEGINNER_WORDS.map((word) => lower.indexOf(word)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
@@ -268,8 +315,12 @@ export function parseQuery(query) {
   }
 
   const placeTokens = new Set(places.flatMap((place) => tokenize(place)));
+  // Suchbegriffe aus dem fachlichen Anliegen (ohne optionale Wünsche zu Ort,
+  // Zeit und Lernform; Korrektur 23.11.2026): „nach der Arbeit“, „am liebsten
+  // in Bern“ oder „le week-end“ erzeugen keine Textabruf-Begriffe mehr.
+  const { topic, optionalWishes } = splitOptionalWishes(normalized);
   const terms = [];
-  for (const token of tokenize(normalized)) {
+  for (const token of tokenize(topic)) {
     if (token.length < 3) continue;
     if (/^\d+$/.test(token)) continue;
     if (STOPWORDS.has(token)) continue;
@@ -282,7 +333,6 @@ export function parseQuery(query) {
   // bestehen nur aus Buchstaben/Ziffern (keine Operatoren aus Nutzertext).
   const tsQuery = terms.slice(0, 12).join(' or ');
 
-  const { topic, optionalWishes } = splitOptionalWishes(normalized);
   return { normalized, terms: terms.slice(0, 12), wishes, tsQuery, language: detectQueryLanguage(normalized), topic, optionalWishes };
 }
 

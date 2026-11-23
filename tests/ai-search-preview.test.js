@@ -1062,8 +1062,9 @@ describe('Begründungstext (Nachtrag 10)', () => {
     expect(text).toBe('Schon der Kurstitel greift „yoga“ auf.');
   });
 
-  it('Luna-Text ersetzt Zitatsätze; Einschränkungen hängt der Server an und kürzt nie weg', () => {
-    const lead = Array.from({ length: 7 }, (_, i) => `Satz ${i} erklärt ruhig und genau, warum dieser Kurs zum Lernwunsch passt.`).join(' '); // 77 Wörter
+  it('Luna-Inhaltssatz ersetzt Zitatsätze; Einschränkungen hängt der Server an und kürzt nie weg', () => {
+    // Stabilisierung 23.11.2026: von Luna gilt nur der erste Satz (Inhalt).
+    const lead = Array.from({ length: 7 }, (_, i) => `Satz ${i} beschreibt ruhig und genau die Übungen und Inhalte dieses Kurses.`).join(' ');
     const text = buildExplanation({
       lead,
       reasons: [{ kind: 'luna', section: 'description', sectionLabel: 'Beschreibung', quote: 'Zitat' }],
@@ -1074,6 +1075,7 @@ describe('Begründungstext (Nachtrag 10)', () => {
     });
     expect(text).not.toMatch(/steht: „Zitat“/);
     expect(text).toMatch(/^Satz 0/);
+    expect(text).not.toMatch(/Satz 1/);
     expect(text).toMatch(/Abweichung vom Wunsch „Zürich“: Ort ist Bern\./);
     expect(text).toMatch(/Nicht bestätigt: ein Termin in Zürich\./);
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
@@ -1148,7 +1150,7 @@ describe('Regression 19.11.2026: unbestätigte Wünsche nie als positive Passung
       embed: vi.fn(),
       rerank: vi.fn(async () => ({ accepted: [
         { courseId: '1', score: 85, explanation: observed, reasons: [{ field: 'description', quote: 'praktische Übungen' }] },
-        { courseId: '2', score: 90, explanation: 'Du lernst Fotografie. Du arbeitest selbstständig im eigenen Tempo.', reasons: [{ field: 'description', quote: 'im eigenen Tempo' }] },
+        { courseId: '2', score: 90, explanation: 'Du lernst Fotografie selbstständig im eigenen Tempo.', reasons: [{ field: 'description', quote: 'im eigenen Tempo' }] },
       ], rejected: [] })),
     };
     const result = await runAiSearch(client, { query: 'Fotografie lernen im Selbststudium', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
@@ -1156,6 +1158,8 @@ describe('Regression 19.11.2026: unbestätigte Wünsche nie als positive Passung
     expect(byId[1]).not.toMatch(/selbstständigem Lernen/);
     expect(byId[1]).toMatch(/Wunsch „Selbststudium“ nicht bestätigt: Die Kursangaben nennen als Lernform nur Präsenz\./);
     expect(byId[2]).toMatch(/selbstständig im eigenen Tempo/);
+    // Bestätigter Wunsch: der Server nennt die belegte Lernform (Stabilisierung 23.11.2026).
+    expect(byId[2]).toMatch(/Lernform laut Kursangaben: Selbststudium\./);
     expect(byId[2]).not.toMatch(/nicht bestätigt/);
     const evidence = gateway.rerank.mock.calls[0][1];
     expect(evidence.find((c) => String(c.courseId) === '1').evidence.delivery_types).toBe('Präsenz');
@@ -1272,9 +1276,11 @@ describe('Zielgruppe Kinder/Jugendliche in der Begründung (20.11.2026)', async 
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
   });
 
-  it('Text nennt Kinder bereits: kein doppelter Hinweis', () => {
+  it('Zielgruppe kommt aus den Kursangaben, nicht aus Lunas zweitem Satz (genau ein Hinweis)', () => {
+    // Stabilisierung 23.11.2026: Lunas zweiter Satz („Der Ferienkurs …“) entfällt.
     const text = buildExplanation({ lead: 'Du baust Roboter und lernst erste Befehle. Der Ferienkurs richtet sich an Kinder ab 8 Jahren.', audience: kids });
-    expect(text).not.toMatch(/Zielgruppe laut Kursangaben/);
+    expect(text).not.toMatch(/Ferienkurs/);
+    expect(text.match(/Zielgruppe laut Kursangaben: Kinder ab 8 Jahren\./g)).toHaveLength(1);
   });
 
   it('unbelegte Eignung für Erwachsene wird entfernt; mit Beleg bleibt sie', () => {
@@ -1329,10 +1335,10 @@ describe('runAiSearch – Luna-Begründung auf der Karte (gemockt)', () => {
     const gateway = {
       usage: { lunaCalls: 1, lunaInputTokens: 900, lunaOutputTokens: 120 },
       embed: vi.fn(),
-      rerank: vi.fn(async () => ({ accepted: [{ courseId: '1', score: 88, explanation: 'Der Kurs passt, weil er sanftes Yoga für den Abend anbietet.', reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }], rejected: [] })),
+      rerank: vi.fn(async () => ({ accepted: [{ courseId: '1', score: 88, explanation: 'Du übst sanftes Yoga mit ruhigen Bewegungen und bewusster Atmung.', reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }], rejected: [] })),
     };
     const result = await runAiSearch(client, { query: 'Yoga', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
-    expect(result.results[0].explanation).toMatch(/^Der Kurs passt, weil er sanftes Yoga/);
+    expect(result.results[0].explanation).toMatch(/^Du übst sanftes Yoga/);
     expect(result.method).toMatchObject({ luna: true, usage: { lunaCalls: 1, lunaInputTokens: 900 } });
   });
 

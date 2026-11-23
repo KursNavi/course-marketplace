@@ -45,7 +45,16 @@ const MESSAGES = {
     nextDate: (day) => `Nächster Termin: ${day}.`,
     offerForm: (x) => `Angebotsform laut Kursangaben: ${x}.`,
     offerForms: { birthday: 'Kindergeburtstag', company: 'Angebot für Firmen und Teams', training: 'berufliche Aus- oder Weiterbildung', self_study: 'Selbststudium' },
-    timeUnconfirmed: (label) => `Wunsch ${q.de(label)} nicht bestätigt: Die Kursangaben belegen das nicht.`,
+    timeUnconfirmed: (label) => `Wunsch ${q.de(label)} nicht belegt.`,
+    prereq: (x) => `Voraussetzungen: ${q.de(x)}.`,
+    targetText: (x) => `Laut Kursbeschreibung: ${q.de(x)}.`,
+    levelFact: (a) => `Niveau laut Kursangaben: ${a}.`,
+    formFact: (a) => `Lernform laut Kursangaben: ${a}.`,
+    timeFact: (x) => `Zeitangabe laut Kursangaben: ${q.de(x)}.`,
+    levelConflict: (label, actual, word) => `Wunsch ${q.de(label)} nicht bestätigt: Das Niveau ist als ${q.de(actual)} angegeben, die Beschreibung nennt ${q.de(word)}.`,
+    periodFact: (day) => `Termin im gewünschten Zeitraum: ${day}.`,
+    periodDeviates: (label, day) => `Abweichung vom Wunsch ${q.de(label)}: nächster Termin ${day}.`,
+    periodUnconfirmed: (label) => `Wunsch ${q.de(label)} nicht bestätigt: kein Termin angegeben.`,
     locale: 'de-CH',
     prices: { unknown: 'Preis auf Anfrage', free: 'Kostenlos', from: (a) => `ab CHF ${a}`, perUnit: (a) => `CHF ${a} pro Einheit` },
     wishLabels: { online: 'Online', not_online: 'nicht online', self_study: 'Selbststudium', presence: 'vor Ort', beginner: 'Für Einsteiger', time_evening: 'abends', time_weekend: 'am Wochenende', time_saturday: 'samstags', time_sunday: 'sonntags' },
@@ -73,7 +82,16 @@ const MESSAGES = {
     nextDate: (day) => `Prochaine date : ${day}.`,
     offerForm: (x) => `Forme de l’offre selon les indications du cours : ${x}.`,
     offerForms: { birthday: 'anniversaire d’enfant', company: 'offre pour entreprises et équipes', training: 'formation professionnelle', self_study: 'autoformation' },
-    timeUnconfirmed: (label) => `Souhait ${q.fr(label)} non confirmé : les indications du cours ne le confirment pas.`,
+    timeUnconfirmed: (label) => `Souhait ${q.fr(label)} non confirmé.`,
+    prereq: (x) => `Prérequis : ${q.fr(x)}.`,
+    targetText: (x) => `Selon la description du cours : ${q.fr(x)}.`,
+    levelFact: (a) => `Niveau selon les indications du cours : ${a}.`,
+    formFact: (a) => `Forme d’apprentissage selon les indications du cours : ${a}.`,
+    timeFact: (x) => `Horaire selon les indications du cours : ${q.fr(x)}.`,
+    levelConflict: (label, actual, word) => `Souhait ${q.fr(label)} non confirmé : le niveau est indiqué ${q.fr(actual)}, mais la description mentionne ${q.fr(word)}.`,
+    periodFact: (day) => `Date dans la période souhaitée : ${day}.`,
+    periodDeviates: (label, day) => `Écart par rapport au souhait ${q.fr(label)} : prochaine date ${day}.`,
+    periodUnconfirmed: (label) => `Souhait ${q.fr(label)} non confirmé : aucune date indiquée.`,
     locale: 'fr-CH',
     prices: { unknown: 'prix sur demande', free: 'gratuit', from: (a) => `dès CHF ${a}`, perUnit: (a) => `CHF ${a} par unité` },
     wishLabels: { online: 'en ligne', not_online: 'pas en ligne', self_study: 'autoformation', presence: 'sur place', beginner: 'pour débutants', time_evening: 'le soir', time_weekend: 'le week-end', time_saturday: 'le samedi', time_sunday: 'le dimanche' },
@@ -101,7 +119,16 @@ const MESSAGES = {
     nextDate: (day) => `Prossima data: ${day}.`,
     offerForm: (x) => `Forma dell’offerta secondo le indicazioni del corso: ${x}.`,
     offerForms: { birthday: 'festa di compleanno per bambini', company: 'offerta per aziende e team', training: 'formazione professionale', self_study: 'autoapprendimento' },
-    timeUnconfirmed: (label) => `Desiderio ${q.it(label)} non confermato: le indicazioni del corso non lo confermano.`,
+    timeUnconfirmed: (label) => `Desiderio ${q.it(label)} non confermato.`,
+    prereq: (x) => `Prerequisiti: ${q.it(x)}.`,
+    targetText: (x) => `Secondo la descrizione del corso: ${q.it(x)}.`,
+    levelFact: (a) => `Livello secondo le indicazioni del corso: ${a}.`,
+    formFact: (a) => `Forma di apprendimento secondo le indicazioni del corso: ${a}.`,
+    timeFact: (x) => `Orario secondo le indicazioni del corso: ${q.it(x)}.`,
+    levelConflict: (label, actual, word) => `Desiderio ${q.it(label)} non confermato: il livello è indicato ${q.it(actual)}, ma la descrizione riporta ${q.it(word)}.`,
+    periodFact: (day) => `Data nel periodo desiderato: ${day}.`,
+    periodDeviates: (label, day) => `Differenza rispetto al desiderio ${q.it(label)}: prossima data ${day}.`,
+    periodUnconfirmed: (label) => `Desiderio ${q.it(label)} non confermato: nessuna data indicata.`,
     locale: 'it-CH',
     prices: { unknown: 'prezzo su richiesta', free: 'gratuito', from: (a) => `da CHF ${a}`, perUnit: (a) => `CHF ${a} per unità` },
     wishLabels: { online: 'online', not_online: 'non online', self_study: 'autoapprendimento', presence: 'in presenza', beginner: 'per principianti', time_evening: 'la sera', time_weekend: 'nel fine settimana', time_saturday: 'il sabato', time_sunday: 'la domenica' },
@@ -133,13 +160,21 @@ const OFFER_FORM_MENTIONS = {
 };
 // Berufliche Aus-/Weiterbildung (Befund 23.11.2026: Fachausbildung für
 // Kursleitende bei einer privaten Suche nicht als solche benannt).
-const TRAINING_TITLE = /\b(ausbildung|lehrgang|fernlehrgang|studiengang|nachdiplom\p{L}*|fachausweis|dipl\.|diplom\p{L}*)/iu;
+const TRAINING_TITLE = /\b(ausbildung|lehrgang|fernlehrgang|studiengang|nachdiplom\p{L}*|fachausweis|dipl\.|diplom\p{L}*|wiedereinstieg)/iu;
 const TRAINING_TEXT = /\b(fernlehrgang|lehrgang|studiengang)\b/i;
 
 /** 'birthday' | 'company' | null aus Kursart, Titel und Beschreibung. */
+// Zielgruppe Teams/Organisationen im Text (Befund Abnahme 4, 20120: „eignet
+// sich für Teams … ebenso für Organisationen“), ausser auch Einzelpersonen
+// sind ausdrücklich angesprochen.
+const COMPANY_AUDIENCE = /\b(eignet sich|richtet sich|gedacht|konzipiert|unterstützt)\s+(?:(?:vor allem|besonders|primär|speziell)\s+)?(?:an\s+|für\s+)?(?:teams|organisationen|unternehmen|firmen)\b/i;
+const INDIVIDUALS_TOO = /einzelpersonen|privatpersonen|privat buchbar|einzelanmeldung/i;
+
 export function offerFormOf(course) {
   if (String(course?.kinder_kursart ?? '').toLowerCase() === 'kindergeburtstag') return 'birthday';
-  if (COMPANY_TITLE.test(String(course?.title ?? '')) || COMPANY_TEXT.test(String(course?.description ?? ''))) return 'company';
+  const description = String(course?.description ?? '');
+  if (COMPANY_TITLE.test(String(course?.title ?? '')) || COMPANY_TEXT.test(description)) return 'company';
+  if (COMPANY_AUDIENCE.test(description) && !INDIVIDUALS_TOO.test(description)) return 'company';
   return null;
 }
 
@@ -317,6 +352,13 @@ export function wishCheckSentence(check, language = 'de') {
   if (!check || check.status === 'confirmed') return null;
   const m = messagesFor(language);
   if (check.aspect === 'Zeit') return m.timeUnconfirmed((check.key && m.wishLabels[check.key]) ?? check.wishLabel);
+  if (check.aspect === 'Zeitraum') {
+    const day = formatDay(check.actual, m.locale);
+    return check.status === 'deviating' && day ? m.periodDeviates(check.wishLabel, day) : m.periodUnconfirmed(check.wishLabel);
+  }
+  if (check.aspect === 'Niveau' && check.conflict) {
+    return m.levelConflict((check.key && m.wishLabels[check.key]) ?? check.wishLabel, translateValues(check.actual, m), check.conflict);
+  }
   const field = check.aspect === 'Niveau' ? 'Niveau' : 'Lernform';
   const actual = check.actual ? translateValues(check.actual, m) : null;
   const detail = actual
@@ -326,6 +368,93 @@ export function wishCheckSentence(check, language = 'de') {
   // Verneinter Wunsch („nicht online“): eine Abweichung wird als solche
   // benannt, nie als nicht bestätigter Gegenwunsch (K1).
   return check.negated && check.status === 'deviating' ? m.wishDeviates(label, detail) : m.wishUnconfirmed(label, detail);
+}
+
+/**
+ * Faktensatz zu einem BESTÄTIGTEN Wunsch (Stabilisierung 23.11.2026): Da Luna
+ * keine Passungsaussage mehr schreibt, nennt der Server die belegte Angabe.
+ */
+export function wishFactSentence(check, language = 'de') {
+  if (!check || check.status !== 'confirmed') return null;
+  const m = messagesFor(language);
+  if (check.aspect === 'Niveau' && check.actual) return m.levelFact(translateValues(check.actual, m));
+  if (check.aspect === 'Lernform' && check.actual) return m.formFact(translateValues(check.actual, m));
+  if (check.aspect === 'Zeit' && check.actual) return m.timeFact(check.actual);
+  if (check.aspect === 'Zeitraum') {
+    const day = formatDay(check.actual, m.locale);
+    return day ? m.periodFact(day) : null;
+  }
+  return null;
+}
+
+/**
+ * Inhaltssatz aus Lunas Text (Stabilisierung 23.11.2026): Luna beschreibt nur
+ * noch, was man lernt; alle Tatsachen zu Eignung, Niveau, Zielgruppe,
+ * Angebotsform, Ort, Zeit und Preis setzt der Server aus den Kursangaben.
+ * Übernommen wird nur der erste Satz. Enthält er trotzdem eine Passungs- oder
+ * Eignungsaussage, entfällt er (dann gelten die belegten Zitatsätze).
+ * Diese Prüfung ist eine Absicherung, nicht die Hauptlösung.
+ */
+const ASSESSMENT = /\b(passt|passend|geeignet|eignet|richtet sich|ideal|für dich|zu deine[mnrs]?|unterstützt (?:\p{L}+ )?(?:dich|deine[nmrs]?)|(?:dein|deine[nmrs]?) (?:\p{L}+ )?(?:wunsch|ziel|ziele|wechsel|einstieg|rolle|niveau|situation|anliegen|suche|alter)|anfänger\p{L}*|einsteiger\p{L}*|fortgeschritten\p{L}*|vorkenntnis\p{L}*|kinder\p{L}*|jugendlich\p{L}*|erwachsen\p{L}*|ferien\p{L}*|convient|adapté\p{L}*|idéal\p{L}*|pour toi|débutant\p{L}*|enfants?|adolescents?|adultes?|adatt[oaie]|ideale|per te|principiant[ei]|bambin[ie]|ragazz[ie]|adulti)\b/iu;
+export function contentSentence(lead) {
+  const text = typeof lead === 'string' ? lead.replace(/\s+/g, ' ').trim() : '';
+  if (!text) return null;
+  const first = (text.match(/^[^.!?]+[.!?]+/) ?? [text])[0].trim();
+  if (countWords(first) < 4 || ASSESSMENT.test(first)) return null;
+  return first;
+}
+
+/** Ort mit Stadt und Kanton („Horgen (Kanton Zürich)“), Online unverändert. */
+export function formatPlace(cities, canton, language = 'de') {
+  const m = messagesFor(language);
+  const known = [...new Set((cities ?? []).filter(Boolean).map(String))];
+  const cantonName = canton ? String(canton) : null;
+  if (cantonName && /^online$/i.test(cantonName)) return known.length > 0 ? known.join(', ') : 'Online';
+  if (known.length > 0 && cantonName && !known.some((c) => c.toLowerCase() === cantonName.toLowerCase())) return `${known.join(', ')} (${m.canton(cantonName)})`;
+  if (known.length > 0) return known.join(', ');
+  return cantonName ? m.canton(cantonName) : null;
+}
+
+// Zielgruppen-Aussage der Kursbeschreibung als wesentliche Einschränkung
+// (Stabilisierung 23.11.2026; Beispiel 20194: „richtet sich an Ärztinnen und
+// Ärzte, die als Praxisbesitzer/innen …“). Wörtlich übernommen, gekürzt.
+const AUDIENCE_STATEMENT = /\b(?:richtet sich (?:ausschlie(?:ss|\xdf)lich |vor allem |speziell |primär |insbesondere )?an|(?:ist|sind) (?:nur |ausschliesslich |speziell )?für|eignet sich (?:nur |ausschliesslich |besonders |speziell )?für|(?:nur|ausschliesslich) für|s['’]adresse (?:uniquement |exclusivement )?(?:aux|à|au)|réservée? aux|si rivolge (?:a|ai|alle|agli)|riservat[oa] (?:a|ai|alle|agli))\s+/iu;
+// Satzende ohne Abkürzungen („ca.“, „z. B.“, „u. a.“, „bzw.“) und Ziffern („3.5“).
+const ABBREVIATION_END = /(?:^|[\s(])(?:ca|z|B|u|a|bzw|evtl|inkl|max|min|Nr|resp|vgl|usw|etc|ggf|d|h|Dr|Prof|St)$/;
+function sentenceRest(text) {
+  let end = 0;
+  while (end < text.length && end < 200) {
+    const ch = text[end];
+    if (/[;:!?\n]/.test(ch)) break;
+    if (ch === '.' && !ABBREVIATION_END.test(text.slice(0, end)) && !/\d/.test(text[end - 1] ?? '')) break;
+    end += 1;
+  }
+  return text.slice(0, end);
+}
+export function audienceStatement(description, maxWords = 8) {
+  const source = String(description ?? '');
+  const match = AUDIENCE_STATEMENT.exec(source);
+  if (!match) return null;
+  const phrase = match[0] + sentenceRest(source.slice(match.index + match[0].length));
+  const words = phrase.replace(/\s+/g, ' ').trim().split(' ');
+  if (words.length < 4) return null;
+  return words.length <= maxWords ? words.join(' ').replace(/[,–-]+$/, '') : `${words.slice(0, maxWords).join(' ').replace(/[,;:–-]+$/, '')}…`;
+}
+
+// Einschränkende Angaben (nie gekürzt): Berufsgruppe, Teams/Organisationen,
+// Abschluss, Berufspraxis, Sprachniveau, Mindestalter, ausdrückliche
+// Beschränkung. Übrige Zielgruppen- und Voraussetzungsangaben (z. B. „eigene
+// Kamera“) weichen bei Platzmangel vor dem Inhaltssatz. Nur für die
+// Kürzungsreihenfolge, nie zum Sperren von Text.
+const RESTRICTIVE = /\b(?:nur|ausschlie(?:ss|\xdf)lich|exklusiv|reserviert|uniquement|exclusivement|solo)\b|réservé|riservat|ärzt|fachperson|fachleute|lehrperson|pflegefach|therapeut|mitarbeitende|führungskr|\bteams?\b|organisation|unternehmen|firmen|grundbildung|berufsbildung|abschluss|berufspraxis|berufserfahrung|berufstätigkeit|fachausweis|diplom|\befz\b|bachelor|\bmaster\b|\b[abc][12]\b|mindestalter|zulassung/iu;
+
+// Voraussetzungen als wesentliche Teilnahmebeschränkung: wörtlich, gekürzt.
+const NO_PREREQ = /^\s*[-–•]?\s*(keine|keinerlei|aucun|aucune|nessun|nessuna|none)\b/i;
+export function prerequisiteQuote(text, maxWords = 8) {
+  const clean = String(text ?? '').replace(/\s+/g, ' ').replace(/^[\s–•-]+/, '').trim();
+  if (clean.length < 4 || NO_PREREQ.test(clean)) return null;
+  const words = clean.split(' ');
+  return words.length <= maxWords ? clean.replace(/[.;:]+$/, '') : `${words.slice(0, maxWords).join(' ').replace(/[,;:–-]+$/, '')}…`;
 }
 
 function capitalize(text) {
@@ -346,7 +475,7 @@ function capitalize(text) {
  * @param {string} [input.language]  'de' | 'fr' | 'it' (Sprache der Anfrage, K4)
  * @returns {string}
  */
-export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], event = null, price = '', audience = null, language = 'de', offerForm = null }) {
+export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], canton = null, event = null, price = '', audience = null, language = 'de', offerForm = null, prerequisites = null, description = null }) {
   const m = messagesFor(language);
   // Strukturierte Zielgruppe (childAudience) in der Sprache der Begründung;
   // ältere Aufrufer mit nur einem Label behalten dieses.
@@ -361,7 +490,9 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   // unbelegte Eignung für Erwachsene behaupten, werden vorher entfernt.
   // K4: Luna-Text in einer anderen Sprache als die Anfrage wird nicht gezeigt;
   // an seine Stelle treten die belegten Zitatsätze in der richtigen Sprache.
-  const leadInLanguage = lead && !leadLanguageMismatch(lead, language) ? lead : null;
+  // Stabilisierung (23.11.2026): von Luna nur der Inhaltssatz (contentSentence);
+  // Tatsachen und Einschränkungen folgen aus den Kursangaben (unten).
+  const leadInLanguage = lead && !leadLanguageMismatch(lead, language) ? contentSentence(lead) : null;
   const leadText = removeUnbackedAdultClaims(removeUnbackedWishClaims(leadInLanguage, wishChecks), audience);
   if (leadText) parts.push({ order: 10, priority: 1, text: leadText, lead: true });
   const evidence = leadText ? [] : reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');
@@ -394,15 +525,26 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   // Server einen nie gekürzten Hinweis.
   if (audienceText && audienceMissing(parts.map((p) => p.text).join(' '), audience)) add(15, 0, m.audience(audienceText));
 
+  // Voraussetzungen (wesentliche Teilnahmebeschränkung), wörtlich und gekürzt.
+  const prereq = prerequisiteQuote(prerequisites);
+  if (prereq) add(16, RESTRICTIVE.test(prereq) ? 0 : 1.5, m.prereq(prereq));
+  // Zielgruppen-Aussage der Beschreibung (wörtlich); bei Kinderkursen genügt
+  // die strukturierte Zielgruppe oben.
+  const statement = audienceText ? null : audienceStatement(description);
+  if (statement) add(15.5, RESTRICTIVE.test(statement) ? 0 : 1.5, m.targetText(statement));
+
+  // Ort mit Stadt und Kanton (Stabilisierung 23.11.2026): „Horgen (Kanton
+  // Zürich)“ statt mehrdeutig „Zürich“.
+  const placeText = formatPlace(cities, canton, language) ?? place;
   const locationReason = reasons.find((r) => r.kind === 'location');
   const positivePlaces = wishes.filter((w) => w.type === 'location' && !w.negated);
   const excludedPlaces = wishes.filter((w) => w.type === 'location' && w.negated);
   if (locationReason) {
-    const where = String(locationReason.quote ?? '').replace(/^Ort laut Kursangaben:\s*/, '');
+    const where = placeText ?? String(locationReason.quote ?? '').replace(/^Ort laut Kursangaben:\s*/, '');
     add(20, 2, m.place(where));
   } else if (positivePlaces.length > 0) {
     const wish = positivePlaces.map((w) => w.value).join(' / ');
-    add(20, 0, place ? m.placeDeviates(wish, place) : m.placeOpen(wish));
+    add(20, 0, placeText ? m.placeDeviates(wish, placeText) : m.placeOpen(wish));
   } else if (excludedPlaces.length > 0) {
     // Verneinter Ortswunsch (K1): Abweichung nur, wenn ein bekannter Ort
     // genau dem Ausgeschlossenen entspricht; sonst neutral der Ort laut
@@ -426,6 +568,8 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
     if (seenWishes.has(key)) return;
     seenWishes.add(key);
     add(25 + index, 0, wishCheckSentence(check, language));
+    // Bestätigter Wunsch: belegte Angabe als Faktensatz (kürzbar).
+    add(25 + index, 2, wishFactSentence(check, language));
   });
 
   for (const unknown of mustUnknowns) {
