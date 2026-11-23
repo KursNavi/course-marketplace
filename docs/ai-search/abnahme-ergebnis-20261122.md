@@ -417,3 +417,93 @@ Fehlerhafte Soll-Einträge sind gesondert dokumentiert:
 Die Score-Korrektur ändert daran nichts. Eine Behebung wäre eine Änderung am Abruf
 (Füllwörter oder Gewichtung der Kanäle). Sie ist nicht freigegeben und wurde deshalb nicht
 umgesetzt.
+
+## 10. Dritte Abnahme nach Trennung von fachlicher Passung und Wünschen (23.11.2026, 18:13 MEZ)
+
+| | |
+|---|---|
+| Code | Commit `564ddfa` |
+| Katalog | derselbe Stand (Fingerabdrücke §8.2 vor dem Austausch und nach dem Import identisch) |
+| Kriterien, Soll-Listen | unverändert; Auslegung nach [abnahme-auslegung.md](abnahme-auslegung.md), also gleich streng wie Abnahme 1 |
+| Lauf | 36 von 36, 0 Fehler, keine Wiederholung |
+| Ergebnisse | privater Bucket, Ordner `abnahme-katalog/s9-qualitaet/2026-11-23T17-13-43-086Z` |
+| Zweitbewertung | unabhängig, 12 kritische Fälle mit 25 Karten |
+
+### 10.1 Ergebnis: **nicht bestanden**
+
+Zählung: 60 Karten. Je Karte gilt die strengere von Erst- und Zweitbewertung.
+
+| Kennzahl (unveränderte Schwelle) | Schwelle | Ergebnis | |
+|---|---|---|---|
+| Verstösse gegen zwingende Vorgaben | 0 | **0** (Treffer 0, unvollständig 0) | **bestanden** |
+| Schwere unbelegte Aussagen | 0 | **2** (siehe 10.2) | **nicht bestanden** |
+| Leichte unbelegte Aussagen | ≤ 5 % | **8 von 60 = 13 %** | **nicht bestanden** |
+| Mittlere Relevanz Top 5 | ≥ 1,5 | **1,76** (17 Fälle mit Soll-Liste und mindestens einer Karte) | **bestanden** |
+| Abdeckung der Soll-Kurse je Fall | ≥ 80 % je Fall | **12 von 18** (Originallisten); fachlich korrigiert 13 von 18 | **nicht bestanden** |
+| Zielgruppenkennzeichnung Kinderkurse | 100 % | **100 %** | **bestanden** |
+| Ehrliche Nulltreffer | 2 von 2 | **2 von 2** | **bestanden** |
+
+### 10.2 Befunde
+
+**Schwere Fehler** (Erstbewertung; liegen nicht in den kritischen Gruppen):
+- **20377** (de-beruf-003, Budget 8000):
+  - Luna schreibt „kostet weniger als dein Budgetlimit“, obwohl die Preisbasis nicht bestätigt
+    ist. Der Server selbst sagt im selben Text „Nicht bestätigt: Preis im Budget (CHF 3950)“.
+  - Ausserdem „passt zum CAS-Wunsch“, obwohl der Kurs ein Diplom ist und kein CAS.
+  - Die Sperrliste für Preisbegriffe erfasst „kostet“ nicht.
+- **20798** (de-privat-002): „passt, um deine Fotografie nach der Arbeit zu verbessern“. Eine
+  Abendzeit ist nicht belegt. Die serverseitige Bereinigung unbelegter Wunschbehauptungen
+  deckt Lernform und Niveau ab, aber keine Zeitwünsche.
+
+**Leichte Fehler (8):**
+- 20128: Führungsbezug überzeichnet.
+- 20022: „passt zu Anfängern“, der Text relativiert das mit „nach Absprache“.
+- 20331: Ferienwoche bei Wunsch „samstags“ nicht erwähnt.
+- 20613: Online-Selbststudium nicht erwähnt.
+- 20888: Altersobergrenze 11 nicht erwähnt.
+- 20426: „passt“ trotz Erwachsenen- und Jugendkurs. Strengere Alternative der Zweitbewertung:
+  schwer.
+- 20099 (q-it-001): „principianti“ nur aus dem Feld, der Text beschreibt eine Masterclass.
+- 20706: Dass es eine Fachausbildung ist, wird nicht ausdrücklich gesagt.
+
+**Fachlich unpassende Treffer (Relevanz 0):**
+- 20426: Malkurs für Erwachsene und Jugendliche bei „Malkurs für Kinder ab 7“, Score 75.
+- 20706: Fachausbildung „Aktivierung durch Bewegung“ bei „Krafttraining für Senioren“, Score 82.
+
+**Punkt 4 (Beschränkungen):**
+- Das Firmenformat steht jetzt in der Begründung (20224).
+- Der Kurs nur für Ärztinnen und Ärzte (20194) ist nicht mehr unter den Treffern.
+- Nicht genannt bleiben Fachausbildung (20706) und Online-Selbststudium (20613).
+
+**K4:** 1 von 60 Begründungen ist in der falschen Sprache (20402: deutscher Text zur
+italienischen Anfrage, der Serverhinweis ist italienisch).
+
+### 10.3 Abdeckung: Wirkung der neuen Regel und verbleibende Ursachen
+
+| Fall | Abnahme 2 | Abnahme 3 |
+|---|---:|---:|
+| de-privat-002 | 1/10 | 5/10 |
+| de-kinder-001 | 1/2 | 2/2 |
+| de-beruf-002 | 1/1 | 0/1 (20380 jetzt Score 55, vorher 77) |
+
+Verbleibende fehlende Soll-Kurse:
+- **Luna-Score unter 70** in 7 Fällen:
+  - 20120 (65), 20380 (55), 20592 (62), 20612 (66), 20800 (55);
+  - 20112 (45) und 20531 (30) bei q-fr-002;
+  - 20751 (64) bei q-it-001.
+- **Nicht an Luna:** 20588, 20869 (Füllwort-Abruf, §9.6).
+- **Korrekt ausgeschlossen:** 20422 (Soll-Listen-Befund).
+- **Score 25 statt Soll:** 20809 (Soll-Listen-Befund).
+
+**Fachlich korrigierte Auswertung (zusätzlich):** de-kinder-002 2/2 → 13 von 18 Fällen.
+Weiterhin nicht bestanden.
+
+### 10.4 Kosten
+
+| Posten | Umfang | USD |
+|---|---|---|
+| Einbettung | 228 295 Tokens | ≈ 0.0046 (Grenze 0.05) |
+| 36 Suchen | 471 280 Eingabe- und 26 106 Ausgabetokens | Schätzung 0.1086 (Grenze 0.50; konservativ, mindestens 0.003 je Suche) |
+| Drei Abnahmen bisher | | ≈ USD 0.34 geschätzt |
+
+Massgeblich ist die Abrechnung von OpenAI; das Projektlimit von USD 10 ist unverändert.
