@@ -38,7 +38,11 @@ export const ALLOWED_EVIDENCE_FIELDS = Object.freeze([
  * Baut den Bewertungs-Request: Kandidaten mit abgegrenzter öffentlicher
  * Evidenz, ohne Paket-/Lead-Daten. Rein deterministisch, für Mock-Tests.
  */
-export function buildRerankRequest(query, candidates) {
+export function buildRerankRequest(query, candidates, options = {}) {
+  // Optionale Wünsche zu Ort, Zeit und Lernform getrennt vom fachlichen
+  // Anliegen (Produktregel 23.11.2026); nur Text, höchstens 6 kurze Angaben.
+  const optionalWishes = (Array.isArray(options.optionalWishes) ? options.optionalWishes : [])
+    .map((w) => String(w ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 6);
   const safeCandidates = (Array.isArray(candidates) ? candidates : []).map((candidate) => ({
     courseId: String(candidate.courseId),
     evidence: Object.fromEntries(
@@ -52,6 +56,7 @@ export function buildRerankRequest(query, candidates) {
     input: {
       task: 'rank_and_justify',
       query: String(query ?? ''),
+      ...(optionalWishes.length > 0 ? { optional_wishes: optionalWishes } : {}),
       candidates: safeCandidates,
     },
     // Strukturierte Ausgabe erzwingen; keine Tools fuer den Reranker.

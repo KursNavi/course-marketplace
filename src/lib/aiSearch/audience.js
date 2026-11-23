@@ -83,6 +83,41 @@ export function audienceLabel(info, language = 'de') {
   return `${group}${age}`;
 }
 
+/**
+ * Sucht die Anfrage einen Kurs für ein Kind (unter 12)? (23.11.2026)
+ * Nur eindeutige Angaben: Kind/Kinder/Tochter/Sohn bzw. FR/IT-Entsprechungen
+ * oder ein Kindesalter. Reine Jugendanfragen („Jugendliche ab 12“) zählen nicht.
+ * @returns {{child: boolean, age: number|null}}
+ */
+const CHILD_REQUEST = /\bkind(?:er\p{L}*|es)?\b|\bkids?\b|tochter|\bsohn\b|\benkel|kleinkind|\benfants?\b|\bfils\b|\bfille\b|bambin|\bfigli[oa]\b|jährige[nrm]?\b/iu;
+const REQUEST_AGE = /(\d{1,2})\s*-?\s*jährig|\bab\s+(\d{1,2})(?:\s+jahren?)?\b|\b(\d{1,2})\s+jahren?\b|\b(\d{1,2})\s+ans\b|\b(\d{1,2})\s+anni\b/iu;
+export function requestedChildAudience(query) {
+  const text = String(query ?? '');
+  if (!CHILD_REQUEST.test(text)) return { child: false, age: null };
+  const match = REQUEST_AGE.exec(text);
+  const age = match ? Number(match.slice(1).find(Boolean)) : null;
+  if (age !== null && age >= 12) return { child: false, age };
+  return { child: true, age };
+}
+
+// Kurstext richtet sich ausdrücklich an Erwachsene und/oder Jugendliche.
+const ADULT_TEEN_TARGET = /(?:für|an)\s+erwachsene\b|erwachsene\s+und\s+jugendliche|jugendliche\s+und\s+erwachsene|nur\s+(?:für\s+)?erwachsene|\bab\s+1[6-9]\s+jahren\b|pour\s+adultes|r[ée]serv[ée]\s+aux\s+adultes|per\s+adulti|solo\s+adulti/i;
+const CHILD_OR_FAMILY = /kind|kids|familie|eltern|enfant|famille|parent|bambin|famiglia|genitor/i;
+
+/**
+ * Fachlich ungeeignet für eine Kinderanfrage (Produktregel 23.11.2026,
+ * Befund: Malkurs „für Erwachsene und Jugendliche“ bei „Malkurs für Kinder
+ * ab 7“): kein Kinderkurs laut belastbaren Angaben UND der Kurstext nennt
+ * ausdrücklich Erwachsene/Jugendliche als Zielgruppe, ohne Kinder oder
+ * Familien zu erwähnen. Das pauschale Feld target_group zählt nicht.
+ */
+export function adultOnlyForChildRequest(course, categoryRows, request) {
+  if (!request?.child) return false;
+  if (childAudience(course, categoryRows).child) return false;
+  const text = `${course?.title ?? ''} ${course?.description ?? ''}`;
+  return ADULT_TEEN_TARGET.test(text) && !CHILD_OR_FAMILY.test(text);
+}
+
 /** Kurstext belegt selbst eine Eignung für Erwachsene (z. B. Eltern-Kind-Kurs). */
 export function adultsBackedByText(evidence) {
   const text = Object.values(evidence ?? {}).map((v) => (Array.isArray(v) ? v.join(' ') : String(v ?? ''))).join(' ');

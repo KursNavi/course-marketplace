@@ -44,10 +44,11 @@ const MESSAGES = {
     priceLine: (price) => `Preis laut Angaben: ${price}.`,
     nextDate: (day) => `Nächster Termin: ${day}.`,
     offerForm: (x) => `Angebotsform laut Kursangaben: ${x}.`,
-    offerForms: { birthday: 'Kindergeburtstag', company: 'Angebot für Firmen und Teams' },
+    offerForms: { birthday: 'Kindergeburtstag', company: 'Angebot für Firmen und Teams', training: 'berufliche Aus- oder Weiterbildung', self_study: 'Selbststudium' },
+    timeUnconfirmed: (label) => `Wunsch ${q.de(label)} nicht bestätigt: Die Kursangaben belegen das nicht.`,
     locale: 'de-CH',
     prices: { unknown: 'Preis auf Anfrage', free: 'Kostenlos', from: (a) => `ab CHF ${a}`, perUnit: (a) => `CHF ${a} pro Einheit` },
-    wishLabels: { online: 'Online', not_online: 'nicht online', self_study: 'Selbststudium', presence: 'vor Ort', beginner: 'Für Einsteiger' },
+    wishLabels: { online: 'Online', not_online: 'nicht online', self_study: 'Selbststudium', presence: 'vor Ort', beginner: 'Für Einsteiger', time_evening: 'abends', time_weekend: 'am Wochenende', time_saturday: 'samstags', time_sunday: 'sonntags' },
     values: {},
   },
   fr: {
@@ -71,10 +72,11 @@ const MESSAGES = {
     priceLine: (price) => `Prix selon les indications : ${price}.`,
     nextDate: (day) => `Prochaine date : ${day}.`,
     offerForm: (x) => `Forme de l’offre selon les indications du cours : ${x}.`,
-    offerForms: { birthday: 'anniversaire d’enfant', company: 'offre pour entreprises et équipes' },
+    offerForms: { birthday: 'anniversaire d’enfant', company: 'offre pour entreprises et équipes', training: 'formation professionnelle', self_study: 'autoformation' },
+    timeUnconfirmed: (label) => `Souhait ${q.fr(label)} non confirmé : les indications du cours ne le confirment pas.`,
     locale: 'fr-CH',
     prices: { unknown: 'prix sur demande', free: 'gratuit', from: (a) => `dès CHF ${a}`, perUnit: (a) => `CHF ${a} par unité` },
-    wishLabels: { online: 'en ligne', not_online: 'pas en ligne', self_study: 'autoformation', presence: 'sur place', beginner: 'pour débutants' },
+    wishLabels: { online: 'en ligne', not_online: 'pas en ligne', self_study: 'autoformation', presence: 'sur place', beginner: 'pour débutants', time_evening: 'le soir', time_weekend: 'le week-end', time_saturday: 'le samedi', time_sunday: 'le dimanche' },
     values: { 'Präsenz': 'présentiel', 'Online live': 'en ligne en direct', 'Online': 'en ligne', 'Selbststudium': 'autoformation', 'für Einsteiger': 'pour débutants', 'alle Niveaus': 'tous niveaux', 'Mittelstufe': 'niveau intermédiaire', 'Fortgeschrittene': 'avancés' },
   },
   it: {
@@ -98,10 +100,11 @@ const MESSAGES = {
     priceLine: (price) => `Prezzo secondo le indicazioni: ${price}.`,
     nextDate: (day) => `Prossima data: ${day}.`,
     offerForm: (x) => `Forma dell’offerta secondo le indicazioni del corso: ${x}.`,
-    offerForms: { birthday: 'festa di compleanno per bambini', company: 'offerta per aziende e team' },
+    offerForms: { birthday: 'festa di compleanno per bambini', company: 'offerta per aziende e team', training: 'formazione professionale', self_study: 'autoapprendimento' },
+    timeUnconfirmed: (label) => `Desiderio ${q.it(label)} non confermato: le indicazioni del corso non lo confermano.`,
     locale: 'it-CH',
     prices: { unknown: 'prezzo su richiesta', free: 'gratuito', from: (a) => `da CHF ${a}`, perUnit: (a) => `CHF ${a} per unità` },
-    wishLabels: { online: 'online', not_online: 'non online', self_study: 'autoapprendimento', presence: 'in presenza', beginner: 'per principianti' },
+    wishLabels: { online: 'online', not_online: 'non online', self_study: 'autoapprendimento', presence: 'in presenza', beginner: 'per principianti', time_evening: 'la sera', time_weekend: 'nel fine settimana', time_saturday: 'il sabato', time_sunday: 'la domenica' },
     values: { 'Präsenz': 'in presenza', 'Online live': 'online dal vivo', 'Online': 'online', 'Selbststudium': 'autoapprendimento', 'für Einsteiger': 'per principianti', 'alle Niveaus': 'tutti i livelli', 'Mittelstufe': 'livello intermedio', 'Fortgeschrittene': 'avanzati' },
   },
 };
@@ -121,13 +124,76 @@ function translateValues(text, m) {
 // (ein allgemeines Angebot "auch für Firmen buchbar" ist kein Firmenangebot).
 const COMPANY_TITLE = /\b(firmen|unternehmen|teamevents?|team-events?|teambuilding|teamanl[aä]ss|inhouse)\b/i;
 const COMPANY_TEXT = /\b(firmenkurs|firmenanl[aä]ss|firmen-?events?|teamevents?|team-events?|teambuilding|teamanl[aä]ss|inhouse-?(kurs|schulung|training))\b/i;
-const OFFER_FORM_MENTION = /firm|team|unternehm|geburtstag|party|entreprise|équipe|anniversaire|aziend|squadra|compleanno|festa/i;
+// Je Angebotsform: Woran erkennbar ist, dass der Text sie schon nennt.
+const OFFER_FORM_MENTIONS = {
+  birthday: /geburtstag|party|anniversaire|compleanno|festa/i,
+  company: /firm|team|unternehm|entreprise|équipe|aziend|squadra/i,
+  training: /ausbildung|lehrgang|studiengang|weiterbildung|formation|cursus|formazione|percorso/i,
+  self_study: WISH_CLAIM_PATTERNS.self_study,
+};
+// Berufliche Aus-/Weiterbildung (Befund 23.11.2026: Fachausbildung für
+// Kursleitende bei einer privaten Suche nicht als solche benannt).
+const TRAINING_TITLE = /\b(ausbildung|lehrgang|fernlehrgang|studiengang|nachdiplom\p{L}*|fachausweis|dipl\.|diplom\p{L}*)/iu;
+const TRAINING_TEXT = /\b(fernlehrgang|lehrgang|studiengang)\b/i;
 
 /** 'birthday' | 'company' | null aus Kursart, Titel und Beschreibung. */
 export function offerFormOf(course) {
   if (String(course?.kinder_kursart ?? '').toLowerCase() === 'kindergeburtstag') return 'birthday';
   if (COMPANY_TITLE.test(String(course?.title ?? '')) || COMPANY_TEXT.test(String(course?.description ?? ''))) return 'company';
   return null;
+}
+
+/**
+ * Alle wesentlichen Angebotsformen (Punkt 4): zusätzlich zu offerFormOf
+ * berufliche Aus-/Weiterbildung (Kurstyp „professionell“ mit Lehrgang/
+ * Ausbildung/Diplom) und reines Selbststudium laut Lernform.
+ */
+export function offerFormsOf(course) {
+  const forms = [offerFormOf(course)];
+  const professional = String(course?.category_type ?? '').toLowerCase() === 'professionell';
+  if (professional && (TRAINING_TITLE.test(String(course?.title ?? '')) || TRAINING_TEXT.test(String(course?.description ?? '')))) forms.push('training');
+  const types = Array.isArray(course?.delivery_types) && course.delivery_types.length > 0 ? course.delivery_types : (course?.delivery_type ? [course.delivery_type] : []);
+  if (types.length > 0 && types.every((t) => String(t).toLowerCase() === 'self_study')) forms.push('self_study');
+  return [...new Set(forms.filter(Boolean))];
+}
+
+// Sprache des Luna-Textes (K4): typische Funktionswörter je Sprache; bewusst
+// ohne mehrdeutige Wörter (la, le, du, un).
+const LEAD_MARKERS = {
+  de: new Set(['der', 'die', 'das', 'und', 'deine', 'deinen', 'deinem', 'dein', 'ist', 'mit', 'für', 'zu', 'zum', 'zur', 'passt', 'lernst', 'übst', 'kannst', 'sich', 'auf', 'von', 'wenn', 'auch', 'eine', 'einen', 'im', 'den', 'dem']),
+  fr: new Set(['les', 'des', 'tu', 'ton', 'ta', 'tes', 'et', 'est', 'pour', 'avec', 'une', 'à', 'au', 'aux', 'qui', 'dans', 'de', 'apprends', 'convient']),
+  it: new Set(['il', 'lo', 'gli', 'e', 'è', 'per', 'con', 'una', 'di', 'del', 'della', 'impari', 'ti', 'tuo', 'tua', 'che', 'nel', 'nella', 'alla', 'adatto', 'adatta']),
+};
+
+/** true, wenn der Text deutlich in einer anderen Sprache als `language` steht. */
+export function leadLanguageMismatch(text, language = 'de') {
+  const target = EXPLANATION_LANGUAGES.includes(language) ? language : 'de';
+  const words = String(text ?? '').toLowerCase().match(/[\p{L}]+/gu) ?? [];
+  const counts = { de: 0, fr: 0, it: 0 };
+  for (const word of words) for (const [lang, set] of Object.entries(LEAD_MARKERS)) if (set.has(word)) counts[lang] += 1;
+  const [best, bestCount] = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return best !== target && bestCount >= 3 && counts[target] < bestCount / 2;
+}
+
+// Altersgrenzen als Teilnahmebeschränkung (Punkt 4): gilt als genannt, wenn
+// die Zahl als Ziffer oder ausgeschrieben (DE/FR/IT) im Text steht.
+const NUMBER_WORDS = {
+  1: ['eins', 'un', 'uno'], 2: ['zwei', 'deux', 'due'], 3: ['drei', 'trois', 'tre'], 4: ['vier', 'quatre', 'quattro'],
+  5: ['fünf', 'cinq', 'cinque'], 6: ['sechs', 'six', 'sei'], 7: ['sieben', 'sept', 'sette'], 8: ['acht', 'huit', 'otto'],
+  9: ['neun', 'neuf', 'nove'], 10: ['zehn', 'dix', 'dieci'], 11: ['elf', 'onze', 'undici'], 12: ['zwölf', 'douze', 'dodici'],
+  13: ['dreizehn', 'treize', 'tredici'], 14: ['vierzehn', 'quatorze', 'quattordici'], 15: ['fünfzehn', 'quinze', 'quindici'],
+  16: ['sechzehn', 'seize', 'sedici'], 17: ['siebzehn', 'dix-sept', 'diciassette'], 18: ['achtzehn', 'dix-huit', 'diciotto'],
+};
+export function ageMentioned(text, age) {
+  const lower = String(text ?? '').toLowerCase();
+  if (new RegExp(`(^|[^\\d])${age}([^\\d]|$)`).test(lower)) return true;
+  return (NUMBER_WORDS[age] ?? []).some((word) => new RegExp(`(^|[^\\p{L}])${word}([^\\p{L}]|$)`, 'u').test(lower));
+}
+
+function audienceMissing(text, audience) {
+  if (!CHILD_MENTION.test(text)) return true;
+  const ages = [audience?.minAge, audience?.maxAge].filter((n) => Number.isFinite(n));
+  return ages.some((age) => !ageMentioned(text, age));
 }
 
 export function localizedPrice(priceStatus, language = 'de') {
@@ -181,6 +247,7 @@ function formatDay(value, locale = 'de-CH') {
 const ASPECT_PATTERNS = {
   Lernform: [WISH_CLAIM_PATTERNS.self_study, WISH_CLAIM_PATTERNS.presence, WISH_CLAIM_PATTERNS.online],
   Niveau: [WISH_CLAIM_PATTERNS.beginner, /fortgeschritten|mittelstufe|\bniveau\b|avancé|intermédiaire|avanzat|intermedi|\blivello\b/i],
+  Zeit: [WISH_CLAIM_PATTERNS.time],
 };
 
 function mentionsAny(text, patterns) {
@@ -249,6 +316,7 @@ export function removeUnbackedAdultClaims(lead, audience) {
 export function wishCheckSentence(check, language = 'de') {
   if (!check || check.status === 'confirmed') return null;
   const m = messagesFor(language);
+  if (check.aspect === 'Zeit') return m.timeUnconfirmed((check.key && m.wishLabels[check.key]) ?? check.wishLabel);
   const field = check.aspect === 'Niveau' ? 'Niveau' : 'Lernform';
   const actual = check.actual ? translateValues(check.actual, m) : null;
   const detail = actual
@@ -291,7 +359,10 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   // bleibt die bisherige belegte Zusammenstellung. Sätze, die einen NICHT
   // bestätigten Wunsch als erfüllt darstellen oder bei Kinderkursen eine
   // unbelegte Eignung für Erwachsene behaupten, werden vorher entfernt.
-  const leadText = removeUnbackedAdultClaims(removeUnbackedWishClaims(lead, wishChecks), audience);
+  // K4: Luna-Text in einer anderen Sprache als die Anfrage wird nicht gezeigt;
+  // an seine Stelle treten die belegten Zitatsätze in der richtigen Sprache.
+  const leadInLanguage = lead && !leadLanguageMismatch(lead, language) ? lead : null;
+  const leadText = removeUnbackedAdultClaims(removeUnbackedWishClaims(leadInLanguage, wishChecks), audience);
   if (leadText) parts.push({ order: 10, priority: 1, text: leadText, lead: true });
   const evidence = leadText ? [] : reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');
   evidence.forEach((reason, index) => {
@@ -309,16 +380,19 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
 
   // Wesentliche Angebotsform (Firmen/Teams, Kindergeburtstag): nennt der Text
   // sie nicht selbst, ergänzt der Server einen nie gekürzten Hinweis.
-  if (offerForm && m.offerForms[offerForm] && !OFFER_FORM_MENTION.test(parts.map((p) => p.text).join(' '))) {
-    add(14, 0, m.offerForm(m.offerForms[offerForm]));
-  }
+  // Mehrere Formen möglich (offerFormsOf); Selbststudium gilt auch als genannt,
+  // wenn ein Lernform-Hinweis zu einem Wunsch es bereits nennt.
+  const forms = (Array.isArray(offerForm) ? offerForm : [offerForm]).filter((form) => form && m.offerForms[form]);
+  const wishTexts = wishChecks.map((check) => wishCheckSentence(check, language)).filter(Boolean).join(' ');
+  forms.forEach((form, index) => {
+    const shown = `${parts.map((p) => p.text).join(' ')} ${wishTexts}`;
+    if (!OFFER_FORM_MENTIONS[form].test(shown)) add(14 + index / 10, 0, m.offerForm(m.offerForms[form]));
+  });
 
-  // Kinder-/Jugendkurs: Zielgruppe muss erkennbar sein. Nennt der Text sie
-  // nicht selbst, ergänzt der Server einen nie gekürzten Hinweis.
-  if (audienceText) {
-    const shown = parts.map((p) => p.text).join(' ');
-    if (!CHILD_MENTION.test(shown)) add(15, 0, m.audience(audienceText));
-  }
+  // Kinder-/Jugendkurs: Zielgruppe mit Altersgrenzen muss erkennbar sein.
+  // Nennt der Text sie (oder eine Altersgrenze) nicht selbst, ergänzt der
+  // Server einen nie gekürzten Hinweis.
+  if (audienceText && audienceMissing(parts.map((p) => p.text).join(' '), audience)) add(15, 0, m.audience(audienceText));
 
   const locationReason = reasons.find((r) => r.kind === 'location');
   const positivePlaces = wishes.filter((w) => w.type === 'location' && !w.negated);
@@ -394,7 +468,7 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   };
   shrink();
   // Ging die Zielgruppen-Nennung beim Kürzen verloren, Hinweis nachträglich sichern.
-  if (audienceText && !CHILD_MENTION.test(kept.map((p) => p.text).join(' '))) {
+  if (audienceText && !kept.some((p) => p.order === 15) && audienceMissing(kept.map((p) => p.text).join(' '), audience)) {
     kept.push({ order: 15, priority: 0, text: m.audience(audienceText), lead: false });
     shrink();
   }

@@ -35,7 +35,26 @@ export const WISH_CLAIM_PATTERNS = Object.freeze({
   presence: /präsenz|vor ort|présentiel|sur place|in presenza/i,
   online: /\bonline\b|virtuell|von zu hause|ortsunabhängig|en ligne|à distance|in linea|a distanza/i,
   beginner: /anfänger|einsteiger|ohne vorkenntnisse|keine vorkenntnisse|débutant|sans connaissances|principiant|senza conoscenze/i,
+  // Zeitwünsche (23.11.2026): „passt, um … nach der Arbeit …“, „passt zeitlich“.
+  time: /abend|nach der arbeit|feierabend|wochenend|samstag|sonntag|zeitlich|soir|week-?end|samedi|dimanche|apr[èe]s le travail|\bsera\b|serale|fine settimana|sabato|domenica|dopo il lavoro/i,
 });
+
+// Belege für Zeitwünsche in Kurstext und Terminbeschreibung (Termine mit
+// verlässlicher Uhrzeit fehlen in den Daten weitgehend; Datumsangaben ohne
+// Uhrzeit stehen als 00:00 UTC). Nur ausdrücklich genannte Zeiten zählen.
+const SATURDAY = /samstag|samedi|sabato|\bsa\b\.?(?=\s*(?:[/,&–-]|\d|und\b|bis\b))/i;
+const SUNDAY = /sonntag|dimanche|domenica|\bso\b\.?(?=\s*(?:[/,&–-]|\d|und\b|bis\b))/i;
+export const TIME_EVIDENCE = Object.freeze({
+  evening: /abend|feierabend|nach der arbeit|\bsoir|\bsera\b|serale|\b(?:1[7-9]|2[0-2])[:.][0-5]\d\b/i,
+  saturday: SATURDAY,
+  sunday: SUNDAY,
+  weekend: new RegExp(`wochenend|week-?end|fine settimana|${SATURDAY.source}|${SUNDAY.source}`, 'i'),
+});
+
+function scheduleText(course) {
+  const events = (Array.isArray(course?.course_events) ? course.course_events : []).filter((e) => !e?.cancelled_at);
+  return [course?.title, course?.description, ...events.map((e) => e?.schedule_description)].filter(Boolean).join(' ');
+}
 
 function deliveryTypes(course) {
   const list = Array.isArray(course?.delivery_types) && course.delivery_types.length > 0
@@ -51,6 +70,7 @@ function labelDelivery(types) {
 /**
  * @param {object} course - Kurs mit delivery_types/delivery_type/level
  * @param {{type: string, value: any, label: string}} wish
+ * Zeitwünsche (type 'time') werden gegen Kurstext und Terminbeschreibung geprüft.
  * @returns {{status: 'confirmed'|'deviating'|'unknown', aspect: string,
  *            wishLabel: string, actual: string|null, claimKey: string}|null}
  *          null, wenn der Wunsch hier nicht geprüft wird (z. B. Ort, Budget).
@@ -82,6 +102,14 @@ export function checkWish(course, wish) {
     // Reines Selbststudium kann online oder gedruckt sein: nicht bestätigt.
     if (types.every((type) => type === 'self_study')) return { ...base, status: 'unknown', actual: labelDelivery(types) };
     return { ...base, status: 'deviating', actual: labelDelivery(types) };
+  }
+  if (wish?.type === 'time' && TIME_EVIDENCE[wish.value]) {
+    // Bestätigt nur, wenn Kurstext oder Terminbeschreibung die Zeit nennen;
+    // sonst „nicht bestätigt“ (eine Abweichung lässt sich nicht sicher belegen).
+    const base = { aspect: 'Zeit', wishLabel: wish.label, claimKey: 'time', key: `time_${wish.value}` };
+    return TIME_EVIDENCE[wish.value].test(scheduleText(course))
+      ? { ...base, status: 'confirmed', actual: null }
+      : { ...base, status: 'unknown', actual: null };
   }
   if (wish?.type === 'level' && wish.value === 'beginner') {
     const level = String(course?.level ?? '').toLowerCase().trim();

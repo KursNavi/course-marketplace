@@ -29,9 +29,9 @@ import { isPubliclySearchable } from './publication.js';
 import { fuseRankedLists } from './retrieval.js';
 import { rankWithPaidPriority, MIN_SCORE, wishAdjustment } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
-import { buildExplanation, localizedPrice, offerFormOf } from './explanation.js';
+import { buildExplanation, localizedPrice, offerFormsOf } from './explanation.js';
 import { checkWishes, deliveryEvidence } from './wishCheck.js';
-import { childAudience, adultsBackedByText } from './audience.js';
+import { childAudience, adultsBackedByText, requestedChildAudience, adultOnlyForChildRequest } from './audience.js';
 import { providerDisplayName } from './providerPublic.js';
 export const CANDIDATE_LIMIT = 100;
 export const RESULT_LIMIT = 10;
@@ -411,7 +411,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     price: localizedPrice(priceStatus, request.language),
     audience,
     language: request.language,
-    offerForm: offerFormOf(course),
+    offerForm: offerFormsOf(course),
   });
 
   // Paketeinfluss bewusst NICHT je Karte (Nachtrag 10: keine Einzelbadges);
@@ -556,13 +556,22 @@ export async function runAiSearch(client, input) {
 
   const scored = [];
   let excludedByMust = 0;
+  let excludedByAudience = 0;
   // K3: Muss-Ergebnis je Kandidat (nur IDs/Codes) für den Prüfbericht.
   const mustLog = new Map();
+  // Kinderanfrage (23.11.2026): ausdrücklich nur an Erwachsene/Jugendliche
+  // gerichtete Kurse sind fachlich ungeeignet und werden nicht bewertet.
+  const childRequest = requestedChildAudience(parsed.normalized);
   for (const course of freshCourses) {
     const mustResult = checkCourseMusts(course, musts, { today: now });
     mustLog.set(String(course.id), { result: mustResult.result, failures: mustResult.failures, unknowns: mustResult.unknowns });
     if (mustResult.result === MUST_RESULT.FAILED) {
       excludedByMust += 1;
+      continue;
+    }
+    if (adultOnlyForChildRequest(course, context.categoriesByCourse.get(String(course.id)), childRequest)) {
+      excludedByAudience += 1;
+      mustLog.set(String(course.id), { result: 'zielgruppe', failures: ['zielgruppe_erwachsene'], unknowns: [] });
       continue;
     }
     const fit = scoreTextFit(course, parsed.terms, context.chunksByCourse, parsed.wishes);
@@ -599,7 +608,7 @@ export async function runAiSearch(client, input) {
     const rankIndex = new Map(candidateIds.map((id, index) => [String(id), index]));
     const ordered = [...scored].sort((a, b) => (rankIndex.get(String(a.course.id)) ?? 1e9) - (rankIndex.get(String(b.course.id)) ?? 1e9));
     const evidenceCandidates = ordered.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
-    const { accepted, sentIds, rejected = [] } = await timed('lunaScore', () => models.gateway.scoreCandidates(parsed.normalized, evidenceCandidates));
+    const { accepted, sentIds, rejected = [] } = await timed('lunaScore', () => models.gateway.scoreCandidates(parsed.topic, evidenceCandidates, { optionalWishes: parsed.optionalWishes }));
     lunaSent = Array.isArray(sentIds) ? sentIds.length : evidenceCandidates.length;
     lunaSentIds = Array.isArray(sentIds) ? sentIds.map(String) : evidenceCandidates.map((c) => String(c.courseId));
     lunaDiscarded = rejected.filter((r) => /Kurs-ID|doppelt|Score/.test(r.reason)).length;
@@ -617,7 +626,7 @@ export async function runAiSearch(client, input) {
     const rankIndex = new Map(candidateIds.map((id, index) => [String(id), index]));
     const ordered = [...scored].sort((a, b) => (rankIndex.get(String(a.course.id)) ?? 1e9) - (rankIndex.get(String(b.course.id)) ?? 1e9));
     const evidenceCandidates = ordered.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
-    const { accepted, sentIds, rejected = [] } = await timed('luna', () => models.gateway.rerank(parsed.normalized, evidenceCandidates, { language: parsed.language }));
+    const { accepted, sentIds, rejected = [] } = await timed('luna', () => models.gateway.rerank(parsed.topic, evidenceCandidates, { language: parsed.language, optionalWishes: parsed.optionalWishes }));
     lunaSent = Array.isArray(sentIds) ? sentIds.length : evidenceCandidates.length;
     lunaSentIds = Array.isArray(sentIds) ? sentIds.map(String) : evidenceCandidates.map((c) => String(c.courseId));
     lunaDiscarded = rejected.filter((r) => /Kurs-ID|doppelt|Score/.test(r.reason)).length;
@@ -654,7 +663,7 @@ export async function runAiSearch(client, input) {
     const finalEntries = [...selectedConfirmed, ...selectedIncomplete].map((r) => entryById.get(String(r.courseId))).filter(Boolean);
     explanationsRequested = finalEntries.length;
     const explainInput = finalEntries.map((s) => ({ courseId: s.course.id, evidence: buildEvidence(s.course, context) }));
-    const { accepted = [], rejected = [] } = await timed('lunaExplain', () => models.gateway.explainCandidates(parsed.normalized, explainInput, { language: parsed.language }));
+    const { accepted = [], rejected = [] } = await timed('lunaExplain', () => models.gateway.explainCandidates(parsed.topic, explainInput, { language: parsed.language, optionalWishes: parsed.optionalWishes }));
     explanationsRejected = rejected.filter((r) => /Begründungstext/.test(r.reason)).length;
     const explainedById = new Map(accepted.map((a) => [String(a.courseId), a]));
     for (const ranked of [...selectedConfirmed, ...selectedIncomplete]) {
@@ -711,6 +720,8 @@ export async function runAiSearch(client, input) {
     stats: {
       candidates: candidateIds.length,
       excludedByMust,
+      // Kinderanfrage: ausdrücklich nur an Erwachsene/Jugendliche gerichtete Kurse.
+      excludedByAudience,
       // Bewertet = von Luna (bzw. ohne Luna: von der Textpassung) beurteilt.
       rated: rated.length,
       belowThreshold,

@@ -123,6 +123,95 @@ function escapeRegExp(text) {
 }
 
 /**
+ * Zeitwünsche (23.11.2026, Produktregel: Wünsche zu Ort, Zeit oder Lernform
+ * beeinflussen nur die Reihenfolge; Abweichungen bleiben sichtbar). Erkannt
+ * werden nur eindeutige Angaben; geprüft werden sie in wishCheck.js.
+ */
+export const TIME_WISHES = Object.freeze([
+  { value: 'evening', label: 'abends', pattern: /\babends\b|\bam abend\b|\bnach der arbeit\b|\bnach feierabend\b|\ble soir\b|\ben soir[ée]e\b|\bapr[èe]s le travail\b|\bla sera\b|\bdi sera\b|\bdopo il lavoro\b/u },
+  { value: 'weekend', label: 'am Wochenende', pattern: /\b(?:am |übers |an )?wochenenden?\b|\b(?:le |du )?week-?end\b|\b(?:il |nel |nei )?fine settimana\b/u },
+  { value: 'saturday', label: 'samstags', pattern: /\bsamstags?\b|\bam samstag\b|\b(?:le )?samedis?\b|\b(?:il )?sabato\b/u },
+  { value: 'sunday', label: 'sonntags', pattern: /\bsonntags?\b|\bam sonntag\b|\b(?:le )?dimanches?\b|\b(?:la )?domenica\b/u },
+]);
+
+// Zeitraum-Angaben („im März“, „diesen Winter“, „Sommer 2027“): optionale
+// Zeitwünsche; sie werden nur aus dem fachlichen Anliegen herausgelöst
+// (keine eigene Prüfung, die Terminangaben reichen dafür nicht aus).
+const MONTHS = 'januar|februar|märz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember|janvier|février|mars|avril|juin|juillet|août|septembre|octobre|novembre|décembre|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|dicembre';
+const SEASONS = 'frühling|fruehling|sommer|herbst|winter|printemps|été|automne|hiver|primavera|estate|autunno|inverno';
+// Nicht nach Apostroph („vacances d'automne“ bleibt Teil des Anliegens).
+const PERIOD_PATTERN = new RegExp(`(?<![\\p{L}'’])(?:(?:start|beginn|ab|im|in|diesen|nächsten|naechsten|kommenden|en|au|cet|cette|ce|dès|début|debut|inizio|dal|da|questo|quest|prossimo|prossima)\\s+)*(?:${MONTHS}|${SEASONS})(?:\\s+\\d{4})?(?![\\p{L}])`, 'gu');
+
+// Wörter, die zu einer Orts-, Zeit- oder Lernform-Angabe gehören und mit ihr
+// aus dem fachlichen Anliegen gelöst werden („am liebsten in Bern“,
+// „aber nicht online“, „anche online“, „de préférence le week-end“).
+const WISH_LEAD_WORDS = new Set(['in', 'im', 'bei', 'nahe', 'nähe', 'naehe', 'von', 'der', 'stadt', 'raum', 'region', 'kanton',
+  'um', 'rund', 'am', 'liebsten', 'lieber', 'vorzugsweise', 'idealerweise', 'möglichst', 'gerne', 'gern', 'auch', 'nur',
+  'nicht', 'aber', 'à', 'au', 'en', 'a', 'nel', 'nella', 'près', 'de', 'préférence', 'plutôt', 'idéalement', 'pas',
+  'non', 'anche', 'preferibilmente', 'possibilmente', 'solo', 'uniquement', 'seulement']);
+
+function extendLeft(text, start) {
+  let from = start;
+  for (;;) {
+    const before = text.slice(0, from);
+    const match = /([\p{L}]+)\s+$/u.exec(before);
+    if (!match || !WISH_LEAD_WORDS.has(match[1].toLowerCase())) return from;
+    from = match.index;
+  }
+}
+
+/**
+ * Fachliches Anliegen ohne optionale Wünsche zu Ort, Zeit und Lernform
+ * (Produktregel 23.11.2026): Luna bewertet die fachliche Eignung nur daran;
+ * die herausgelösten Angaben gehen getrennt als optionale Wünsche mit und
+ * zählen nur für die Reihenfolge. Zwingende Vorgaben kommen aus dem Formular
+ * und werden serverseitig geprüft. Der Textabruf bleibt unverändert.
+ *
+ * @returns {{topic: string, optionalWishes: string[]}}
+ */
+export function splitOptionalWishes(normalized) {
+  const text = String(normalized ?? '');
+  const lower = text.toLowerCase();
+  const spans = [];
+  const addSpan = (start, end) => { if (end > start) spans.push([extendLeft(lower, start), end]); };
+  for (const place of detectPlaces(lower)) {
+    const name = place.name.toLowerCase();
+    const raw = lower.slice(place.index);
+    const length = raw.startsWith(name) ? name.length : (/^[\p{L}.\- ]+?(?=[^\p{L}]|$)/u.exec(raw)?.[0].length ?? name.length);
+    addSpan(place.index, place.index + length);
+  }
+  for (const regex of [new RegExp(ONLINE_PATTERN.source, 'gu'), /\bvor ort\b|\bpräsenz(?:unterricht)?\b|\bselbststudium\b|\bselbstlern\p{L}*\b|\bim eigenen tempo\b|\be-learning\b|\bon.?demand\b/gu, PERIOD_PATTERN]) {
+    for (const match of lower.matchAll(regex)) addSpan(match.index, match.index + match[0].length);
+  }
+  for (const wish of TIME_WISHES) {
+    for (const match of lower.matchAll(new RegExp(wish.pattern.source, 'gu'))) addSpan(match.index, match.index + match[0].length);
+  }
+  if (spans.length === 0) return { topic: text, optionalWishes: [] };
+  spans.sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  for (const span of spans) {
+    const last = merged[merged.length - 1];
+    if (last && span[0] <= last[1]) last[1] = Math.max(last[1], span[1]);
+    else merged.push([...span]);
+  }
+  const optionalWishes = merged.map(([s, e]) => text.slice(s, e).trim()).filter(Boolean);
+  let topic = '';
+  let cursor = 0;
+  for (const [s, e] of merged) { topic += `${text.slice(cursor, s)} `; cursor = e; }
+  topic += text.slice(cursor);
+  topic = topic
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .replace(/(?:^|[,;]\s*)(?:und|oder|aber|et|ou|mais|e|o|ma)(?=\s*(?:[,;.]|$))/giu, '')
+    .replace(/([,;])\s*(?=[,;.]|$)/g, '')
+    .replace(/^[\s,;]+|[\s,;]+$/g, '')
+    .replace(/\s+(?:und|oder|aber|et|ou|mais|e|o|ma)$/iu, '')
+    .trim();
+  if (topic.length < QUERY_MIN_LENGTH) return { topic: text, optionalWishes: [] };
+  return { topic, optionalWishes };
+}
+
+/**
  * @param {string} query
  * @returns {{normalized: string, terms: string[], wishes: Array<{type: string,
  *   label: string, value: any}>, tsQuery: string}}
@@ -166,6 +255,12 @@ export function parseQuery(query) {
     wishes.push({ type: 'format', label: 'vor Ort', value: 'presence' });
   }
 
+  // Zeitwünsche (nur nicht verneinte, je Art höchstens einmal).
+  for (const wish of TIME_WISHES) {
+    const match = wish.pattern.exec(lower);
+    if (match && !isNegatedAt(lower, match.index)) wishes.push({ type: 'time', label: wish.label, value: wish.value });
+  }
+
   // „nicht bloss Einführung“ ist kein Einsteigerwunsch.
   const beginnerIndex = BEGINNER_WORDS.map((word) => lower.indexOf(word)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
   if (beginnerIndex !== undefined && !isNegatedAt(lower, beginnerIndex)) {
@@ -187,7 +282,8 @@ export function parseQuery(query) {
   // bestehen nur aus Buchstaben/Ziffern (keine Operatoren aus Nutzertext).
   const tsQuery = terms.slice(0, 12).join(' or ');
 
-  return { normalized, terms: terms.slice(0, 12), wishes, tsQuery, language: detectQueryLanguage(normalized) };
+  const { topic, optionalWishes } = splitOptionalWishes(normalized);
+  return { normalized, terms: terms.slice(0, 12), wishes, tsQuery, language: detectQueryLanguage(normalized), topic, optionalWishes };
 }
 
 /**

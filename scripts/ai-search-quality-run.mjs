@@ -192,6 +192,7 @@ export function analyzeSoll(soll, cards, diagnostics) {
     const c = byId.get(id);
     if (!c) return { courseId: id, stage: 'nicht_unter_kandidaten' };
     if (c.must === 'failed') return { courseId: id, stage: 'muss_verstoss', detail: c.mustFailures, fusedRank: c.fusedRank };
+    if (c.must === 'zielgruppe') return { courseId: id, stage: 'zielgruppe_ausgeschlossen', detail: c.mustFailures, fusedRank: c.fusedRank };
     if (c.sentToLuna === false) return { courseId: id, stage: 'nicht_an_luna', fusedRank: c.fusedRank, lexicalChunkRank: c.lexicalChunkRank, lexicalDocumentRank: c.lexicalDocumentRank, semanticRank: c.semanticRank };
     if (c.rated && c.score !== null && c.score < (diagnostics.minScore ?? 70)) return { courseId: id, stage: 'score_unter_mindestpassung', score: c.score, fusedRank: c.fusedRank };
     if (!c.rated) return { courseId: id, stage: 'nicht_bewertet', fusedRank: c.fusedRank };

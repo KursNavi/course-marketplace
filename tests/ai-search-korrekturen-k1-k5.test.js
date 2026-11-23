@@ -195,7 +195,7 @@ describe('K4: Begründung in der Sprache der Anfrage', () => {
     const { client } = createFakeSupabase((call) => (call.table === 'ai_search_config' ? { data: { active_model_version: null }, error: null } : inner(call)));
     const gateway = { usage: {}, embed: vi.fn(), rerank: vi.fn(async (q, cands) => ({ accepted: cands.map((c) => ({ courseId: String(c.courseId), score: 85, explanation: 'Tu apprends les bases de la photographie.', reasons: [{ field: 'description', quote: 'Fotografie Grundlagen' }] })), rejected: [] })) };
     const result = await runAiSearch(client, { query: 'Cours de photographie pour débutants', now: NOW, models: { gateway, embeddingVersion: 'v1' } });
-    expect(gateway.rerank.mock.calls[0][2]).toEqual({ language: 'fr' });
+    expect(gateway.rerank.mock.calls[0][2]).toEqual({ language: 'fr', optionalWishes: [] });
     expect(result.criteria.language).toBe('fr');
     expect(result.results[0].explanation).toMatch(/Tu apprends/);
   });
