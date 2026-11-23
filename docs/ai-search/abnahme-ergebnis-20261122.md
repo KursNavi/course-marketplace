@@ -302,7 +302,7 @@ Ergebnis:
 | Lauf | 36 von 36, 0 Fehler, keine Wiederholung |
 | Ergebnisse | privater Bucket, Ordner `abnahme-katalog/s9-qualitaet/2026-11-22T21-59-16-424Z` |
 
-### 9.1 Ergebnis: **nicht bestanden**. Nur die Abdeckung ist verfehlt.
+### 9.1 Ergebnis: **nicht bestanden**. ~~Nur die Abdeckung ist verfehlt.~~ **Korrigiert 23.11.2026:** Bei gleicher Bewertungsstrenge wie in Abnahme 1 sind Abdeckung **und** leichte Belegfehler verfehlt (siehe 9.5).
 
 Zählung: 50 Karten. Je Karte gilt die strengere von Erst- und Zweitbewertung.
 
@@ -310,7 +310,7 @@ Zählung: 50 Karten. Je Karte gilt die strengere von Erst- und Zweitbewertung.
 |---|---|---|---|
 | Verstösse gegen zwingende Vorgaben | 0 | **0** (Treffer 0, unvollständig 0) | erfüllt |
 | Schwere unbelegte Aussagen | 0 | **0** | erfüllt |
-| Leichte unbelegte Aussagen | ≤ 5 % | 2 von 50 = **4 %** (20194: Kurs nur für Ärztinnen und Ärzte, nicht erwähnt; 20224: Firmenformat nicht erwähnt) | erfüllt |
+| Leichte unbelegte Aussagen | ≤ 5 % | ~~2 von 50 = 4 % – erfüllt~~ **5 von 50 = 10 %** bei gleicher Strenge wie Abnahme 1 (20194, 20224, dazu 20099 zweimal und 20094: „Einsteiger“ nur aus dem Feld, Text beschreibt eine Masterclass zum Verfeinern) | **verfehlt** |
 | Mittlere Relevanz Top 5 | ≥ 1,5 | **1,70** | erfüllt |
 | Abdeckung der Soll-Kurse je Fall | ≥ 80 % je Fall | **12 von 18 Fällen** (Mittel 80,0 %) | **verfehlt** |
 | Zielgruppenkennzeichnung Kinderkurse | 100 % | **100 %** | erfüllt |
@@ -373,3 +373,47 @@ Das ist eine Änderung der Bewertungsanweisung, also einer Produktregel, und bra
 Die Schätzung der Suchen ist konservativ: mindestens 0.003 je Suche, auch bei Fällen ohne Luna-Aufruf. Massgeblich ist die Abrechnung von OpenAI; das Projektlimit von USD 10 ist unverändert.
 
 **Gesamt heute (beide Abnahmen):** ≈ USD 0.23 geschätzt.
+
+### 9.5 Klärung 4 % gegenüber 10 % (23.11.2026)
+
+**Ursache der Abweichung:**
+- In Abnahme 1 hat die Zweitbewertung eine Aussage wie „passt zu Anfängern“ als **leicht**
+  gewertet, wenn sie sich nur auf `level = beginner` stützt, der Kurstext aber eine Masterclass
+  zum Verfeinern beschreibt (Karte 20094).
+- In Abnahme 2 hat die Zweitbewertung solche Aussagen nach dem Wortlaut „aus Kurstext oder
+  Kursfeldern“ als **belegt** gewertet. Ich bin dem gefolgt und kam so auf 4 %.
+
+**Bei derselben Strenge wie in Abnahme 1** zählen in Abnahme 2 zusätzlich 20099 (zweimal) und
+20094. Das ergibt 5 von 50 = **10 %**, die Schwelle ist verfehlt.
+
+Die Auslegung ist jetzt schriftlich festgehalten
+([abnahme-auslegung.md](abnahme-auslegung.md)) und gilt für alle weiteren Bewertungen.
+Fehlerhafte Soll-Einträge sind gesondert dokumentiert:
+[abnahme-soll-listen-befunde.md](abnahme-soll-listen-befunde.md).
+
+### 9.6 Die zwei Soll-Kurse, die Luna nicht erreichten (belegt)
+
+20588 „Bildgestaltung und Bildkomposition“ (Fusionsrang 46 bzw. 41) und 20869
+„Strassenfotografie“ (Fusionsrang 34):
+
+1. **Kein bzw. zu schwacher lexikalischer Treffer:**
+   - 20588 enthält keinen der Suchbegriffe.
+   - 20869 trifft zwar „fotografieren“, liegt im Abschnitts-Kanal (ts_rank, Grenze 100) aber
+     hinter vielen „Arbeit“-Treffern.
+   - Im Titel-Kanal zählt das zusammengesetzte Wort „Strassenfotografie“ nicht als
+     Titeltreffer.
+   - Beide kommen deshalb nur über die Bedeutungssuche (Rang 11 bzw. 21).
+2. **Füllwörter als Suchbegriffe:** Die Anfrageanalyse macht aus „nach der Arbeit … am
+   liebsten“ die Begriffe `arbeit`, `liebsten`, aus der französischen Anfrage `cours`, `pour`,
+   `week`, `end`.
+   - Diese treffen viele fremde Kurse lexikalisch, zum Beispiel „E-Gitarre“ (arbeit/liebsten),
+     „Chakra-Arbeit“, „Visual Communication mit Flipcharts“ (end).
+   - Belegt in den Auswahlstufen: 27 von 30 gesendeten Kandidaten bei de-privat-002 haben
+     Text- und Bedeutungsrang, nur einer kommt allein über die Bedeutungssuche.
+3. **Gleich gewichtete Fusion (RRF) und Begrenzung auf 30 an Luna:** Ein Kurs mit
+   Bedeutungs- **und** Füllwort-Treffer liegt vor einem Kurs, der nur über die
+   Bedeutungssuche kommt.
+
+Die Score-Korrektur ändert daran nichts. Eine Behebung wäre eine Änderung am Abruf
+(Füllwörter oder Gewichtung der Kanäle). Sie ist nicht freigegeben und wurde deshalb nicht
+umgesetzt.

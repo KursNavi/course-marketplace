@@ -27,9 +27,9 @@ import { checkCourseMusts, MUST_RESULT, zurichDayString } from './mussCheck.js';
 import { derivePriceStatus, PRICE_STATUS } from './priceStatus.js';
 import { isPubliclySearchable } from './publication.js';
 import { fuseRankedLists } from './retrieval.js';
-import { rankWithPaidPriority, MIN_SCORE } from './paidRanking.js';
+import { rankWithPaidPriority, MIN_SCORE, wishAdjustment } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
-import { buildExplanation, localizedPrice } from './explanation.js';
+import { buildExplanation, localizedPrice, offerFormOf } from './explanation.js';
 import { checkWishes, deliveryEvidence } from './wishCheck.js';
 import { childAudience, adultsBackedByText } from './audience.js';
 import { providerDisplayName } from './providerPublic.js';
@@ -143,9 +143,14 @@ export function scoreTextFit(course, terms, chunksByCourse, wishes) {
   }
 
   const coverage = terms.length > 0 ? matched / terms.length : (wishBonus > 0 ? 1 : 0);
+  // Produktregel (23.11.2026): Bei Suchbegriffen ist der Score die fachliche
+  // Passung; ein Ortswunsch wirkt nur auf die Reihenfolge (wishAdjust ±2).
+  // Reine Ortsanfrage ohne Suchbegriff: der Ort ist dann das einzige Kriterium.
   const base = terms.length > 0 ? 55 + 45 * coverage : (wishBonus > 0 ? 70 : 0);
-  const score = Math.min(100, Math.round(base + (titleHit ? 5 : 0) + wishBonus));
-  return { score, coverage, matchedTerms: matched, reasons };
+  const score = Math.min(100, Math.round(base + (titleHit ? 5 : 0) + (terms.length > 0 ? 0 : wishBonus)));
+  const positiveLocationWish = wishes.some((w) => w.type === 'location' && !w.negated);
+  const wishAdjust = terms.length > 0 && positiveLocationWish ? (wishBonus > 0 ? 2 : -2) : 0;
+  return { score, coverage, matchedTerms: matched, reasons, wishAdjust };
 }
 
 async function lexicalChunkChannel(client, tsQuery) {
@@ -406,6 +411,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     price: localizedPrice(priceStatus, request.language),
     audience,
     language: request.language,
+    offerForm: offerFormOf(course),
   });
 
   // Paketeinfluss bewusst NICHT je Karte (Nachtrag 10: keine Einzelbadges);
@@ -568,6 +574,7 @@ export async function runAiSearch(client, input) {
       candidate: {
         courseId: course.id,
         score: fit.score,
+        wishAdjust: fit.wishAdjust,
         reasons: fit.reasons,
         tier,
         // Prio nur bei aktivem Bezahlpaket (Paketstatus serverseitig geprüft).
@@ -623,6 +630,8 @@ export async function runAiSearch(client, input) {
       // damit Abweichungen vom Ortswunsch korrekt benannt werden.
       const locationReasons = entry.candidate.reasons.filter((r) => r.kind === 'location');
       entry.candidate.score = judged ? judged.score : 0;
+      // Optionale Wünsche nur für die Reihenfolge (nie für die Mindestpassung).
+      entry.candidate.wishAdjust = judged ? wishAdjustment(judged.wishScore) : 0;
       entry.candidate.lunaExplanation = judged?.explanation ?? null;
       entry.candidate.reasons = judged
         ? [...judged.reasons.slice(0, 3).map((r) => ({ kind: 'luna', section: r.field, sectionLabel: EVIDENCE_LABELS[r.field] ?? r.field, quote: r.quote })), ...locationReasons]

@@ -101,10 +101,11 @@ const RERANK_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['courseId', 'score', 'explanation', 'reasons'],
+        required: ['courseId', 'score', 'wishScore', 'explanation', 'reasons'],
         properties: {
           courseId: { type: 'string' },
           score: { type: 'number' },
+          wishScore: { type: 'number' },
           explanation: { type: 'string' },
           reasons: {
             type: 'array',
@@ -127,7 +128,10 @@ const SYSTEM_INSTRUCTIONS = [
   'Verwende ausschliesslich die gelieferten Evidenzfelder. Jedes quote muss ein wörtlicher Ausschnitt aus genau diesem Feld sein.',
   'Erfinde keine Angaben zu Preis, Ort, Termin, Zertifikat oder Qualifikation.',
   'Gib für JEDEN gelieferten Kandidaten genau einen Eintrag zurück (auch bei niedrigem Score), nur mit gelieferten courseId-Werten.',
-  'Score ab 70 nur, wenn der Kurs inhaltlich und von der Zielgruppe her zum Wunsch passt (z. B. Kinderkurs bei erwachsener Person: niedriger).',
+  'score bewertet ausschliesslich die fachliche Eignung: Inhalt bzw. Thema, Niveau und Zielgruppe (Alter, Berufsgruppe, Teilnahmevoraussetzungen). Optionale Wünsche zu Ort, Zeit bzw. Wochentag und Lernform (online, vor Ort, Selbststudium) fliessen NICHT in score ein.',
+  'wishScore (0-100) bewertet nur diese optionalen Wünsche zu Ort, Zeit und Lernform: 100 = belegt erfüllt, 0 = belegt nicht erfüllt, 50 = keine solchen Wünsche oder nicht beurteilbar.',
+  'Score ab 70 nur, wenn der Kurs inhaltlich und von der Zielgruppe her zum Wunsch passt (z. B. Kinderkurs bei erwachsener Person: niedriger; Kurs nur für eine bestimmte Berufsgruppe oder nur für Firmen bei einer allgemeinen Person: niedriger).',
+  'Nennt der Kurstext eine wesentliche Teilnahmebeschränkung (z. B. nur für Ärztinnen und Ärzte oder eine andere Berufsgruppe) oder eine besondere Angebotsform (z. B. Angebot für Firmen oder Teams, Kindergeburtstag, Party), nenne sie in explanation ausdrücklich und behaupte keine Eignung für allgemein Suchende.',
   'Für Kurse mit Score ab 70: explanation mit 20 bis 35 Wörtern in zwei kurzen Sätzen, Du-Form, Schweizer Rechtschreibung (immer ss, nie Eszett).',
   'Satz 1: was man konkret lernt. Satz 2: warum das zum Wunsch passt (Niveau, Format, Zielgruppe).',
   'Wiederhole den Suchwunsch nicht, keine Einleitung, keine Füllwörter.',
@@ -184,6 +188,7 @@ const BASE_RULES = [
 const SCORE_INSTRUCTIONS = [
   'Du bewertest, wie gut Kurse zu einem Suchwunsch passen (Score 0-100). Keine Begründung.',
   ...BASE_RULES,
+  'score bewertet ausschliesslich die fachliche Eignung (Inhalt, Niveau, Zielgruppe); optionale Wünsche zu Ort, Zeit und Lernform fliessen nicht ein.',
   'Score ab 70 nur, wenn der Kurs inhaltlich und von der Zielgruppe her zum Wunsch passt (z. B. Kinderkurs bei erwachsener Person: niedriger).',
 ].join(' ');
 const EXPLAIN_INSTRUCTIONS = [
@@ -194,6 +199,7 @@ const EXPLAIN_INSTRUCTIONS = [
   'Wiederhole den Suchwunsch nicht, keine Einleitung, keine Füllwörter.',
   'Nennt das Feld target_group eine Kinder- oder Jugendzielgruppe, mache genau diese Zielgruppe mit genau dieser Altersangabe erkennbar und weite sie nicht aus (z. B. nicht „Kinder und Jugendliche“, wenn nur Kinder genannt sind); behaupte nie eine Eignung für Erwachsene, wenn der Kurstext sie nicht ausdrücklich belegt.',
   'Wünsche zu Lernform (z. B. Selbststudium, online, vor Ort), Niveau oder Zeit gelten nur als erfüllt, wenn die Felder delivery_types bzw. level oder ein wörtliches Zitat sie ausdrücklich belegen; thematische Passung belegt keine Lernform. Ist ein solcher Wunsch nicht belegt, erwähne ihn im Text gar nicht (weder als passend noch als ausgeschlossen): Das System ergänzt dazu selbst einen Hinweis. Schliesse aus einer genannten Lernform nicht auf den Ausschluss einer anderen.',
+  'Nennt der Kurstext eine wesentliche Teilnahmebeschränkung (z. B. nur für Ärztinnen und Ärzte) oder eine besondere Angebotsform (z. B. für Firmen oder Teams, Kindergeburtstag), nenne sie ausdrücklich und behaupte keine Eignung für allgemein Suchende.',
   'Belege den Text mit ein bis zwei kurzen wörtlichen Zitaten (höchstens 10 Wörter) in reasons; jedes quote ist ein wörtlicher Ausschnitt aus genau diesem Feld.',
   'Nenne im Text keine Preise, Daten, Zahlen, Orte, Abschlüsse, Zertifikate, Pakete oder Garantien.',
 ].join(' ');

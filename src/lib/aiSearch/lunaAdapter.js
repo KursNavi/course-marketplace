@@ -120,6 +120,9 @@ export function validateRerankResponse(response, allowedCourseIds) {
     accepted.push({
       courseId,
       score: Math.max(0, Math.min(100, score)),
+      // Erfüllung optionaler Wünsche (Ort, Zeit, Lernform), getrennt von der
+      // fachlichen Passung (Produktregel 23.11.2026). Fehlt der Wert: neutral.
+      wishScore: Number.isFinite(Number(entry.wishScore)) ? Math.max(0, Math.min(100, Number(entry.wishScore))) : 50,
       reasons,
       // Roh; die inhaltliche Prüfung erfolgt in openaiGateway.validateExplanation.
       explanation: typeof entry.explanation === 'string' ? entry.explanation : null,

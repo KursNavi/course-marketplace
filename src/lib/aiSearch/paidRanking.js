@@ -59,6 +59,22 @@ export function paidBonus(tier, prioEligible) {
 }
 
 /**
+ * Optionale Wünsche (Ort, Zeit, Lernform) beeinflussen die Reihenfolge,
+ * schliessen aber keinen fachlich ausreichend passenden Kurs aus
+ * (Produktregel, bestätigt 23.11.2026). Der Einfluss ist begrenzt auf
+ * ±WISH_ADJUST_MAX Punkte und wirkt – wie der Paketbonus – nur innerhalb des
+ * fachlichen Bands; Mindestpassung und Bänder hängen allein am fachlichen Score.
+ */
+export const WISH_ADJUST_MAX = 2;
+
+/** wishScore 0–100 (50 = neutral) → Ordnungsbeitrag −2 … +2. */
+export function wishAdjustment(wishScore) {
+  const value = Number(wishScore);
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(-WISH_ADJUST_MAX, Math.min(WISH_ADJUST_MAX, Math.round((value - 50) / 25)));
+}
+
+/**
  * Sortiert fachlich bewertete, Muss-bestätigte Kandidaten mit begrenztem
  * Paid-Einfluss. Kandidaten unter der Mindestpassung werden entfernt —
  * unabhängig vom Paket.
@@ -77,11 +93,13 @@ export function rankWithPaidPriority(candidates) {
     .filter((c) => Number.isFinite(c?.score) && c.score >= MIN_SCORE)
     .map((c) => {
       const bonus = paidBonus(c.tier ?? 'basic', c.prioEligible === true);
+      const wish = Number.isFinite(c.wishAdjust) ? Math.max(-WISH_ADJUST_MAX, Math.min(WISH_ADJUST_MAX, c.wishAdjust)) : 0;
       return {
         ...c,
         band: bandOf(c.score),
         bonus,
         visibility: c.score + bonus,
+        wishAdjust: wish,
         paidInfluence: bonus > 0,
       };
     });
@@ -90,6 +108,11 @@ export function rankWithPaidPriority(candidates) {
     // Höheres Band zuerst; Bonus kann die Bandgrenze nie überschreiten,
     // weil die Bänder direkt aus dem fachlichen Score bestimmt werden.
     if (a.band !== b.band) return a.band - b.band;
+    // Innerhalb des Bands: fachlicher Score + Paketbonus (unverändert) +
+    // begrenzter Wunschbeitrag. Der Paketbonus erhält dadurch kein Gewicht dazu.
+    const orderA = a.visibility + a.wishAdjust;
+    const orderB = b.visibility + b.wishAdjust;
+    if (orderA !== orderB) return orderB - orderA;
     if (a.visibility !== b.visibility) return b.visibility - a.visibility;
     // Gleichstand: fachlicher Score, dann stabile Kurs-ID.
     if (a.score !== b.score) return b.score - a.score;

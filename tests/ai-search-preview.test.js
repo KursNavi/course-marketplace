@@ -703,7 +703,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ output_text: JSON.stringify(answer) }) }));
     const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
     const result = await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga', description: 'Sanftes Yoga am Abend.', contact_email: 'x@y' } }]);
-    expect(result.accepted).toEqual([{ courseId: '1', score: 91, explanation: null, reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }]);
+    expect(result.accepted).toEqual([{ courseId: '1', score: 91, wishScore: 50, explanation: null, reasons: [{ field: 'description', quote: 'Sanftes Yoga' }] }]);
     expect(result.rejected.some((r) => r.courseId === '999')).toBe(true);
     const sent = JSON.parse(fetchImpl.mock.calls[0][1].body);
     expect(sent.model).toBe('gpt-6-luna');

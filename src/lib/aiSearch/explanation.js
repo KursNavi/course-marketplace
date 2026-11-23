@@ -43,6 +43,8 @@ const MESSAGES = {
     language: 'Nicht bestätigt: Kurssprache.',
     priceLine: (price) => `Preis laut Angaben: ${price}.`,
     nextDate: (day) => `Nächster Termin: ${day}.`,
+    offerForm: (x) => `Angebotsform laut Kursangaben: ${x}.`,
+    offerForms: { birthday: 'Kindergeburtstag', company: 'Angebot für Firmen und Teams' },
     locale: 'de-CH',
     prices: { unknown: 'Preis auf Anfrage', free: 'Kostenlos', from: (a) => `ab CHF ${a}`, perUnit: (a) => `CHF ${a} pro Einheit` },
     wishLabels: { online: 'Online', not_online: 'nicht online', self_study: 'Selbststudium', presence: 'vor Ort', beginner: 'Für Einsteiger' },
@@ -68,6 +70,8 @@ const MESSAGES = {
     language: 'Non confirmé : langue du cours.',
     priceLine: (price) => `Prix selon les indications : ${price}.`,
     nextDate: (day) => `Prochaine date : ${day}.`,
+    offerForm: (x) => `Forme de l’offre selon les indications du cours : ${x}.`,
+    offerForms: { birthday: 'anniversaire d’enfant', company: 'offre pour entreprises et équipes' },
     locale: 'fr-CH',
     prices: { unknown: 'prix sur demande', free: 'gratuit', from: (a) => `dès CHF ${a}`, perUnit: (a) => `CHF ${a} par unité` },
     wishLabels: { online: 'en ligne', not_online: 'pas en ligne', self_study: 'autoformation', presence: 'sur place', beginner: 'pour débutants' },
@@ -93,6 +97,8 @@ const MESSAGES = {
     language: 'Non confermato: lingua del corso.',
     priceLine: (price) => `Prezzo secondo le indicazioni: ${price}.`,
     nextDate: (day) => `Prossima data: ${day}.`,
+    offerForm: (x) => `Forma dell’offerta secondo le indicazioni del corso: ${x}.`,
+    offerForms: { birthday: 'festa di compleanno per bambini', company: 'offerta per aziende e team' },
     locale: 'it-CH',
     prices: { unknown: 'prezzo su richiesta', free: 'gratuito', from: (a) => `da CHF ${a}`, perUnit: (a) => `CHF ${a} per unità` },
     wishLabels: { online: 'online', not_online: 'non online', self_study: 'autoapprendimento', presence: 'in presenza', beginner: 'per principianti' },
@@ -109,6 +115,21 @@ function translateValues(text, m) {
 }
 
 /** Preisangabe für den Hinweistext in der Sprache der Begründung. */
+// Wesentliche Angebotsform (Punkt 4, 23.11.2026): feste Absicherung zusätzlich
+// zur Luna-Anweisung für eindeutig erkennbare Formen.
+// Titel: Firmen/Unternehmen als eigenes Wort; Beschreibung nur eindeutige Begriffe
+// (ein allgemeines Angebot "auch für Firmen buchbar" ist kein Firmenangebot).
+const COMPANY_TITLE = /\b(firmen|unternehmen|teamevents?|team-events?|teambuilding|teamanl[aä]ss|inhouse)\b/i;
+const COMPANY_TEXT = /\b(firmenkurs|firmenanl[aä]ss|firmen-?events?|teamevents?|team-events?|teambuilding|teamanl[aä]ss|inhouse-?(kurs|schulung|training))\b/i;
+const OFFER_FORM_MENTION = /firm|team|unternehm|geburtstag|party|entreprise|équipe|anniversaire|aziend|squadra|compleanno|festa/i;
+
+/** 'birthday' | 'company' | null aus Kursart, Titel und Beschreibung. */
+export function offerFormOf(course) {
+  if (String(course?.kinder_kursart ?? '').toLowerCase() === 'kindergeburtstag') return 'birthday';
+  if (COMPANY_TITLE.test(String(course?.title ?? '')) || COMPANY_TEXT.test(String(course?.description ?? ''))) return 'company';
+  return null;
+}
+
 export function localizedPrice(priceStatus, language = 'de') {
   const m = messagesFor(language);
   switch (priceStatus?.status) {
@@ -257,7 +278,7 @@ function capitalize(text) {
  * @param {string} [input.language]  'de' | 'fr' | 'it' (Sprache der Anfrage, K4)
  * @returns {string}
  */
-export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], event = null, price = '', audience = null, language = 'de' }) {
+export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], event = null, price = '', audience = null, language = 'de', offerForm = null }) {
   const m = messagesFor(language);
   // Strukturierte Zielgruppe (childAudience) in der Sprache der Begründung;
   // ältere Aufrufer mit nur einem Label behalten dieses.
@@ -285,6 +306,12 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
     }
     add(10 + index, index === 0 ? 1 : 3 + index, sentence);
   });
+
+  // Wesentliche Angebotsform (Firmen/Teams, Kindergeburtstag): nennt der Text
+  // sie nicht selbst, ergänzt der Server einen nie gekürzten Hinweis.
+  if (offerForm && m.offerForms[offerForm] && !OFFER_FORM_MENTION.test(parts.map((p) => p.text).join(' '))) {
+    add(14, 0, m.offerForm(m.offerForms[offerForm]));
+  }
 
   // Kinder-/Jugendkurs: Zielgruppe muss erkennbar sein. Nennt der Text sie
   // nicht selbst, ergänzt der Server einen nie gekürzten Hinweis.
