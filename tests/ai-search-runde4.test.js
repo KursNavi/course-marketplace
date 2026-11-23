@@ -81,6 +81,15 @@ describe('Zeitwünsche', () => {
     expect(checkWish({ title: 'Deutsch', description: 'Abendkurse ab 18:30', course_events: [] }, { type: 'time', label: 'abends', value: 'evening' }).status).toBe('confirmed');
   });
 
+  it('Ende eines Tageskurses um 17 Uhr belegt keinen Abend (Befund Abnahme 4: 20610/20611)', () => {
+    const evening = { type: 'time', label: 'abends', value: 'evening' };
+    const tageskurs = { title: 'Anfänger Fotokurs', description: '13.00 – 15.00 Uhr Portraits Indoor\n15.00 – 17.00 Uhr Fotoaufnahmen Outdoor', course_events: [] };
+    expect(checkWish(tageskurs, evening).status).toBe('unknown');
+    expect(checkWish({ title: 'Foto', description: '', course_events: [{ schedule_description: 'Sa 09:30–16:30; Di/Fr 18:00–21:00' }] }, evening).status).toBe('confirmed');
+    expect(checkWish({ title: 'Kurs', description: 'Beginn ab 18.30 Uhr', course_events: [] }, evening).status).toBe('confirmed');
+    expect(checkWish({ title: 'Kurs', description: 'von 9 bis 17:30 Uhr', course_events: [] }, evening).status).toBe('unknown');
+  });
+
   it('entfernt unbelegte Zeitbehauptung (Befund 20798) und nennt den Wunsch als nicht bestätigt', () => {
     const wishChecks = [checkWish({ title: 'Fotografie Grundlagen', description: '', course_events: [{ schedule_description: 'Sa/So 09:30–16:30' }] }, { type: 'time', label: 'abends', value: 'evening' })];
     const text = buildExplanation({

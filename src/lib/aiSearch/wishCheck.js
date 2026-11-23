@@ -45,7 +45,9 @@ export const WISH_CLAIM_PATTERNS = Object.freeze({
 const SATURDAY = /samstag|samedi|sabato|\bsa\b\.?(?=\s*(?:[/,&–-]|\d|und\b|bis\b))/i;
 const SUNDAY = /sonntag|dimanche|domenica|\bso\b\.?(?=\s*(?:[/,&–-]|\d|und\b|bis\b))/i;
 export const TIME_EVIDENCE = Object.freeze({
-  evening: /abend|feierabend|nach der arbeit|\bsoir|\bsera\b|serale|\b(?:1[7-9]|2[0-2])[:.][0-5]\d\b/i,
+  // Uhrzeit nur als BEGINN ab 17 Uhr („18:00–21:00“, „ab 18:30“), nicht als
+  // Ende eines Tageskurses („15.00 – 17.00 Uhr“; Befund Abnahme 4, 20610/20611).
+  evening: /abend|feierabend|nach der arbeit|\bsoir|\bsera\b|serale|(?<![–-]\s{0,2})\b(?:1[7-9]|2[0-2])[:.][0-5]\d\s*(?:uhr\s*)?(?:[–-]|bis\b)|\b(?:ab|dès|à partir de|dalle)\s+(?:1[7-9]|2[0-2])[:.][0-5]\d\b/i,
   saturday: SATURDAY,
   sunday: SUNDAY,
   weekend: new RegExp(`wochenend|week-?end|fine settimana|${SATURDAY.source}|${SUNDAY.source}`, 'i'),
