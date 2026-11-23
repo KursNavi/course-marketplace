@@ -41,6 +41,10 @@ export const CASES_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/cases-
 export const STARTSET_PATH = resolve(ROOT, 'tests/fixtures/ai-search-goldstandard/tasks-initial.json');
 export const SOLL_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/soll-listen.json');
 export const MAX_USD_CEILING = 1;
+// Gezielte Proben (Freigabe 23.11.2026): vorab festgelegte Auswahl, höchstens 8 Suchen.
+export const PROBE_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/proben-20261124.json');
+export const PROBE_MAX_CASES = 8;
+export const PROBE_MAX_USD = 0.1;
 export const MAX_ERRORS = 3;
 /** Annahme je Suche (e3-entscheidungsvorlage): 18 000 Eingabe-, 2 000 Ausgabetokens ≈ USD 0.003. */
 export const SEARCH_ASSUMPTION = Object.freeze({ usd: OPS_PRICES.searchUsdMax, inputTokens: 18_000, outputTokens: 2_000 });
@@ -130,17 +134,37 @@ export function canStartNext({ spentUsd, maxFactor, maxUsd }) {
 
 export function checkRunArgs(argv, env) {
   const execute = argv.includes('--execute');
+  const probe = argv.includes('--probe');
   const maxArg = argv.find((a) => a.startsWith('--max-usd='));
-  const unknown = argv.filter((a) => a !== '--execute' && !a.startsWith('--max-usd='));
+  const unknown = argv.filter((a) => a !== '--execute' && a !== '--probe' && !a.startsWith('--max-usd='));
   const errors = [];
   if (unknown.length) errors.push(`unbekannte Optionen: ${unknown.join(' ')}`);
   const maxUsd = maxArg ? Number(maxArg.split('=')[1]) : null;
   if (execute) {
     if (!Number.isFinite(maxUsd) || maxUsd <= 0) errors.push('--max-usd=<Grenze> ist Pflicht');
     else if (maxUsd > MAX_USD_CEILING) errors.push(`--max-usd über der Höchstgrenze ${MAX_USD_CEILING}`);
+    else if (probe && maxUsd > PROBE_MAX_USD) errors.push(`--max-usd über der Probengrenze ${PROBE_MAX_USD}`);
     if (env?.AI_QUALITY_CONFIRM !== EXPECTED_TEST_REF) errors.push(`AI_QUALITY_CONFIRM=${EXPECTED_TEST_REF} fehlt`);
   }
-  return { execute, maxUsd, errors };
+  return { execute, probe, maxUsd, errors };
+}
+
+/**
+ * Probenauswahl: nur die vorab festgelegten Fälle aus PROBE_PATH, höchstens
+ * PROBE_MAX_CASES, in der dort festgelegten Reihenfolge; die Probeneinstellungen
+ * (zweite Score-Stichprobe, Bedeutungssuche) müssen gesetzt sein.
+ */
+export function selectProbeCases(cases, probeSpec, env) {
+  const ids = (probeSpec?.cases ?? []).map((c) => c.id);
+  const errors = [];
+  if (ids.length === 0 || ids.length > PROBE_MAX_CASES) errors.push(`Probenauswahl muss 1–${PROBE_MAX_CASES} Fälle enthalten (${ids.length})`);
+  const byId = new Map(cases.map((c) => [c.id, c]));
+  const missing = ids.filter((id) => !byId.has(id));
+  if (missing.length) errors.push(`unbekannte Probenfälle: ${missing.join(', ')}`);
+  for (const [key, value] of Object.entries(probeSpec?.config ?? {})) {
+    if (String(env?.[key] ?? '') !== String(value)) errors.push(`Probeneinstellung ${key}=${value} fehlt`);
+  }
+  return { cases: ids.filter((id) => byId.has(id)).map((id) => byId.get(id)), errors };
 }
 
 /** Vorbedingungen für einen aussagekräftigen Lauf auf dem Abnahmebestand. */
@@ -287,13 +311,16 @@ async function main() {
   const guard = checkTestTarget(process.env);
   if (!guard.ok) { console.error(`Abbruch: ${guard.reason}`); process.exit(2); }
 
-  const { cases, errors } = loadQualityCases(JSON.parse(readFileSync(CASES_PATH, 'utf8')), JSON.parse(readFileSync(STARTSET_PATH, 'utf8')));
+  const loaded = loadQualityCases(JSON.parse(readFileSync(CASES_PATH, 'utf8')), JSON.parse(readFileSync(STARTSET_PATH, 'utf8')));
+  const probeSel = args.probe ? selectProbeCases(loaded.cases, JSON.parse(readFileSync(PROBE_PATH, 'utf8')), process.env) : null;
+  const cases = probeSel ? probeSel.cases : loaded.cases;
+  const errors = [...loaded.errors, ...(probeSel?.errors ?? [])];
   const sollLists = JSON.parse(readFileSync(SOLL_PATH, 'utf8')).cases ?? {};
   if (errors.length) { errors.forEach((e) => console.error(`Fälle: ${e}`)); process.exit(2); }
   const env = { ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST };
   const config = readModelConfig(env);
-  const configLabel = `Luna ${config.lunaModel}, Denkstufe ${config.lunaReasoningEffort}, Teilgrösse ${config.lunaBatchSize}, Verteilung ${config.lunaDistribution}, Ablauf ${config.lunaMode}, Embedding ${config.embeddingVersion}`;
-  console.log(`Qualitätsabnahme: ${cases.length} Fälle, je 1 Lauf. ${configLabel}`);
+  const configLabel = `Luna ${config.lunaModel}, Denkstufe ${config.lunaReasoningEffort}, Teilgrösse ${config.lunaBatchSize}, Verteilung ${config.lunaDistribution}, Ablauf ${config.lunaMode}, Score-Stichproben ${config.lunaScoreSamples}, Bedeutungssuche ${config.semanticQuery}, Embedding ${config.embeddingVersion}`;
+  console.log(`${args.probe ? 'Gezielte Proben (keine Abnahme)' : 'Qualitätsabnahme'}: ${cases.length} Fälle, je 1 Lauf. ${configLabel}`);
   for (const c of cases) console.log(`  ${c.id.padEnd(16)} ${c.group.padEnd(16)} ${c.language} Formular ${JSON.stringify(sanitizeMusts(c.form))}`);
   const planUsd = cases.length * SEARCH_ASSUMPTION.usd;
   console.log(`Kostenschätzung: ${cases.length} × USD ${SEARCH_ASSUMPTION.usd} ≈ USD ${planUsd.toFixed(3)} (Annahme je Suche, Preisliste 13.11.2026)`);
@@ -321,11 +348,12 @@ async function main() {
     const gateway = createOpenAiGateway({
       apiKey: process.env.OPENAI_API_KEY, embeddingModel: config.embeddingModel, reasoningEffort: config.lunaReasoningEffort,
       batchSize: config.lunaBatchSize, distribution: config.lunaDistribution, mode: config.lunaMode,
+      scoreSamples: config.lunaScoreSamples,
     });
     const started = Date.now();
     const run = { case: testCase, cards: [], checks: null, error: null };
     try {
-      const result = await runAiSearch(service, { query: testCase.query, musts: sanitizeMusts(testCase.form), models: { gateway, embeddingVersion: config.embeddingVersion }, diagnostics: true });
+      const result = await runAiSearch(service, { query: testCase.query, musts: sanitizeMusts(testCase.form), models: { gateway, embeddingVersion: config.embeddingVersion, semanticQuery: config.semanticQuery }, diagnostics: true });
       run.cards = [
         ...result.results.map((c) => ({ ...c, section: 'Treffer' })),
         ...result.incompleteResults.map((c) => ({ ...c, section: 'unvollständig' })),
@@ -368,7 +396,8 @@ async function main() {
     executed: runs.length, errors: errorCount, estimatedUsd: Number(spentUsd.toFixed(4)),
     tokens: runs.reduce((acc, r) => ({ in: acc.in + r.usage.lunaInputTokens, out: acc.out + r.usage.lunaOutputTokens }), { in: 0, out: 0 }),
   };
-  const folder = `${QUALITY_PREFIX}/${startedAt.replace(/[:.]/g, '-')}`;
+  // Proben getrennt von Abnahmen ablegen (keine Verwechslung mit einem Abnahmelauf).
+  const folder = `${QUALITY_PREFIX}/${args.probe ? 'proben-' : ''}${startedAt.replace(/[:.]/g, '-')}`;
   const payload = { summary, runs: runs.map((r) => ({ ...r, cards: r.cards.map((c) => ({ courseId: c.courseId, title: c.title, section: c.section, score: c.score, explanation: c.explanation, reasons: c.reasons, gaps: c.gaps, mustStatus: c.mustStatus, wishChecks: c.wishChecks, event: c.event, price: c.price, place: c.place })) })) };
   const review = buildReviewMarkdown({ startedAt, catalog: `Abnahmebestand (Prod-ID + ${ID_OFFSET})`, config: configLabel }, payload.runs);
   for (const [name, body, type] of [['ergebnisse.json', JSON.stringify(payload), 'application/json'], ['bewertung.md', review, 'text/markdown']]) {

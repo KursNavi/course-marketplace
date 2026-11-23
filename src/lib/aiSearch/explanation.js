@@ -396,12 +396,39 @@ export function wishFactSentence(check, language = 'de') {
  * Diese Prüfung ist eine Absicherung, nicht die Hauptlösung.
  */
 const ASSESSMENT = /\b(passt|passend|geeignet|eignet|richtet sich|ideal|für dich|zu deine[mnrs]?|unterstützt (?:\p{L}+ )?(?:dich|deine[nmrs]?)|(?:dein|deine[nmrs]?) (?:\p{L}+ )?(?:wunsch|ziel|ziele|wechsel|einstieg|rolle|niveau|situation|anliegen|suche|alter)|anfänger\p{L}*|einsteiger\p{L}*|fortgeschritten\p{L}*|vorkenntnis\p{L}*|kinder\p{L}*|jugendlich\p{L}*|erwachsen\p{L}*|ferien\p{L}*|convient|adapté\p{L}*|idéal\p{L}*|pour toi|débutant\p{L}*|enfants?|adolescents?|adultes?|adatt[oaie]|ideale|per te|principiant[ei]|bambin[ie]|ragazz[ie]|adulti)\b/iu;
-export function contentSentence(lead) {
+export function contentSentence(lead, evidenceText = null) {
   const text = typeof lead === 'string' ? lead.replace(/\s+/g, ' ').trim() : '';
   if (!text) return null;
   const first = (text.match(/^[^.!?]+[.!?]+/) ?? [text])[0].trim();
   if (countWords(first) < 4 || ASSESSMENT.test(first)) return null;
+  // Belegprüfung (Punkt 1, 23.11.2026): Behauptet der Inhaltssatz eine
+  // Eigenschaft, muss sie in den Kursangaben stehen; sonst entfällt er.
+  if (evidenceText !== null && unbackedProperty(first, evidenceText)) return null;
   return first;
+}
+
+/**
+ * Eigenschaften, die ein Inhaltssatz nur mit Beleg nennen darf: je Eigenschaft
+ * die Behauptung (DE/FR/IT) und der Beleg in den Kursangaben (Titel,
+ * Beschreibung, Lernziele, Stichworte, Terminbeschreibung, Lernform).
+ * Keine Sperrliste: Die Aussage bleibt erlaubt, wenn die Kursangaben sie tragen.
+ */
+export const PROPERTY_CLAIMS = Object.freeze([
+  { key: 'online', claim: /\bonline\b|\bzoom\b|virtuell|en ligne|à distance|in linea|a distanza/i, evidence: /\bonline\b|\bzoom\b|virtuell|livestream|webinar|e-learning/i },
+  { key: 'draussen', claim: /draussen|im freien|outdoor|en plein air|à l['’]extérieur|all['’]aperto/i, evidence: /draussen|im freien|outdoor|plein air|aperto|exkursion|ausflug|natur|wald|garten|stadtrundgang|city walk/i },
+  { key: 'kleingruppe', claim: /kleine[nr]? gruppe|kleingruppe|petits? groupes?|piccoli gruppi/i, evidence: /kleingruppe|kleine[nr]? gruppe|max(?:imal)?\.?\s*\d+\s*(?:teilnehm|person|kinder)|petits? groupes?|piccoli gruppi/i },
+  { key: 'einzel', claim: /einzelunterricht|einzeltraining|einzellektion|privatunterricht|1:1|cours particuliers?|leçons? individuelles?|lezioni? (?:individuali|private)/i, evidence: /einzel|privatunterricht|privatstunde|1:1|personal training|individuell/i },
+  { key: 'ferien', claim: /ferien|\bcamp\b|\blager\b|vacances|colonie|vacanze|\bcampo\b/i, evidence: /ferien|\bcamp\b|\blager\b|vacances|vacanze/i },
+  { key: 'intensiv', claim: /intensiv|intensif|intensivo/i, evidence: /intensiv/i },
+  { key: 'täglich', claim: /täglich|jeden tag|chaque jour|tous les jours|ogni giorno/i, evidence: /täglich|jeden tag|aufeinanderfolgenden tagen|tageweise/i },
+  { key: 'zeit', claim: /wochenend|samstag|sonntag|\babends?\b|feierabend|week-?end|samedi|dimanche|\bsoir|fine settimana|sabato|domenica|\bsera\b/i, evidence: /wochenend|samstag|sonntag|\b(?:sa|so)\.?\s*[/\d]|abend|feierabend|(?:1[89]|2[0-2])[:.][0-5]\d/i },
+]);
+
+/** Erste Eigenschaft, die der Satz behauptet, die Kursangaben aber nicht tragen. */
+export function unbackedProperty(sentence, evidenceText) {
+  const text = String(sentence ?? '');
+  const evidence = String(evidenceText ?? '');
+  return PROPERTY_CLAIMS.find((p) => p.claim.test(text) && !p.evidence.test(evidence))?.key ?? null;
 }
 
 /** Ort mit Stadt und Kanton („Horgen (Kanton Zürich)“), Online unverändert. */
@@ -475,7 +502,7 @@ function capitalize(text) {
  * @param {string} [input.language]  'de' | 'fr' | 'it' (Sprache der Anfrage, K4)
  * @returns {string}
  */
-export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], canton = null, event = null, price = '', audience = null, language = 'de', offerForm = null, prerequisites = null, description = null }) {
+export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], canton = null, event = null, price = '', audience = null, language = 'de', offerForm = null, prerequisites = null, description = null, evidenceText = null }) {
   const m = messagesFor(language);
   // Strukturierte Zielgruppe (childAudience) in der Sprache der Begründung;
   // ältere Aufrufer mit nur einem Label behalten dieses.
@@ -492,7 +519,7 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   // an seine Stelle treten die belegten Zitatsätze in der richtigen Sprache.
   // Stabilisierung (23.11.2026): von Luna nur der Inhaltssatz (contentSentence);
   // Tatsachen und Einschränkungen folgen aus den Kursangaben (unten).
-  const leadInLanguage = lead && !leadLanguageMismatch(lead, language) ? contentSentence(lead) : null;
+  const leadInLanguage = lead && !leadLanguageMismatch(lead, language) ? contentSentence(lead, evidenceText) : null;
   const leadText = removeUnbackedAdultClaims(removeUnbackedWishClaims(leadInLanguage, wishChecks), audience);
   if (leadText) parts.push({ order: 10, priority: 1, text: leadText, lead: true });
   const evidence = leadText ? [] : reasons.filter((r) => r.kind === 'text' || r.kind === 'luna');

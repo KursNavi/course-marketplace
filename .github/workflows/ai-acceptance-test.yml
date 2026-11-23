@@ -11,6 +11,7 @@ name: KI-Suche Abnahmebestand
 #                          (Testindex wird ENTFERNT), Import, Indexaufbau
 #   ki-abnahme-einbetten   S7: Ersteinbettung, Stoppschwelle USD 0.05
 #   ki-abnahme-qualitaet   S9: 36 Faelle je 1 Lauf, Stoppschwelle USD 0.50
+#   ki-abnahme-probe       8 vorab festgelegte Probenfaelle, Stoppschwelle USD 0.09
 #   ki-abnahme-status      nur Lesen: Zaehlungen im TEST
 #   ki-abnahme-rueckweg    S11: bisheriger Zustand aus der Sicherung
 #   ki-abnahme-aufraeumen  Sicherung und Ergebnisse loeschen (nach Rueckweg)
@@ -97,8 +98,27 @@ jobs:
           AI_RESULTS_OUT: abnahme-ergebnisse.enc.json
         run: node scripts/ai-search-quality-run.mjs --execute --max-usd=0.50
 
+      # Gezielte Proben (Freigabe 23.11.2026): NUR die 8 vorab festgelegten Faelle
+      # aus tests/fixtures/ai-search-quality/proben-20261124.json, keine Abnahme.
+      # Zweite Score-Stichprobe parallel, Bedeutungssuche mit dem fachlichen Anliegen.
+      - name: Gezielte Proben (8 Faelle, max. USD 0.09)
+        if: github.event.label.name == 'ki-abnahme-probe'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          AI_SEARCH_MODELS_ENABLED: '1'
+          AI_QUALITY_CONFIRM: omoapbvfligjfznzivyu
+          AI_SEARCH_LUNA_BATCH: '5'
+          AI_SEARCH_LUNA_EFFORT: none
+          AI_SEARCH_LUNA_DISTRIBUTION: stripe
+          AI_SEARCH_LUNA_MODE: single
+          AI_SEARCH_LUNA_SCORE_SAMPLES: '2'
+          AI_SEARCH_SEMANTIC_QUERY: topic
+          AI_RESULTS_PUBLIC_KEY_PATH: scripts/keys/ai-acceptance-results.pub.pem
+          AI_RESULTS_OUT: abnahme-ergebnisse.enc.json
+        run: node scripts/ai-search-quality-run.mjs --execute --probe --max-usd=0.09
+
       - name: Verschluesselte Ergebnisse ablegen
-        if: always() && github.event.label.name == 'ki-abnahme-qualitaet'
+        if: always() && (github.event.label.name == 'ki-abnahme-qualitaet' || github.event.label.name == 'ki-abnahme-probe')
         uses: actions/upload-artifact@v7
         with:
           name: abnahme-ergebnisse-verschluesselt

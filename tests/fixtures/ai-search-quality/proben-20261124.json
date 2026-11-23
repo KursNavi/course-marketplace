@@ -1,0 +1,90 @@
+{
+  "version": "2026-11-24-proben",
+  "note": "Vorab festgelegte Probenauswahl (8 Suchen) aus den bekannten Problemfällen der Abnahmen 3 und 4. Festgelegt VOR jeder Probe; nicht nachträglich ändern. Abdeckung: schwankende Scores, falsche Eignung, fehlender Abruf, unbelegte Begründungen. Erwartungen sind Eigenschaften, keine erhofften Einzelergebnisse; neue Fehlentscheidungen werden zusätzlich ausgewiesen.",
+  "config": { "AI_SEARCH_LUNA_SCORE_SAMPLES": "2", "AI_SEARCH_SEMANTIC_QUERY": "topic" },
+  "cases": [
+    {
+      "id": "de-privat-002",
+      "kategorien": ["fehlender Abruf", "schwankende Scores", "unbelegte Begründungen"],
+      "beobachtet": { "20869": "A3/A4 nicht an Luna (Rang 34)", "20588": "A3/A4 nicht an Luna (Rang 46)", "20800": "A3 55, A4 82", "20592": "A3 62, A4 87" },
+      "erwartet": [
+        "20869 wird an Luna gesendet (Rang ≤ 30).",
+        "20588: nur Beobachtung – erreicht Luna, wenn die Bedeutungssuche mit dem Anliegen ihn unter die ersten Ränge bringt; ohne Datenbankentwurf nicht zugesichert.",
+        "Keine Begründung behauptet Abend- oder Berner Eignung; Ort mit Kanton, „abends“ als nicht belegt, ausser die Kursangaben belegen einen Beginn ab 18 Uhr.",
+        "Kein Luna-Satz mit Passungsaussage (passt, geeignet, richtet sich an)."
+      ]
+    },
+    {
+      "id": "q-fr-001",
+      "kategorien": ["schwankende Scores", "fehlender Abruf"],
+      "beobachtet": { "20611": "A3 82, A4 55", "20588": "A4 nicht an Luna (Rang 41)" },
+      "erwartet": [
+        "Textabruf ohne Treffer, Reihenfolge aus der Bedeutungssuche; 20588 und 20869 an Luna.",
+        "Für 20611 beide Stichproben im Bericht; Entscheidung nach Mittelwert.",
+        "Begründungen auf Französisch; Zitate wörtlich (Deutsch erlaubt)."
+      ]
+    },
+    {
+      "id": "de-kinder-002",
+      "kategorien": ["schwankende Scores", "unbelegte Begründungen"],
+      "beobachtet": { "20613": "A3 88, A4 55", "20177": "A4 „projektorientierter Ferienkurs“ ohne Beleg (schwer)" },
+      "erwartet": [
+        "Kein Text nennt 20177 einen Ferienkurs (Kursart events_workshops).",
+        "„Sommer 2027“ als nicht bestätigt bzw. mit nächstem Termin ausgewiesen.",
+        "Zielgruppe Kinder/Jugendliche erkennbar; 20422 bleibt durch das Budget ausgeschlossen."
+      ]
+    },
+    {
+      "id": "de-beruf-002",
+      "kategorien": ["schwankende Scores"],
+      "beobachtet": { "20380": "A2 77, A3 55, A4 61" },
+      "erwartet": [
+        "Beide Stichproben für 20380 im Bericht; Zulassung nur bei Mittelwert ≥ 70.",
+        "„Online“ als nicht bestätigt, wenn die Lernform es nicht belegt; Zertifikat nicht von Luna behauptet."
+      ]
+    },
+    {
+      "id": "q-fr-002",
+      "kategorien": ["schwankende Scores", "falsche Eignung"],
+      "beobachtet": { "20112": "A3 45, A4 64", "20531": "A3 30, A4 0", "20541": "A4 zugelassen mit 70 (Skicamp)" },
+      "erwartet": [
+        "Nur Kinder-/Jugendangebote; Altersangabe aus den Kursangaben.",
+        "Beide Stichproben für 20112, 20531 und 20541 im Bericht."
+      ]
+    },
+    {
+      "id": "de-beruf-001",
+      "kategorien": ["falsche Eignung", "schwankende Scores"],
+      "beobachtet": { "20120": "A3 65, A4 88; A4 „unterstützt deinen beruflichen Wechsel“ bei einem Teamworkshop (schwer)" },
+      "erwartet": [
+        "Wird 20120 gezeigt, nennt die Karte das Angebot für Firmen/Teams und behauptet keine Eignung für die Einzelperson.",
+        "„abends“ und „Bern“ sichtbar als nicht belegt bzw. Abweichung."
+      ]
+    },
+    {
+      "id": "q-muss-001",
+      "kategorien": ["falsche Eignung", "unbelegte Begründungen"],
+      "beobachtet": { "20094": "A4 „passt dank ausgewiesenem Anfängerniveau“ (Masterclass)", "20099": "A4 Einsteigerkurs laut Feld, Masterclass laut Text" },
+      "erwartet": [
+        "Bei 20094/20099 wird der Niveau-Widerspruch genannt, keine Einsteiger-Eignung behauptet.",
+        "Kein Kurs ausserhalb Bern als Treffer; Online-Kurse ausgeschlossen."
+      ]
+    },
+    {
+      "id": "de-beruf-003",
+      "kategorien": ["unbelegte Begründungen"],
+      "beobachtet": { "20377": "A3 „kostet weniger als dein Budgetlimit“, „passt zum CAS-Wunsch“ (schwer)" },
+      "erwartet": [
+        "Keine Preis-, Budget- oder CAS-Aussage von Luna; Preis nur als „nicht bestätigt“ durch den Server.",
+        "Angebotsform berufliche Aus-/Weiterbildung und Voraussetzungen wörtlich, „Start im Frühling 2027“ als nicht bestätigt."
+      ]
+    }
+  ],
+  "nicht_ausgewählt": {
+    "q-kinder-004": "20426-Ausschluss ist deterministisch und durch Tests belegt",
+    "de-privat-006": "20706 erschien nur in A3; Wirkung der Luna-Regel wäre mit einer Probe nicht belastbar",
+    "de-privat-001": "Zeitraum „im März“ deterministisch, an gespeicherten Karten belegt",
+    "de-kinder-001": "Ort/Kanton deterministisch, an gespeicherten Karten belegt",
+    "q-it-001": "Sprachprüfung deterministisch; italienischer Text ohnehin in q-fr-001 nicht abgedeckt"
+  }
+}

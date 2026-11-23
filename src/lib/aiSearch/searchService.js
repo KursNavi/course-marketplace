@@ -355,6 +355,17 @@ export function buildEvidence(course, context) {
   return Object.fromEntries(Object.entries(evidence).filter(([, value]) => value !== undefined && value !== ''));
 }
 
+/**
+ * Belegtext eines Kurses für die Prüfung des Luna-Inhaltssatzes: alle an Luna
+ * gesendeten öffentlichen Felder plus Rohbeschreibung und Terminbeschreibungen.
+ */
+export function courseEvidenceText(course, context) {
+  const evidence = buildEvidence(course, context);
+  const events = (Array.isArray(course?.course_events) ? course.course_events : []).map((e) => e?.schedule_description);
+  return [...Object.values(evidence), course?.description, ...events]
+    .flatMap((v) => (Array.isArray(v) ? v : [v])).filter(Boolean).join(' ');
+}
+
 function categoryLabel(rows) {
   const primary = (rows ?? []).find((r) => r.is_primary) ?? (rows ?? [])[0];
   if (!primary) return null;
@@ -422,6 +433,8 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     // Voraussetzungen als wesentliche Teilnahmebeschränkung (wörtlich, gekürzt).
     prerequisites: Array.isArray(course.prerequisites) ? course.prerequisites.join(' ') : (course.prerequisites ?? null),
     description: course.description ?? null,
+    // Belegtext für die Prüfung des Luna-Inhaltssatzes (Eigenschaften).
+    evidenceText: courseEvidenceText(course, context),
     event: cardEvent,
     price: localizedPrice(priceStatus, request.language),
     audience,
@@ -455,16 +468,21 @@ function buildCard(course, ranked, mustResult, context, now, request) {
  * Auswahlstufen je Kandidat für den Prüfbericht (K3): Rang je Abrufkanal,
  * fusionierter Rang, Muss-Ergebnis, an Luna gesendet, Score, angezeigt.
  */
-export function buildSelectionDiagnostics({ channels, candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults, titleChannelMeta = null }) {
+export function buildSelectionDiagnostics({ channels, candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults, titleChannelMeta = null, semanticVariants = null }) {
   const rankIn = (list) => new Map((list ?? []).map((row, index) => [String(row.courseId ?? row.course_id), index + 1]));
   const ranks = { lexicalChunks: rankIn(channels.lexicalChunks), lexicalDocuments: rankIn(channels.lexicalDocuments), semantic: channels.semantic ? rankIn(channels.semantic) : null };
   const sent = new Set((lunaSentIds ?? []).map(String));
-  const scoreById = new Map(scored.map((s) => [String(s.course.id), { rated: lunaUsed ? Boolean(s.rated) : true, score: s.candidate.score }]));
+  const scoreById = new Map(scored.map((s) => [String(s.course.id), { rated: lunaUsed ? Boolean(s.rated) : true, score: s.candidate.score, samples: s.candidate.scoreSamples ?? null }]));
   const shown = new Map([...results.map((c) => [String(c.courseId), 'Treffer']), ...incompleteResults.map((c) => [String(c.courseId), 'unvollständig'])]);
+  const variantRanks = semanticVariants?.full ? { full: rankIn(semanticVariants.full), topic: rankIn(semanticVariants.topic) } : null;
   return {
     minScore: MIN_SCORE,
     semanticUsed: Boolean(channels.semantic),
     titleChannel: titleChannelMeta,
+    // Bedeutungssuche mit ganzer Anfrage bzw. nur fachlichem Anliegen (Abrufprüfung).
+    semanticQueryUsed: semanticVariants?.used ?? null,
+    // Erste 30 der Bedeutungssuche je Variante (nur IDs), auch ausserhalb der Kandidaten.
+    semanticTop: semanticVariants?.full ? { full: semanticVariants.full.slice(0, 30).map((r) => String(r.courseId)), topic: semanticVariants.topic.slice(0, 30).map((r) => String(r.courseId)) } : null,
     candidates: candidateIds.map((id, index) => {
       const key = String(id);
       const must = mustLog.get(key) ?? null;
@@ -475,12 +493,14 @@ export function buildSelectionDiagnostics({ channels, candidateIds, mustLog, sco
         lexicalChunkRank: ranks.lexicalChunks.get(key) ?? null,
         lexicalDocumentRank: ranks.lexicalDocuments.get(key) ?? null,
         semanticRank: ranks.semantic ? (ranks.semantic.get(key) ?? null) : null,
+        ...(variantRanks ? { semanticRankFull: variantRanks.full.get(key) ?? null, semanticRankTopic: variantRanks.topic.get(key) ?? null } : {}),
         must: must ? must.result : 'not_loaded',
         mustFailures: must?.failures ?? [],
         mustUnknowns: must?.unknowns ?? [],
         sentToLuna: lunaUsed ? sent.has(key) : null,
         rated: scoredEntry ? scoredEntry.rated : false,
         score: scoredEntry && scoredEntry.rated ? scoredEntry.score : null,
+        scoreSamples: scoredEntry && scoredEntry.rated ? scoredEntry.samples : null,
         shown: shown.get(key) ?? null,
       };
     }),
@@ -520,6 +540,8 @@ export async function runAiSearch(client, input) {
   // Embedding → semantischer Abruf). Alle bleiben katalogweit.
   // Kennzahlen des Titel-Kanals (nur Zahlen) für Diagnose und Prüfbericht.
   const titleChannelMeta = {};
+  // Beide Varianten der Bedeutungssuche (nur Prüfbericht, siehe unten).
+  const semanticVariants = {};
   const lexicalPath = parsed.tsQuery
     ? timed('lexical', () => Promise.all([
       lexicalChunkChannel(client, parsed.tsQuery),
@@ -539,18 +561,34 @@ export async function runAiSearch(client, input) {
       timings.semanticConfig = Date.now() - configStarted;
       if (configError) throw new Error(`Konfiguration: ${configError.message}`);
       if (!config?.active_model_version || config.active_model_version !== models.embeddingVersion) return null;
+      // Anfragetext der Bedeutungssuche (Abrufprüfung 23.11.2026): 'full' wie
+      // bisher die ganze Anfrage, 'topic' nur das fachliche Anliegen ohne
+      // optionale Wünsche. Im Prüfbericht werden bei Unterschied BEIDE in EINEM
+      // Embedding-Aufruf eingebettet und beide Ränge festgehalten.
+      const useTopic = models.semanticQuery === 'topic' && parsed.topic && parsed.topic !== parsed.normalized;
+      const compare = input.diagnostics === true && parsed.topic && parsed.topic !== parsed.normalized;
+      const texts = compare ? [parsed.normalized, parsed.topic] : [useTopic ? parsed.topic : parsed.normalized];
       const embedStarted = Date.now();
-      const [vector] = await models.gateway.embed(parsed.normalized);
+      const vectors = await models.gateway.embed(texts);
       timings.queryEmbedding = Date.now() - embedStarted;
       const rpcStarted = Date.now();
-      const { data, error } = await client.rpc('ai_search_semantic', {
-        p_embedding: JSON.stringify(vector),
-        p_model_version: models.embeddingVersion,
-        p_limit: CANDIDATE_LIMIT,
-      });
+      const lists = await Promise.all(vectors.map(async (vector) => {
+        const { data, error } = await client.rpc('ai_search_semantic', {
+          p_embedding: JSON.stringify(vector),
+          p_model_version: models.embeddingVersion,
+          p_limit: CANDIDATE_LIMIT,
+        });
+        if (error) throw new Error(`Abruf (Bedeutung): ${error.message}`);
+        return (data ?? []).map((row) => ({ courseId: row.course_id }));
+      }));
       timings.semanticRpc = Date.now() - rpcStarted;
-      if (error) throw new Error(`Abruf (Bedeutung): ${error.message}`);
-      return (data ?? []).map((row) => ({ courseId: row.course_id }));
+      if (compare && lists.length === 2) {
+        semanticVariants.full = lists[0];
+        semanticVariants.topic = lists[1];
+        semanticVariants.used = useTopic ? 'topic' : 'full';
+        return useTopic ? lists[1] : lists[0];
+      }
+      return lists[0] ?? [];
     })
     : Promise.resolve(null);
   const [coverage, lexicalChannels, semanticChannel] = await Promise.all([
@@ -657,6 +695,8 @@ export async function runAiSearch(client, input) {
       entry.candidate.score = judged ? judged.score : 0;
       // Optionale Wünsche nur für die Reihenfolge (nie für die Mindestpassung).
       entry.candidate.wishAdjust = judged ? wishAdjustment(judged.wishScore) : 0;
+      // Rohwerte beider Stichproben (nur für den Prüfbericht).
+      entry.candidate.scoreSamples = judged?.scoreSamples ?? null;
       entry.candidate.lunaExplanation = judged?.explanation ?? null;
       entry.candidate.reasons = judged
         ? [...judged.reasons.slice(0, 3).map((r) => ({ kind: 'luna', section: r.field, sectionLabel: EVIDENCE_LABELS[r.field] ?? r.field, quote: r.quote })), ...locationReasons]
@@ -715,7 +755,7 @@ export async function runAiSearch(client, input) {
   // Anforderung (Qualitätsprüfung). Nur IDs, Ränge, Codes und Scores.
   const diagnostics = input.diagnostics === true ? buildSelectionDiagnostics({
     channels: { lexicalChunks: lexicalChannels[0] ?? [], lexicalDocuments: lexicalChannels[1] ?? [], semantic: semanticUsed ? semanticChannel : null },
-    candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults, titleChannelMeta,
+    candidateIds, mustLog, scored, lunaUsed, lunaSentIds, results, incompleteResults, titleChannelMeta, semanticVariants,
   }) : null;
 
   return {

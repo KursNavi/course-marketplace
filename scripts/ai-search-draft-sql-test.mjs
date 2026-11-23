@@ -94,6 +94,12 @@ export const TEST_SETS = Object.freeze({
     rollback: 'supabase/rollback/20261121225750_ai_search_ops_lease_v2_down.sql',
     test: 'supabase/drafts/tests/20261121225750_ai_search_ops_lease_v2_test.sql',
   },
+  // ENTWURF 20261124090000 (nachrangige Präfixtreffer im Textabruf), nicht angewendet.
+  lexical_prefix: {
+    migration: 'supabase/drafts/20261124090000_ai_search_lexical_prefix.sql',
+    rollback: 'supabase/drafts/20261124090000_ai_search_lexical_prefix_down.sql',
+    test: 'supabase/drafts/tests/20261124090000_ai_search_lexical_prefix_test.sql',
+  },
 });
 
 export function composeDraftTest(root = ROOT, setName = 'keep_embeddings') {

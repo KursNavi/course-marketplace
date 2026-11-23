@@ -63,6 +63,10 @@ export function readModelConfig(env) {
     lunaBatchSize: Number.isInteger(batch) && batch >= 1 && batch <= RERANK_MAX_CANDIDATES ? batch : RERANK_BATCH_SIZE,
     lunaDistribution: LUNA_DISTRIBUTIONS.includes(env?.AI_SEARCH_LUNA_DISTRIBUTION) ? env.AI_SEARCH_LUNA_DISTRIBUTION : LUNA_DISTRIBUTION,
     lunaMode: LUNA_MODES.includes(env?.AI_SEARCH_LUNA_MODE) ? env.AI_SEARCH_LUNA_MODE : LUNA_MODE,
+    // Zweite, PARALLELE Score-Stichprobe (Stabilität, 23.11.2026); Standard 1.
+    lunaScoreSamples: String(env?.AI_SEARCH_LUNA_SCORE_SAMPLES ?? '').trim() === '2' ? 2 : 1,
+    // Anfragetext der Bedeutungssuche: 'full' (bisher) oder 'topic' (fachliches Anliegen).
+    semanticQuery: String(env?.AI_SEARCH_SEMANTIC_QUERY ?? '').trim() === 'topic' ? 'topic' : 'full',
   };
   if (env?.AI_SEARCH_MODELS_ENABLED !== '1') return { ...base, enabled: false, reason: 'Modellaufrufe nicht freigeschaltet (E3)' };
   if (!env?.OPENAI_API_KEY) return { ...base, enabled: false, reason: 'kein OpenAI-API-Zugang hinterlegt' };
@@ -246,7 +250,9 @@ export function boundedSchema(stageName, ids) {
   const count = { minItems: ids.length, maxItems: ids.length };
   const item = stageName === 'score'
     ? { type: 'object', additionalProperties: false, required: ['courseId', 'score'], properties: { courseId, score: { type: 'number' } } }
-    : {
+    : stageName === 'sample'
+      ? { type: 'object', additionalProperties: false, required: ['courseId', 'score', 'wishScore'], properties: { courseId, score: { type: 'number' }, wishScore: { type: 'number' } } }
+      : {
       type: 'object',
       additionalProperties: false,
       required: ['courseId', 'explanation', 'reasons'],
@@ -373,6 +379,26 @@ export function keepGroundedReasons(accepted, candidates) {
 }
 
 /**
+ * Führt zwei unabhängige Score-Stichproben zusammen (Stabilität, 23.11.2026):
+ * fachlicher Score und wishScore als gerundeter Mittelwert, nie der höhere
+ * Wert; die Mindestpassung gilt unverändert auf diesem Endwert. Fehlt die
+ * zweite Stichprobe für einen Kandidaten, bleibt die erste unverändert.
+ * scoreSamples hält beide Rohwerte für den Prüfbericht fest.
+ */
+export function combineScoreSamples(accepted, second) {
+  return accepted.map((entry) => {
+    const other = second?.get(String(entry.courseId));
+    if (!other) return { ...entry, scoreSamples: [entry.score] };
+    return {
+      ...entry,
+      score: Math.round((entry.score + other.score) / 2),
+      wishScore: Math.round((entry.wishScore + other.wishScore) / 2),
+      scoreSamples: [entry.score, other.score],
+    };
+  });
+}
+
+/**
  * @param {{apiKey: string, fetchImpl?: Function, embeddingModel?: string}} options
  */
 export function createOpenAiGateway(options) {
@@ -393,7 +419,11 @@ export function createOpenAiGateway(options) {
     rank: { instructions: SYSTEM_INSTRUCTIONS, schema: RERANK_SCHEMA, task: 'rank_and_justify' },
     score: { instructions: SCORE_INSTRUCTIONS, schema: SCORE_SCHEMA, task: 'rank' },
     explain: { instructions: EXPLAIN_INSTRUCTIONS, schema: EXPLAIN_SCHEMA, task: 'justify' },
+    // Zweite Score-Stichprobe: GLEICHE Bewertungsanweisung wie rank, nur ohne
+    // Begründung (kürzere Antwort); parallel zu rank, nie danach.
+    sample: { instructions: `${SYSTEM_INSTRUCTIONS} Gib je Kandidat nur courseId, score und wishScore zurück; keine Begründung.`, schema: null, task: 'rank' },
   };
+  const scoreSamples = options.scoreSamples === 2 ? 2 : 1;
 
   async function callLuna(query, batch, stageName = 'rank', language = 'de', optionalWishes = []) {
     const stage = STAGES[stageName];
@@ -495,10 +525,25 @@ export function createOpenAiGateway(options) {
       // Alle ausgewählten Kandidaten werden bewertet; bei batchSize < Anzahl
       // in parallelen Teilaufrufen (gleiche Anweisungen, absolute Skala).
       const batches = distributeCandidates(limited, batchSize, distribution);
-      const parsed = { results: (await Promise.all(batches.map((batch) => callLuna(query, batch, 'rank', options.language, options.optionalWishes)))).flatMap((p) => p.results ?? []) };
+      // Stabilität (23.11.2026): optional eine zweite Score-Stichprobe, GLEICHZEITIG
+      // gestartet, mit anderer Zusammensetzung der Teilaufrufe (andere Nachbarn).
+      // Kein zusätzlicher sequenzieller Aufruf; schlägt sie fehl, gilt die erste.
+      const secondBatches = scoreSamples === 2 ? distributeCandidates(limited, batchSize, distribution === 'stripe' ? 'block' : 'stripe') : [];
+      const [primary, secondary] = await Promise.all([
+        Promise.all(batches.map((batch) => callLuna(query, batch, 'rank', options.language, options.optionalWishes))),
+        Promise.allSettled(secondBatches.map((batch) => callLuna(query, batch, 'sample', options.language, options.optionalWishes))),
+      ]);
+      const parsed = { results: primary.flatMap((p) => p.results ?? []) };
       const callUsage = { inputTokens: usage.lunaInputTokens, outputTokens: usage.lunaOutputTokens, reasoningTokens: usage.lunaReasoningTokens };
       const { accepted, rejected } = validateRerankResponse(parsed, limited.map((c) => c.courseId));
-      const grounded = groundExplanations(accepted, limited, rejected);
+      const second = new Map();
+      for (const settled of secondary) {
+        if (settled.status !== 'fulfilled') { usage.lunaSampleFailures = (usage.lunaSampleFailures ?? 0) + 1; continue; }
+        const checked = validateRerankResponse({ results: (settled.value.results ?? []).map((r) => ({ ...r, reasons: [] })) }, limited.map((c) => c.courseId));
+        for (const entry of checked.accepted) second.set(entry.courseId, entry);
+      }
+      const combined = combineScoreSamples(accepted, second);
+      const grounded = groundExplanations(combined, limited, rejected);
       return { accepted: grounded, rejected, usage: callUsage, sentIds: limited.map((c) => String(c.courseId)) };
     },
 

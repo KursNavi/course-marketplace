@@ -265,8 +265,10 @@ export default async function handler(req, res) {
           batchSize: modelConfig.lunaBatchSize,
           distribution: modelConfig.lunaDistribution,
           mode: modelConfig.lunaMode,
+          scoreSamples: modelConfig.lunaScoreSamples,
         }),
         embeddingVersion: modelConfig.embeddingVersion,
+        semanticQuery: modelConfig.semanticQuery,
       }
       : null;
     try {

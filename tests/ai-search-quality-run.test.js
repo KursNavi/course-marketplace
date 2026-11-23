@@ -80,7 +80,7 @@ describe('Kosten und Abbruch', () => {
     expect(checkRunArgs(['--execute'], { AI_QUALITY_CONFIRM: 'omoapbvfligjfznzivyu' }).errors.join(' ')).toMatch(/max-usd/);
     expect(checkRunArgs(['--execute', '--max-usd=2'], { AI_QUALITY_CONFIRM: 'omoapbvfligjfznzivyu' }).errors.join(' ')).toMatch(/Höchstgrenze/);
     expect(checkRunArgs(['--execute', '--max-usd=0.5'], {}).errors.join(' ')).toMatch(/AI_QUALITY_CONFIRM/);
-    expect(checkRunArgs(['--execute', '--max-usd=0.5'], { AI_QUALITY_CONFIRM: 'omoapbvfligjfznzivyu' })).toEqual({ execute: true, maxUsd: 0.5, errors: [] });
+    expect(checkRunArgs(['--execute', '--max-usd=0.5'], { AI_QUALITY_CONFIRM: 'omoapbvfligjfznzivyu' })).toEqual({ execute: true, probe: false, maxUsd: 0.5, errors: [] });
   });
 
   it('kein Lauf bei fremden Kursen, unvollständigem Index oder fehlenden Embeddings', () => {
