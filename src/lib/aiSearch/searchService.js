@@ -29,7 +29,7 @@ import { isPubliclySearchable } from './publication.js';
 import { fuseHybrid } from './retrieval.js';
 import { rankWithPaidPriority, MIN_SCORE, wishAdjustment } from './paidRanking.js';
 import { buildCanonicalCoursePath } from '../courseUrl.js';
-import { buildExplanation, localizedPrice, offerFormsOf } from './explanation.js';
+import { buildExplanation, localizedPrice, offerFormsOf, addressCantons } from './explanation.js';
 import { checkWishes, deliveryEvidence } from './wishCheck.js';
 import { childAudience, adultsBackedByText, requestedChildAudience, adultOnlyForChildRequest } from './audience.js';
 import { providerDisplayName } from './providerPublic.js';
@@ -130,6 +130,8 @@ export function scoreTextFit(course, terms, chunksByCourse, wishes) {
       course.canton,
       ...(Array.isArray(course.course_locations) ? course.course_locations.flatMap((l) => [l.canton, l.city]) : []),
       ...(Array.isArray(course.course_events) ? course.course_events.flatMap((e) => [e.canton, e.location]) : []),
+      // Kantone aus der Adressangabe (24.11.2026, Befund 20127: Ortsfeld „Online“, Adresse nennt Bern).
+      ...addressCantons(course.address),
     ].filter(Boolean).map((p) => String(p).toLowerCase());
     // Stadt und Kanton unterscheiden (Stabilisierung 23.11.2026, Befund
     // 20331/20579): Ein Stadtwunsch („Winterthur“) ist nur durch dieselbe
@@ -417,7 +419,16 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     ? { ...childInfo, adultsBacked: adultsBackedByText(buildEvidence(course, context)) }
     : null;
   const cardEvent = event ? { startDate: event.start_date, endDate: event.end_date ?? null, location: event.location ?? null, canton: event.canton ?? null } : null;
+  // Diagnose (24.11.2026): ursprünglicher Luna-Satz und Verwerfungsgrund, nur
+  // für den privaten Prüfbericht (request.traces nur bei diagnostics).
+  const trace = request.traces ? {} : null;
   const explanation = buildExplanation({
+    trace,
+    // Ort und Lernform zusammen auswerten; Abschluss aus belegten Kursangaben.
+    address: course.address ?? null,
+    deliveryTypes: Array.isArray(course.delivery_types) && course.delivery_types.length > 0 ? course.delivery_types : (course.delivery_type ? [course.delivery_type] : []),
+    objectives: course.objectives ?? null,
+    courseText: [course.title, course.description, Array.isArray(course.objectives) ? course.objectives.join(' ') : course.objectives, Array.isArray(course.keywords) ? course.keywords.join(' ') : course.keywords].filter(Boolean).join(' '),
     lead: ranked.lunaExplanation ?? null,
     reasons: ranked.reasons,
     wishes: request.wishes,
@@ -431,7 +442,7 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     // Kanton getrennt von der Stadt (Stabilisierung 23.11.2026).
     canton: event?.canton || course.canton || null,
     // Voraussetzungen als wesentliche Teilnahmebeschränkung (wörtlich, gekürzt).
-    prerequisites: Array.isArray(course.prerequisites) ? course.prerequisites.join(' ') : (course.prerequisites ?? null),
+    prerequisites: Array.isArray(course.prerequisites) ? course.prerequisites.join('\n') : (course.prerequisites ?? null),
     description: course.description ?? null,
     // Belegtext für die Prüfung des Luna-Inhaltssatzes (Eigenschaften).
     evidenceText: courseEvidenceText(course, context),
@@ -441,6 +452,14 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     language: request.language,
     offerForm: offerFormsOf(course),
   });
+  if (trace) {
+    // Von der Textprüfung des Gateways verworfener Luna-Text (vor dem Server).
+    if (!ranked.lunaExplanation && ranked.lunaExplanationRaw) {
+      trace.lunaText = ranked.lunaExplanationRaw;
+      trace.verworfen = `textpruefung:${ranked.lunaRejectedBecause ?? 'unbekannt'}`;
+    }
+    request.traces.set(String(course.id), trace);
+  }
 
   // Paketeinfluss bewusst NICHT je Karte (Nachtrag 10: keine Einzelbadges);
   // er wird allgemein in der Fussnote unter den Ergebnissen erklärt.
@@ -698,6 +717,8 @@ export async function runAiSearch(client, input) {
       // Rohwerte beider Stichproben (nur für den Prüfbericht).
       entry.candidate.scoreSamples = judged?.scoreSamples ?? null;
       entry.candidate.lunaExplanation = judged?.explanation ?? null;
+      entry.candidate.lunaExplanationRaw = judged?.explanationRaw ?? null;
+      entry.candidate.lunaRejectedBecause = judged?.explanationRejectedBecause ?? null;
       entry.candidate.reasons = judged
         ? [...judged.reasons.slice(0, 3).map((r) => ({ kind: 'luna', section: r.field, sectionLabel: EVIDENCE_LABELS[r.field] ?? r.field, quote: r.quote })), ...locationReasons]
         : [];
@@ -727,16 +748,20 @@ export async function runAiSearch(client, input) {
       if (!explained) continue;
       const locationReasons = (ranked.reasons ?? []).filter((r) => r.kind === 'location');
       ranked.lunaExplanation = explained.explanation ?? null;
+      ranked.lunaExplanationRaw = explained.explanationRaw ?? null;
+      ranked.lunaRejectedBecause = explained.explanationRejectedBecause ?? null;
       ranked.reasons = [...explained.reasons.slice(0, 3).map((r) => ({ kind: 'luna', section: r.field, sectionLabel: EVIDENCE_LABELS[r.field] ?? r.field, quote: r.quote })), ...locationReasons];
     }
     timings.luna = (timings.lunaScore ?? 0) + (timings.lunaExplain ?? 0);
   }
 
+  // Diagnose je angezeigter Karte (nur Prüfbericht, nie in der API-Antwort).
+  const traces = input.diagnostics === true ? new Map() : null;
   const toCards = (selected, group) => {
     const byId = new Map(group.map((s) => [String(s.course.id), s]));
     return selected.map((ranked) => {
       const entry = byId.get(String(ranked.courseId));
-      return buildCard(entry.course, ranked, entry.mustResult, context, now, { wishes: parsed.wishes, musts, language: parsed.language });
+      return buildCard(entry.course, ranked, entry.mustResult, context, now, { wishes: parsed.wishes, musts, language: parsed.language, traces });
     });
   };
 
@@ -759,7 +784,7 @@ export async function runAiSearch(client, input) {
   }) : null;
 
   return {
-    ...(diagnostics ? { diagnostics } : {}),
+    ...(diagnostics ? { diagnostics: { ...diagnostics, explanations: traces ? [...traces.entries()].map(([courseId, t]) => ({ courseId, ...t })) : [] } } : {}),
     criteria: {
       language: parsed.language,
       terms: parsed.terms,

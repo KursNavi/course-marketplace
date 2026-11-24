@@ -304,14 +304,39 @@ export function parseQuery(query) {
   // Zeitwünsche (nur nicht verneinte, je Art höchstens einmal).
   for (const wish of TIME_WISHES) {
     const match = wish.pattern.exec(lower);
-    if (match && !isNegatedAt(lower, match.index)) wishes.push({ type: 'time', label: wish.label, value: wish.value });
+    // Bezeichnung mit den Worten der Anfrage („nach der Arbeit“, „le soir“), Lesbarkeit 24.11.2026.
+    if (match && !isNegatedAt(lower, match.index)) wishes.push({ type: 'time', label: normalized.slice(match.index, match.index + match[0].length).trim(), value: wish.value });
   }
   wishes.push(...detectPeriodWishes(normalized));
+
+  // Ferienkurs als gewünschte Kursart (24.11.2026), geprüft gegen die Kursart.
+  const holidayMatch = /\bferien(?:kurs|lager|camp|woche)\p{L}*|\bcours de vacances|\bstage de vacances|\bpendant les vacances|\bcorso estivo|\bdurante le vacanze/iu.exec(normalized);
+  if (holidayMatch && !isNegatedAt(lower, holidayMatch.index)) wishes.push({ type: 'holiday', label: holidayMatch[0], value: true });
+
+  // Abschluss (24.11.2026): CAS/MAS/DAS/MBA nur in Grossschreibung; geprüft
+  // werden sie serverseitig gegen die Kursangaben (explanation.qualificationCheck).
+  const qualificationPatterns = [
+    [/\b(CAS|MAS|DAS|E?MBA)\b/u, (m) => m[1].toLowerCase().replace(/^emba$/, 'mba')],
+    [/\b(?:zertifikat\p{L}*|certificat\p{L}*|certificato)/iu, () => 'zertifikat'],
+    [/\b(?:diplom\p{L}*|diplôme|diploma)/iu, () => 'diplom'],
+    [/\bfachausweis\p{L}*/iu, () => 'fachausweis'],
+  ];
+  const seenQualifications = new Set();
+  for (const [pattern, toValue] of qualificationPatterns) {
+    const match = pattern.exec(normalized);
+    if (!match || isNegatedAt(lower, match.index)) continue;
+    const value = toValue(match);
+    if (seenQualifications.has(value)) continue;
+    seenQualifications.add(value);
+    wishes.push({ type: 'qualification', label: match[0], value });
+  }
 
   // „nicht bloss Einführung“ ist kein Einsteigerwunsch.
   const beginnerIndex = BEGINNER_WORDS.map((word) => lower.indexOf(word)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
   if (beginnerIndex !== undefined && !isNegatedAt(lower, beginnerIndex)) {
-    wishes.push({ type: 'level', label: 'Für Einsteiger', value: 'beginner' });
+    // Bezeichnung mit dem Wort der Anfrage („Anfänger“, „débutant“), Lesbarkeit 24.11.2026.
+    const word = /[\p{L}-]+/u.exec(normalized.slice(beginnerIndex))?.[0] ?? 'Für Einsteiger';
+    wishes.push({ type: 'level', label: word, value: 'beginner' });
   }
 
   const placeTokens = new Set(places.flatMap((place) => tokenize(place)));

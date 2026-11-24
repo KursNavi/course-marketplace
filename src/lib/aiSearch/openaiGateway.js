@@ -492,7 +492,8 @@ export function createOpenAiGateway(options) {
     return keepGroundedReasons(entries, candidates).map((entry) => {
       const check = validateExplanation(entry.explanation, evidenceById.get(entry.courseId), entry.reasons);
       if (check.rejectedBecause && check.rejectedBecause !== 'leer') rejected.push({ courseId: entry.courseId, reason: `Begründungstext verworfen (${check.rejectedBecause})` });
-      return { ...entry, explanation: check.text };
+      // Rohtext und Grund bleiben für den privaten Prüfbericht erhalten (24.11.2026).
+      return { ...entry, explanation: check.text, explanationRaw: entry.explanation ?? null, explanationRejectedBecause: check.rejectedBecause && check.rejectedBecause !== 'leer' ? check.rejectedBecause : null };
     });
   }
 
@@ -573,7 +574,7 @@ export function createOpenAiGateway(options) {
       // Score wird hier nicht neu vergeben: Platzhalter nur für die Validierung.
       const { accepted, rejected } = validateRerankResponse({ results: results.map((r) => ({ ...r, score: 0 })) }, limited.map((c) => c.courseId));
       const grounded = groundExplanations(accepted, limited, rejected);
-      return { accepted: grounded.map(({ courseId, explanation, reasons }) => ({ courseId, explanation, reasons })), rejected };
+      return { accepted: grounded.map(({ courseId, explanation, reasons, explanationRaw, explanationRejectedBecause }) => ({ courseId, explanation, reasons, explanationRaw, explanationRejectedBecause })), rejected };
     },
   };
 }

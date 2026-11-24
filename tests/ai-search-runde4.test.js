@@ -67,8 +67,9 @@ describe('Fachliches Anliegen ohne optionale Wünsche (Luna-Eingabe)', () => {
 describe('Zeitwünsche', () => {
   it('erkennt Zeitwünsche, aber keine verneinten', () => {
     expect(parseQuery('Schwimmkurs samstags').wishes).toContainEqual({ type: 'time', label: 'samstags', value: 'saturday' });
-    expect(parseQuery('Fotografie nach der Arbeit').wishes).toContainEqual({ type: 'time', label: 'abends', value: 'evening' });
-    expect(parseQuery('Cours le soir').wishes).toContainEqual({ type: 'time', label: 'abends', value: 'evening' });
+    // Bezeichnung mit den Worten der Anfrage (Lesbarkeit 24.11.2026).
+    expect(parseQuery('Fotografie nach der Arbeit').wishes).toContainEqual({ type: 'time', label: 'nach der Arbeit', value: 'evening' });
+    expect(parseQuery('Cours le soir').wishes).toContainEqual({ type: 'time', label: 'le soir', value: 'evening' });
     expect(parseQuery('Yoga, nicht am Wochenende').wishes.some((w) => w.type === 'time')).toBe(false);
   });
 
@@ -77,14 +78,15 @@ describe('Zeitwünsche', () => {
     expect(checkWish({ title: 'Nähkurs', description: 'Samstags-Tageskurs', course_events: [] }, wish).status).toBe('confirmed');
     expect(checkWish({ title: 'Foto', description: '', course_events: [{ schedule_description: 'Sa/So 09:30–16:30' }] }, wish).status).toBe('confirmed');
     expect(checkWish({ title: 'Schwimmen', description: 'An fünf aufeinanderfolgenden Tagen', course_events: [] }, { type: 'time', label: 'samstags', value: 'saturday' }).status).toBe('unknown');
-    expect(checkWish({ title: 'Foto', description: '', course_events: [{ schedule_description: 'Sa/So 09:30–16:30' }] }, { type: 'time', label: 'abends', value: 'evening' }).status).toBe('unknown');
+    expect(checkWish({ title: 'Foto', description: '', course_events: [{ schedule_description: 'Sa/So 09:30–16:30' }] }, { type: 'time', label: 'abends', value: 'evening' }).status).toBe('deviating'); // 24.11.: bekannte Tageszeit = Abweichung
     expect(checkWish({ title: 'Deutsch', description: 'Abendkurse ab 18:30', course_events: [] }, { type: 'time', label: 'abends', value: 'evening' }).status).toBe('confirmed');
   });
 
   it('Ende eines Tageskurses um 17 Uhr belegt keinen Abend (Befund Abnahme 4: 20610/20611)', () => {
     const evening = { type: 'time', label: 'abends', value: 'evening' };
     const tageskurs = { title: 'Anfänger Fotokurs', description: '13.00 – 15.00 Uhr Portraits Indoor\n15.00 – 17.00 Uhr Fotoaufnahmen Outdoor', course_events: [] };
-    expect(checkWish(tageskurs, evening).status).toBe('unknown');
+    // 24.11.2026: bekannte Tageszeit ist eine Abweichung mit Angabe der Kurszeit.
+    expect(checkWish(tageskurs, evening)).toMatchObject({ status: 'deviating', actual: '13:00–17:00' });
     expect(checkWish({ title: 'Foto', description: '', course_events: [{ schedule_description: 'Sa 09:30–16:30; Di/Fr 18:00–21:00' }] }, evening).status).toBe('confirmed');
     expect(checkWish({ title: 'Kurs', description: 'Beginn ab 18.30 Uhr', course_events: [] }, evening).status).toBe('confirmed');
     expect(checkWish({ title: 'Kurs', description: 'von 9 bis 17:30 Uhr', course_events: [] }, evening).status).toBe('unknown');
@@ -97,7 +99,8 @@ describe('Zeitwünsche', () => {
       wishChecks, wishes: [{ type: 'time', label: 'abends', value: 'evening' }],
     });
     expect(text).not.toMatch(/nach der Arbeit zu verbessern/);
-    expect(text).toMatch(/Wunsch „abends“ nicht belegt\./);
+    // 24.11.2026: Die Kurszeit ist bekannt → Abweichung mit tatsächlicher Zeit.
+    expect(text).toMatch(/Abweichung vom Wunsch „abends“: Kurszeit laut Kursangaben „Sa\/So 09:30–16:30“\./);
   });
 
   it('belegte Zeitaussage bleibt (Samstagskurs bei Wochenendwunsch)', () => {
@@ -109,9 +112,9 @@ describe('Zeitwünsche', () => {
   });
 
   it('Zeit-Hinweis in der Sprache der Anfrage', () => {
-    const check = { aspect: 'Zeit', status: 'unknown', wishLabel: 'am Wochenende', key: 'time_weekend' };
-    expect(buildExplanation({ wishChecks: [check], language: 'fr' })).toMatch(/Souhait « le week-end » non confirmé/);
-    expect(buildExplanation({ wishChecks: [check], language: 'it' })).toMatch(/Desiderio «nel fine settimana» non confermato/);
+    // Die Bezeichnung stammt aus der Anfrage, also schon in deren Sprache; ohne Bezeichnung die Standardform.
+    expect(buildExplanation({ wishChecks: [{ aspect: 'Zeit', status: 'unknown', wishLabel: 'le week-end', key: 'time_weekend' }], language: 'fr' })).toMatch(/Souhait « le week-end » non confirmé/);
+    expect(buildExplanation({ wishChecks: [{ aspect: 'Zeit', status: 'unknown', wishLabel: '', key: 'time_weekend' }], language: 'it' })).toMatch(/Desiderio «nel fine settimana» non confermato/);
   });
 });
 
@@ -148,7 +151,8 @@ describe('Angebotsformen und Teilnahmebeschränkungen (Punkt 4)', () => {
     const text = buildExplanation({ lead: 'Du lernst, Bewegungsangebote für ältere Menschen zu planen.', offerForm: ['training'] });
     expect(text).toMatch(/Angebotsform laut Kursangaben: berufliche Aus- oder Weiterbildung\./);
     const kids = buildExplanation({ lead: 'Du setzt eigene kleine Projekte um und entdeckst Programmieren.', offerForm: ['self_study'], language: 'de' });
-    expect(kids).toMatch(/Angebotsform laut Kursangaben: Selbststudium\./);
+    // Selbststudium ist eine Lernform (Lesbarkeit 24.11.2026).
+    expect(kids).toMatch(/Lernform laut Kursangaben: Selbststudium\./);
   });
 
   it('kein doppelter Hinweis, wenn Text oder Wunschhinweis die Form schon nennen', () => {

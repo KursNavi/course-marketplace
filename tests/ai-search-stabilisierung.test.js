@@ -106,7 +106,7 @@ describe('1. Tatsachen aus Kursangaben', () => {
 
   it('Abend erst ab 18 Uhr Beginn (Befund 20611: letzter Block 17–19 Uhr eines Tageskurses)', () => {
     const evening = { type: 'time', label: 'abends', value: 'evening' };
-    expect(checkWish({ title: 'Portrait', description: '15.00 – 17.00 Uhr Indoor\n17.00 – 19.00 Uhr Outdoor', course_events: [] }, evening).status).toBe('unknown');
+    expect(checkWish({ title: 'Portrait', description: '15.00 – 17.00 Uhr Indoor\n17.00 – 19.00 Uhr Outdoor', course_events: [] }, evening)).toMatchObject({ status: 'deviating', actual: '15:00–19:00' });
     expect(checkWish({ title: 'Foto', description: 'Di/Fr 18:00–21:00', course_events: [] }, evening).status).toBe('confirmed');
   });
 
@@ -137,7 +137,7 @@ describe('1. Tatsachen aus Kursangaben', () => {
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
     const restricted = buildExplanation({ lead, description: 'Dieser Berufsbildner-Kurs richtet sich an Ärztinnen und Ärzte, die Lernende ausbilden.', prerequisites: 'Abgeschlossene Grundbildung und Berufspraxis' });
     expect(restricted).toMatch(/Laut Kursbeschreibung: „richtet sich an Ärztinnen und Ärzte, die Lernende…“\./);
-    expect(restricted).toMatch(/Voraussetzungen: „Abgeschlossene Grundbildung und Berufspraxis“\./);
+    expect(restricted).toMatch(/Zulassungsbedingungen laut Kursangaben: „Abgeschlossene Grundbildung und Berufspraxis“\./);
   });
 
   it('keine Voraussetzungszeile bei „keine“', () => {

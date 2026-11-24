@@ -704,7 +704,8 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
     const result = await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga', description: 'Sanftes Yoga am Abend.', contact_email: 'x@y' } }]);
     // scoreSamples: Rohwert(e) der Score-Stichprobe(n) für den Prüfbericht (Stabilität, 23.11.2026).
-    expect(result.accepted).toEqual([{ courseId: '1', score: 91, wishScore: 50, explanation: null, reasons: [{ field: 'description', quote: 'Sanftes Yoga' }], scoreSamples: [91] }]);
+    // explanationRaw/explanationRejectedBecause: nur für den privaten Prüfbericht (24.11.2026).
+    expect(result.accepted).toEqual([{ courseId: '1', score: 91, wishScore: 50, explanation: null, reasons: [{ field: 'description', quote: 'Sanftes Yoga' }], scoreSamples: [91], explanationRaw: null, explanationRejectedBecause: null }]);
     expect(result.rejected.some((r) => r.courseId === '999')).toBe(true);
     const sent = JSON.parse(fetchImpl.mock.calls[0][1].body);
     expect(sent.model).toBe('gpt-6-luna');
@@ -1053,7 +1054,9 @@ describe('Begründungstext (Nachtrag 10)', () => {
       price: 'Preis auf Anfrage',
     });
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
-    expect(text).toMatch(/Abweichung vom Wunsch/);
+    // 24.11.2026: Ist der Ort zugleich Formular-Vorgabe, heisst er nicht „Wunsch“;
+    // die Vorgabe wird als nicht bestätigt genannt.
+    expect(text).not.toMatch(/Wunsch „Zürich“/);
     expect(text).toMatch(/Nicht bestätigt: ein Termin in Zürich\./);
     expect(text).toMatch(/Nicht bestätigt: Preis im Budget/);
   });
@@ -1077,7 +1080,8 @@ describe('Begründungstext (Nachtrag 10)', () => {
     expect(text).not.toMatch(/steht: „Zitat“/);
     expect(text).toMatch(/^Satz 0/);
     expect(text).not.toMatch(/Satz 1/);
-    expect(text).toMatch(/Abweichung vom Wunsch „Zürich“: Ort ist Bern\./);
+    // 24.11.2026: Formular-Vorgabe „Zürich“ wird nicht als Wunsch bezeichnet.
+    expect(text).not.toMatch(/Wunsch „Zürich“/);
     expect(text).toMatch(/Nicht bestätigt: ein Termin in Zürich\./);
     expect(countWords(text)).toBeLessThanOrEqual(MAX_EXPLANATION_WORDS);
   });

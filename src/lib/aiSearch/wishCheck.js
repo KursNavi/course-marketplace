@@ -87,9 +87,74 @@ function upcomingEvents(course, now) {
     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
 }
 
+// Uhrzeitspannen („10.00 – 11.00 Uhr“, „Sa/So 09:30–16:30“).
+const TIME_RANGE = /(\d{1,2})[:.](\d{2})\s*(?:uhr\s*)?(?:[–-]|bis)\s*(\d{1,2})[:.](\d{2})/gi;
+const WEEKDAY = /\b(?:montags?|dienstags?|mittwochs?|donnerstags?|freitags?|mo|di|mi|do|fr)\b\.?(?=[\s,/–-]|$)/i;
+const WEEKDAY_FULL = /\b(?:montags?|dienstags?|mittwochs?|donnerstags?|freitags?)\b/i;
+const pad = (n) => String(n).padStart(2, '0');
+const DAY_TOKEN = /(?:montags?|dienstags?|mittwochs?|donnerstags?|freitags?|samstags?|sonntags?|(?:mo|di|mi|do|fr|sa|so)(?:\s*[/–-]\s*(?:mo|di|mi|do|fr|sa|so))*)(?=[\s,./–-]|$)/gi;
+
+/**
+ * Datum (TT.MM.JJJJ) in Kursdauer oder Terminbeschreibung, das vor `now` liegt,
+ * sofern kein künftiger Termin existiert; sonst null.
+ */
+export function pastScheduleDate(course, now) {
+  if (!now) return null;
+  const nowMs = new Date(now).getTime();
+  const events = (Array.isArray(course?.course_events) ? course.course_events : []).filter((e) => !e?.cancelled_at);
+  if (events.some((e) => e?.start_date && new Date(e.start_date).getTime() >= nowMs)) return null;
+  const text = [course?.session_length, ...events.map((e) => e?.schedule_description)].filter(Boolean).join(' ');
+  const match = /\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b/.exec(text);
+  if (!match) return null;
+  const date = Date.UTC(Number(match[3]), Number(match[2]) - 1, Number(match[1]), 23, 59);
+  return date < nowMs ? match[0] : null;
+}
+
+/** Kurze Zeitangabe aus einer Zeitbeschreibung: Wochentag(e) und Uhrzeitspanne, ohne Datum. */
+export function dayAndTime(text) {
+  const source = String(text ?? '');
+  const range = new RegExp(TIME_RANGE.source, 'i').exec(source);
+  const days = [...source.matchAll(DAY_TOKEN)].map((d) => d[0].replace(/\s+/g, ''))
+    .filter((d, i, a) => a.indexOf(d) === i);
+  const time = range ? `${pad(Number(range[1]))}:${range[2]}–${pad(Number(range[3]))}:${range[4]}` : '';
+  const out = [days.join(', '), time].filter(Boolean).join(' ').trim();
+  return out || source.trim();
+}
+
+/**
+ * Belegte Kurszeit, die einem Zeitwunsch widerspricht (24.11.2026), sonst null:
+ *  - abends: Uhrzeitspannen bekannt, keine beginnt ab 18 Uhr → Terminbeschreibung
+ *    bzw. Spanne früheste–späteste Uhrzeit („10:00–17:00“);
+ *  - Wochenende/Samstag/Sonntag: nur Wochentage genannt, kein Sa/So.
+ */
+export function knownScheduleDeviation(course, value) {
+  const events = (Array.isArray(course?.course_events) ? course.course_events : []).filter((e) => !e?.cancelled_at);
+  // Ausdrückliche Zeitangaben: Terminbeschreibungen, sonst die Kursdauer-Angabe.
+  const eventSchedule = [...events.map((e) => e?.schedule_description), course?.session_length].filter(Boolean);
+  const source = scheduleText(course);
+  if (value === 'evening') {
+    const ranges = [...source.matchAll(TIME_RANGE)].map((r) => ({ start: Number(r[1]) * 60 + Number(r[2]), end: Number(r[3]) * 60 + Number(r[4]) }))
+      .filter((r) => r.start < 24 * 60 && r.end <= 24 * 60);
+    if (ranges.length === 0) return null;
+    const scheduled = eventSchedule.find((s) => new RegExp(TIME_RANGE.source, 'i').test(s));
+    if (scheduled) return dayAndTime(scheduled);
+    const start = Math.min(...ranges.map((r) => r.start));
+    const end = Math.max(...ranges.map((r) => r.end));
+    return `${pad(Math.floor(start / 60))}:${pad(start % 60)}–${pad(Math.floor(end / 60))}:${pad(end % 60)}`;
+  }
+  if (['weekend', 'saturday', 'sunday'].includes(value)) {
+    // Abkürzungen (Mo, Di …) nur in Terminbeschreibungen; im Fliesstext nur ausgeschriebene Tage.
+    const days = eventSchedule.find((s) => WEEKDAY.test(s)) ?? (WEEKDAY_FULL.test(source) ? source.match(WEEKDAY_FULL)[0] : null);
+    return days ? dayAndTime(days) : null;
+  }
+  return null;
+}
+
 function scheduleText(course) {
   const events = (Array.isArray(course?.course_events) ? course.course_events : []).filter((e) => !e?.cancelled_at);
-  return [course?.title, course?.description, ...events.map((e) => e?.schedule_description)].filter(Boolean).join(' ');
+  // session_length trägt oft die Kurszeit („1 Tag, 09:00 bis 16:00 Uhr“, Befund 24.11.2026).
+  // Zeilenweise getrennt, damit ein Ausschnitt nicht in das nächste Feld läuft.
+  return [course?.title, course?.description, course?.session_length, ...events.map((e) => e?.schedule_description)].filter(Boolean).join('\n');
 }
 
 function deliveryTypes(course) {
@@ -112,6 +177,16 @@ function labelDelivery(types) {
  *          null, wenn der Wunsch hier nicht geprüft wird (z. B. Ort, Budget).
  */
 export function checkWish(course, wish, options = {}) {
+  if (wish?.type === 'holiday') {
+    // Ferienkurs-Wunsch (24.11.2026, Befund 20178): Kursart entscheidet; ein
+    // Ferienbezug im Text bestätigt ebenfalls. Andere bekannte Kursart = Abweichung.
+    const base = { aspect: 'Kursart', wishLabel: wish.label, claimKey: 'time', key: null };
+    const kursart = String(course?.kinder_kursart ?? '').toLowerCase();
+    if (kursart === 'ferienkurs' || kursart === 'feriencamp') return { ...base, status: 'confirmed', actual: kursart };
+    if (/schulferien|ferienkurs|ferienwoche|in den ferien|sommerferien|herbstferien|frühlingsferien|winterferien/i.test(`${course?.title ?? ''} ${course?.description ?? ''}`)) return { ...base, status: 'confirmed', actual: 'ferienkurs' };
+    if (kursart) return { ...base, status: 'deviating', actual: kursart };
+    return { ...base, status: 'unknown', actual: null };
+  }
   if (wish?.type === 'period' && Array.isArray(wish.value?.months)) {
     // Zeitraum: nur künftige, nicht abgesagte Termine entscheiden.
     const base = { aspect: 'Zeitraum', wishLabel: wish.label, claimKey: 'time', key: null };
@@ -160,9 +235,12 @@ export function checkWish(course, wish, options = {}) {
     const source = scheduleText(course);
     const hit = TIME_EVIDENCE[wish.value].exec(source);
     // Belegstelle (wenige Wörter um den Treffer) für den Faktensatz.
-    return hit
-      ? { ...base, status: 'confirmed', actual: timeExcerpt(source, hit.index, hit[0].length) }
-      : { ...base, status: 'unknown', actual: null };
+    // Vergangenes Datum in der Zeitangabe ausdrücklich nennen (Befund 20592).
+    const pastDate = pastScheduleDate(course, options.now);
+    if (hit) return { ...base, status: 'confirmed', actual: timeExcerpt(source, hit.index, hit[0].length), pastDate };
+    // Bekannt abweichend (24.11.2026): belegte Kurszeit, aber nicht passend.
+    const known = knownScheduleDeviation(course, wish.value);
+    return known ? { ...base, status: 'deviating', actual: known, pastDate } : { ...base, status: 'unknown', actual: null };
   }
   if (wish?.type === 'level' && wish.value === 'beginner') {
     const level = String(course?.level ?? '').toLowerCase().trim();
