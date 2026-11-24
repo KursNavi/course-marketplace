@@ -29,9 +29,17 @@ Nicht freigegeben: Push, Migration, Produktionsänderung und eine vollständige 
 
 **Befund aus den gespeicherten Bewertungen** (Abnahme 3 gegen 4; Teilaufrufe aus den
 gespeicherten Rängen rekonstruiert):
-- **Zufallsschwankung nachgewiesen:** Bei unveränderter Luna-Eingabe und **identischen**
-  Nachbarkandidaten im Teilaufruf änderten sich 7 von 200 Bewertungen um 15 Punkte oder mehr.
-  Beispiele: q-fr-002/20112 45 → 64, q-muss-001/20091 52 → 32, q-muss-003/20113 24 → 45.
+- **Schwankung bei weitgehend gleicher Eingabe:** 7 von 200 Bewertungen änderten sich um
+  15 Punkte oder mehr. Beispiele: q-fr-002/20112 45 → 64, q-muss-001/20091 52 → 32,
+  q-muss-003/20113 24 → 45.
+  - **Gleich waren:** Anfragetext (Fälle ohne herausgelöste Wünsche), Kursangaben (gleicher
+    Katalogstand), Nachbarkandidaten im Teilaufruf und Modelleinstellungen (gpt-6-luna,
+    Denkstufe none, Teilgrösse 5, stripe).
+  - **Nicht gleich war die Anweisung:** Zwischen Abnahme 3 (`564ddfa`) und 4 (`6153081`) kamen
+    zwei Regeln hinzu (`OPTIONAL_WISHES_RULE`, `TRAINING_RULE`).
+  - **Korrektur 24.11.2026:** Die frühere Formulierung „bei unveränderter Luna-Eingabe“ war
+    damit falsch. Der Befund belegt Schwankung bei weitgehend, aber nicht vollständig gleicher
+    Eingabe.
 - **Nachbarschaftseffekt nur angedeutet:** Bei anderen Nachbarn gehen stärkere Nachbarn eher
   mit niedrigeren Werten einher (r = −0,38, n = 25). Das ist zu wenig für einen Nachweis.
   Beispiele: q-kinder-004/20647 30 → 76 bei schwächeren, q-fr-002/20943 82 → 65 bei stärkeren
