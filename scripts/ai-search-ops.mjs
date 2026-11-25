@@ -66,7 +66,7 @@ export function describeStep(mode, step, result) {
   }
   if (mode === 'cleanup') {
     if (step.skipped) return `${head} – ${step.reason ?? ''}`.trim();
-    return `${head} – ${step.deleted} gelöscht (höchstens ${step.batch})`;
+    return `${head} – ${step.deleted} gelöscht (höchstens ${step.batch})${step.usageDeleted !== undefined ? `, ${step.usageDeleted} Kontingentzeilen vor ${step.usageBefore} gelöscht` : ''}`;
   }
   return head;
 }

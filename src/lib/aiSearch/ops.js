@@ -74,8 +74,8 @@ export const MONTHLY_BUDGET_USD = 10;
 /** Kennzeichnung der Kostenangaben (begrenzte Schätzung, siehe collectStatus). */
 export const ESTIMATE_NOTE = 'Begrenzte Schätzung (Preisannahmen 13.11.2026), nicht der vollständige Projektverbrauch und keine garantierte Monatsobergrenze; massgeblich ist die Abrechnung des Anbieters.';
 export const ESTIMATE_SCOPE = Object.freeze([
-  'Suchen dieses Monats laut Kontingenttabelle der TESTdatenbank × angenommener Höchstpreis je Suche',
-  'noch fehlende/veraltete Embeddings dieser TESTdatenbank (einmalig, ~4 Zeichen je Token)',
+  'Suchen dieses Monats laut Kontingenttabelle der Zieldatenbank × angenommener Höchstpreis je Suche',
+  'noch fehlende/veraltete Embeddings der Zieldatenbank (einmalig, ~4 Zeichen je Token)',
 ]);
 export const ESTIMATE_EXCLUDES = Object.freeze([
   'Embedding-Läufe ausserhalb des Betriebsrunners (Backfill-/Testskripte) und Sonden',
@@ -93,7 +93,7 @@ const PAGE = 1000;
 const MODES = ['index', 'embed', 'cleanup'];
 const KNOWN_FLAGS = new Set([
   'execute-index', 'execute-embed', 'execute-cleanup', 'max-usd', 'max-runtime-sec',
-  'max-index-batches', 'max-enqueue', 'max-embed-chunks', 'cleanup-batch', 'json', 'alarm-exit',
+  'max-index-batches', 'max-enqueue', 'max-embed-chunks', 'cleanup-batch', 'json', 'alarm-exit', 'purge-usage',
 ]);
 
 export class OpsError extends Error {
@@ -148,7 +148,7 @@ export function parseOpsArgs(argv, env, expectedRef) {
     const value = flags.get(`execute-${mode}`);
     if (value !== undefined && value !== true) errors.push(`--execute-${mode} nimmt keinen Wert.`);
   }
-  for (const name of ['json', 'alarm-exit']) {
+  for (const name of ['json', 'alarm-exit', 'purge-usage']) {
     const value = flags.get(name);
     if (value !== undefined && value !== true) errors.push(`--${name} nimmt keinen Wert.`);
   }
@@ -179,11 +179,16 @@ export function parseOpsArgs(argv, env, expectedRef) {
     errors.push('--max-usd gilt nur zusammen mit --execute-embed.');
   }
 
+  // Kontingentzeilen älter als der Vormonat löschen (Produktionspaket 25.11.2026):
+  // nur zusammen mit der Ergebnisbereinigung.
+  const purgeUsage = flags.get('purge-usage') === true;
+  if (purgeUsage && !execute.cleanup) errors.push('--purge-usage gilt nur zusammen mit --execute-cleanup.');
+
   return {
     ok: errors.length === 0,
     errors,
     options: {
-      execute, anyExecute, limits,
+      execute, anyExecute, limits, purgeUsage,
       json: flags.get('json') === true,
       alarmExit: flags.get('alarm-exit') === true,
     },
@@ -545,9 +550,16 @@ export async function runIndexStep(client, session, { deadline, maxBatches, maxE
 export async function runEmbedStep(client, gateway, session, {
   version, activeVersion, candidates, maxChunks, maxUsd, deadline,
   monthSpentUsd = 0, monthCapUsd = OPS_LIMITS.maxEmbedUsdPerMonth,
-  now = Date.now, prices = OPS_PRICES,
+  now = Date.now, prices = OPS_PRICES, initial = false,
 }) {
-  if (!version || version !== activeVersion) {
+  // Ersteinbettung (Produktionswerkzeug, 25.11.2026): nur solange KEINE Version
+  // aktiv ist; aktiviert wird getrennt und erst nach vollständiger Einbettung.
+  if (initial) {
+    if (!version) return { skipped: true, reason: 'Keine Modellversion konfiguriert.' };
+    if (activeVersion !== null && activeVersion !== undefined) {
+      return { skipped: true, reason: `Ersteinbettung nur ohne aktive Version (aktiv: ${activeVersion}); laufende Pflege über den Betriebsrunner.` };
+    }
+  } else if (!version || version !== activeVersion) {
     return { skipped: true, reason: `Konfigurierte Version ${version ?? '—'} ≠ aktive ${activeVersion ?? '—'}; kein Modellwechsel im Betriebsrunner.` };
   }
   const planned = candidates.slice(0, maxChunks);
@@ -601,14 +613,34 @@ export async function runEmbedStep(client, gateway, session, {
   return result;
 }
 
-export async function runCleanupStep(client, session, { batch }) {
+export async function runCleanupStep(client, session, { batch, purgeUsageBefore = null }) {
   await session.gate(STEP_MS.dbRequest);
   const { data, error } = await client.rpc('ai_search_ops_fenced_cleanup', { ...session.fence(), p_batch: batch });
   if (error) {
     if (isLeaseLostDbError(error)) throw leaseErrorFrom(error);
     throw new Error(`Ergebnisbereinigung: ${error.message}`);
   }
-  return { deleted: Number(data ?? 0), batch };
+  const result = { deleted: Number(data ?? 0), batch };
+  if (purgeUsageBefore) {
+    // Aufbewahrung der Kontingentzeilen: laufender und vorheriger Kalendermonat
+    // (Zürich). Nur abgeschlossene/freigegebene Zeilen; laufende Reservierungen bleiben.
+    await session.gate(STEP_MS.dbRequest);
+    const { count, error: usageError } = await client.from('ai_search_usage')
+      .delete({ count: 'exact' })
+      .lt('month_key', purgeUsageBefore)
+      .in('state', ['completed', 'released']);
+    if (usageError) throw new Error(`Kontingentzeilen löschen: ${usageError.message}`);
+    result.usageDeleted = Number(count ?? 0);
+    result.usageBefore = purgeUsageBefore;
+  }
+  return result;
+}
+
+/** Monatsschlüssel des Vormonats (Zürich): Zeilen davor werden gelöscht. */
+export function previousMonthKey(now = new Date()) {
+  const current = monthKeyZurich(now);
+  const [year, month] = current.split('-').map(Number);
+  return month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`;
 }
 
 // ---------------------------------------------------------------------
@@ -721,7 +753,7 @@ export async function runOps(client, options, deps) {
     }
     if (options.execute.cleanup) {
       if (now() >= deadline) steps.cleanup = { skipped: true, reason: 'Laufzeitgrenze erreicht' };
-      else steps.cleanup = await runCleanupStep(client, session, { batch: options.limits.cleanupBatch });
+      else steps.cleanup = await runCleanupStep(client, session, { batch: options.limits.cleanupBatch, purgeUsageBefore: options.purgeUsage ? previousMonthKey(clock()) : null });
     }
   } catch (error) {
     failure = error;
@@ -741,7 +773,7 @@ export async function runOps(client, options, deps) {
     stepResults,
     index: steps.index ? { enqueued: steps.index.reconciliation?.enqueued, enqueuedBy: steps.index.reconciliation?.enqueuedBy, jobs: steps.index.worker?.fetchedJobs, failures: steps.index.worker?.failures, stoppedBy: steps.index.stoppedBy } : undefined,
     embed: steps.embed ? { embedded: steps.embed.embedded, calls: steps.embed.calls, actualUsd: steps.embed.actualUsd ?? null } : undefined,
-    cleanup: steps.cleanup ? { deleted: steps.cleanup.deleted } : undefined,
+    cleanup: steps.cleanup ? { deleted: steps.cleanup.deleted, usageDeleted: steps.cleanup.usageDeleted } : undefined,
     leaseLost: failure?.leaseLost ? failure.status : undefined,
     error: failure ? String(failure.message ?? failure).slice(0, 300) : undefined,
   };

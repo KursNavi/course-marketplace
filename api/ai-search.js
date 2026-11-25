@@ -171,7 +171,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const modelConfig = readModelConfig(process.env);
       return res.status(200).json({
-        environment: 'test',
+        environment: environment.mode,
         models: { enabled: modelConfig.enabled, reason: modelConfig.reason },
         quota: await quotaStatus(service, user.id),
       });

@@ -1,0 +1,118 @@
+name: KI-Suche Produktionsbetrieb
+
+# Betrieb der KI-Suche in PRODUKTION (nplxmpfasgpumpiddjfl) mit dem
+# Produktionswerkzeug scripts/ai-search-prod.mjs. Gleiche Infrastruktur wie der
+# TEST-Betriebszyklus (GitHub Actions), getrennte Secrets und Schalter.
+#
+# STANDARDMÄSSIG AUS. Zwei Auslöser:
+#  1) Zeitplan alle 15 Minuten: wirkt erst, wenn diese Datei auf dem
+#     Standardbranch liegt UND die Repository-Variable
+#     AI_OPS_PROD_SCHEDULE_ENABLED auf 'true' gesetzt ist.
+#     Ablauf: Index/Änderungsaufträge, fehlende Embeddings (nur Deltas, nur bei
+#     aktiver Version), Löschung abgelaufener Ergebnisse (24-h-Frist) und
+#     Kontingentzeilen älter als der Vormonat – danach
+#     lesender Bericht mit Überwachung (--alarm-exit: roter Lauf bei
+#     kritischem Alarm, z. B. fehlgeschlagene Aufträge, Rückstand > 24 h,
+#     Löschrückstand > 2 h; GitHub benachrichtigt bei fehlgeschlagenen Läufen).
+#  2) Manueller Einzellauf (workflow_dispatch, nur Berechtigte, nur vom
+#     Standardbranch): beaufsichtigter Indexaufbau, Ersteinbettung,
+#     Aktivierung, Deaktivierung (Rückweg) oder Statusbericht.
+#
+# Kein pull_request-Auslöser (öffentliches Repository: keine Produktions-
+# Secrets für Pull Requests). Secrets liegen in der GitHub-Umgebung
+# "ki-produktion" (Einrichtung siehe docs/ai-search/produktionspaket-20261125.md).
+# Logs enthalten nur Zählungen, IDs und Kosten-Schätzungen, keine Kurstexte.
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+    inputs:
+      befehl:
+        description: 'Befehl (Standard: nur lesender Statusbericht)'
+        type: choice
+        default: status
+        options: [status, index-aufbau, ersteinbettung-trocken, ersteinbettung, aktivieren-trocken, aktivieren, deaktivieren]
+      max_usd:
+        description: 'Stoppschwelle Ersteinbettung in USD (Schätzung, höchstens 1)'
+        type: string
+        default: '0.05'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ki-produktionsbetrieb
+  cancel-in-progress: false
+
+jobs:
+  produktion:
+    if: >-
+      (github.event_name == 'schedule' && vars.AI_OPS_PROD_SCHEDULE_ENABLED == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: ki-produktion
+    env:
+      SUPABASE_URL_PROD: ${{ secrets.SUPABASE_URL_PROD }}
+      SUPABASE_SECRET_KEY_PROD: ${{ secrets.SUPABASE_SECRET_KEY_PROD }}
+      AI_SEARCH_EMBEDDING_MODEL: text-embedding-3-small
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Zeitgesteuerter Zyklus (Index, Embedding-Deltas, Löschung)
+        if: github.event_name == 'schedule'
+        env:
+          AI_PROD_CONFIRM: nplxmpfasgpumpiddjfl
+          AI_SEARCH_MODELS_ENABLED: '1'
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_PROD }}
+        run: node scripts/ai-search-prod.mjs ops --execute-index --execute-embed --execute-cleanup --max-usd=0.01 --max-runtime-sec=300 --max-index-batches=6 --max-enqueue=200 --max-embed-chunks=300 --cleanup-batch=1000 --purge-usage
+
+      - name: Indexaufbau Stufe 1 (ohne Modell, wiederholbar)
+        if: github.event_name == 'workflow_dispatch' && inputs.befehl == 'index-aufbau'
+        env:
+          AI_PROD_CONFIRM: nplxmpfasgpumpiddjfl
+        run: node scripts/ai-search-prod.mjs ops --execute-index --max-runtime-sec=600 --max-index-batches=40 --max-enqueue=500
+
+      - name: Ersteinbettung (Trockenlauf)
+        if: github.event_name == 'workflow_dispatch' && inputs.befehl == 'ersteinbettung-trocken'
+        run: node scripts/ai-search-prod.mjs initial-embed
+
+      - name: Ersteinbettung (kostenpflichtig, Stoppschwelle)
+        if: github.event_name == 'workflow_dispatch' && inputs.befehl == 'ersteinbettung'
+        env:
+          AI_PROD_CONFIRM: nplxmpfasgpumpiddjfl
+          AI_SEARCH_MODELS_ENABLED: '1'
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_PROD }}
+          MAX_USD: ${{ inputs.max_usd }}
+        run: node scripts/ai-search-prod.mjs initial-embed --execute "--max-usd=$MAX_USD" --max-runtime-sec=600
+
+      - name: Aktivierung (Trockenlauf)
+        if: github.event_name == 'workflow_dispatch' && inputs.befehl == 'aktivieren-trocken'
+        run: node scripts/ai-search-prod.mjs activate
+
+      - name: Aktivierung der Modellversion
+        if: github.event_name == 'workflow_dispatch' && inputs.befehl == 'aktivieren'
+        env:
+          AI_PROD_CONFIRM: nplxmpfasgpumpiddjfl
+        run: node scripts/ai-search-prod.mjs activate --execute
+
+      - name: Deaktivierung (Rückweg)
+        if: github.event_name == 'workflow_dispatch' && inputs.befehl == 'deaktivieren'
+        env:
+          AI_PROD_CONFIRM: nplxmpfasgpumpiddjfl
+        run: node scripts/ai-search-prod.mjs deactivate --execute
+
+      - name: Bericht mit Überwachung (lesend, rot bei kritischem Alarm)
+        if: always()
+        run: node scripts/ai-search-prod.mjs status --alarm-exit

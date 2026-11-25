@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Sparkles, Search, LayoutGrid, Lock, AlertTriangle, ChevronDown, ArrowRight, Loader, FlaskConical } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { AI_SEARCH_TEST_REF, supabaseRefOf } from '../lib/aiSearch/previewGuard';
+import { currentAiSearchClientMode } from '../lib/aiSearch/previewGuard';
 import { writeStored, readSession, writeSession, removeSession } from '../lib/safeStorage';
 import { DEFAULT_COURSE_IMAGE } from '../lib/imageUtils';
 import { AI_SEARCH_DRAFT_KEY } from '../lib/aiSearch/draft';
 import { coverageWarning, coverageFootnote } from '../lib/aiSearch/coverageText';
 
 /**
- * KI-Suche (Preview). Dritter Einstieg neben Kategorien und klassischer
+ * KI-Suche (Vorschau mit Testdaten bzw. nach Produktionsfreischaltung). Dritter Einstieg neben Kategorien und klassischer
  * Filtersuche. Nur für angemeldete echte Konten, 10 Suchen je Kalendermonat.
  *
  * Datenschutz: Der Suchtext bleibt im Browser (sessionStorage) und wird nie
@@ -18,9 +18,11 @@ import { coverageWarning, coverageFootnote } from '../lib/aiSearch/coverageText'
  * 3/5/10 mehr); die Anzeige löst nie eine neue Suche aus.
  */
 
-// Datenbank, mit der DIESER Browser spricht (zur Build-Zeit eingebettet).
-const BROWSER_DB_REF = supabaseRefOf(import.meta.env.VITE_SUPABASE_URL);
-const BROWSER_ON_TEST_DB = BROWSER_DB_REF === AI_SEARCH_TEST_REF;
+// Betriebsart DIESES Browsers (Adresse + zur Build-Zeit eingebettete Datenbank
+// und Produktionsfreischaltung). Verbindlich prüft der Server.
+const CLIENT_MODE = currentAiSearchClientMode();
+const IS_TEST_MODE = CLIENT_MODE === 'test';
+const BROWSER_DB_OK = CLIENT_MODE === 'test' || CLIENT_MODE === 'production';
 
 const DRAFT_KEY = AI_SEARCH_DRAFT_KEY;
 const RESULT_KEY = 'kn_ai_search_last_result';
@@ -50,7 +52,7 @@ const ERROR_TEXT = {
   in_progress: 'Diese Suche läuft bereits. Bitte warte einen Moment.',
   request_mismatch: 'Die Anfrage passte nicht zum laufenden Suchvorgang. Bitte starte die Suche neu.',
   not_released: 'Das Ergebnis konnte nicht freigegeben werden, weil dein Monatskontingent inzwischen aufgebraucht ist.',
-  wrong_environment: 'Die KI-Suche ist in dieser Umgebung gesperrt: Sie darf nur mit der Testdatenbank laufen.',
+  wrong_environment: 'Die KI-Suche ist in dieser Umgebung gesperrt (falsche Datenbank).',
   not_available: 'Die KI-Suche ist hier noch nicht freigeschaltet.',
   server_error: 'Unerwarteter Serverfehler. Bitte versuche es später erneut.',
   network: 'Keine Verbindung zum Server. Du kannst es mit derselben Anfrage erneut versuchen – sie wird höchstens einmal gezählt.',
@@ -236,7 +238,7 @@ export default function AiSearchView({ user, setView }) {
     clickStartedRef.current = performance.now();
     setClientMs(null);
     setError(null);
-    if (!BROWSER_ON_TEST_DB) { setError('wrong_environment'); return; }
+    if (!BROWSER_DB_OK) { setError('wrong_environment'); return; }
     let pending = pendingRef.current;
     if (!retry || !pending) {
       const musts = {};
@@ -295,14 +297,16 @@ export default function AiSearchView({ user, setView }) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
-      <p className={`mb-6 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full px-3 py-1 text-xs ${BROWSER_ON_TEST_DB ? 'bg-indigo-50 text-indigo-900' : 'bg-red-50 text-red-800'}`} data-testid="ai-preview-banner">
-        <FlaskConical className="w-3.5 h-3.5" />
-        <span>Vorschau mit Testdaten, nicht öffentlich</span>
-        <span aria-hidden="true">·</span>
-        <span data-testid="ai-db-check">
-          {BROWSER_ON_TEST_DB ? '✓ Datenbank dieses Browsers: Testumgebung' : '✗ Dieser Browser ist NICHT mit der Testumgebung verbunden – KI-Suche gesperrt.'}
-        </span>
-      </p>
+      {CLIENT_MODE !== 'production' && (
+        <p className={`mb-6 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full px-3 py-1 text-xs ${IS_TEST_MODE ? 'bg-indigo-50 text-indigo-900' : 'bg-red-50 text-red-800'}`} data-testid="ai-preview-banner">
+          <FlaskConical className="w-3.5 h-3.5" />
+          <span>Vorschau mit Testdaten, nicht öffentlich</span>
+          <span aria-hidden="true">·</span>
+          <span data-testid="ai-db-check">
+            {IS_TEST_MODE ? '✓ Datenbank dieses Browsers: Testumgebung' : '✗ Dieser Browser ist NICHT mit der Testumgebung verbunden – KI-Suche gesperrt.'}
+          </span>
+        </p>
+      )}
 
       <h1 className="text-3xl sm:text-4xl font-bold font-heading text-dark leading-tight" data-testid="ai-title">
         <Sparkles className="inline-block w-8 h-8 sm:w-9 sm:h-9 text-primary align-[-0.15em] mr-2" aria-hidden="true" />
@@ -355,7 +359,7 @@ export default function AiSearchView({ user, setView }) {
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-              <button type="submit" disabled={loading || !BROWSER_ON_TEST_DB || limitReached || statusError === 'wrong_environment' || statusError === 'not_available'} aria-describedby="ai-wait-hint" className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-bold disabled:opacity-50" data-testid="ai-submit">
+              <button type="submit" disabled={loading || !BROWSER_DB_OK || limitReached || statusError === 'wrong_environment' || statusError === 'not_available'} aria-describedby="ai-wait-hint" className="inline-flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-lg text-sm font-bold disabled:opacity-50" data-testid="ai-submit">
                 {loading ? <Loader className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Sparkles className="w-4 h-4" aria-hidden="true" />}
                 KI-Suche starten
               </button>
@@ -473,7 +477,7 @@ export default function AiSearchView({ user, setView }) {
                     {result.method && <p>Suchverfahren: {result.method.retrieval}.</p>}
                   </div>
                 </details>
-                {(clientMs !== null || result.serverTimings) && (
+                {IS_TEST_MODE && (clientMs !== null || result.serverTimings) && (
                   <p data-testid="ai-timing">
                     Messung (Testvorschau):
                     {clientMs !== null && <> Klick bis fertige Anzeige {formatSeconds(clientMs)}</>}

@@ -1,18 +1,25 @@
 /**
- * Umgebungsschutz der KI-Suche in der Preview-Phase.
+ * Umgebungsschutz der KI-Suche.
  *
- * Verbindlich (Auftrag 17.11.2026): Die Preview bezieht Daten und
+ * Preview/Entwicklung (Auftrag 17.11.2026, unverändert): Daten und
  * Schreibzugriffe AUSSCHLIESSLICH aus der TESTumgebung KursNavi
- * (omoapbvfligjfznzivyu). Das wird serverseitig bei jeder Anfrage geprüft:
- *  - In der Vercel-Produktionsumgebung ist die KI-Suche abgeschaltet
- *    (auch falls der Code versehentlich nach main gelangt).
- *  - Server- (SUPABASE_URL) und Browser-Ziel (VITE_SUPABASE_URL) müssen
- *    beide exakt auf das Testprojekt zeigen; jede andere Adresse,
- *    insbesondere Produktion, führt zur Ablehnung ohne Datenzugriff.
+ * (omoapbvfligjfznzivyu). Server- (SUPABASE_URL) und Browser-Ziel
+ * (VITE_SUPABASE_URL) müssen beide exakt auf das Testprojekt zeigen.
+ *
+ * Produktion (Produktionsfreischaltung, 25.11.2026): STANDARDMÄSSIG AUS.
+ * In der Vercel-Produktionsumgebung ist die KI-Suche nur aktiv, wenn
+ * ALLE Bedingungen zugleich erfüllt sind:
+ *  - AI_SEARCH_PRODUCTION_ENABLED ist exakt die Produktions-Projektkennung
+ *    (kein „1“/„true“: ein versehentlich gesetzter Wert schaltet nichts frei);
+ *  - Server- und Browser-Ziel zeigen beide exakt auf das Produktionsprojekt.
+ * Ein Merge allein aktiviert nichts. Der Schalter wirkt erst nach einem
+ * Deployment mit gesetzter Variable (Vercel liest Variablen beim Deployment).
  */
 
 export const AI_SEARCH_TEST_REF = 'omoapbvfligjfznzivyu';
 export const PRODUCTION_REF = 'nplxmpfasgpumpiddjfl';
+/** Öffentliche Produktionsadressen, auf denen der Einstieg erscheinen darf. */
+export const AI_SEARCH_PRODUCTION_HOSTS = Object.freeze(['kursnavi.ch', 'www.kursnavi.ch']);
 
 export function supabaseRefOf(rawUrl) {
   try {
@@ -25,13 +32,27 @@ export function supabaseRefOf(rawUrl) {
   }
 }
 
+/** true nur bei exakt gesetzter Produktionsfreischaltung (Wert = Projektkennung). */
+export function isProductionSwitchOn(value) {
+  return String(value ?? '').trim() === PRODUCTION_REF;
+}
+
 /**
  * @param {Record<string, string|undefined>} env
- * @returns {{ok: true, ref: string} | {ok: false, code: string, reason: string}}
+ * @returns {{ok: true, ref: string, mode: 'test'|'production'} | {ok: false, code: string, reason: string}}
  */
 export function checkAiSearchEnvironment(env) {
   if (env?.VERCEL_ENV === 'production') {
-    return { ok: false, code: 'not_available', reason: 'KI-Suche ist in der Produktionsumgebung nicht freigeschaltet.' };
+    if (!isProductionSwitchOn(env?.AI_SEARCH_PRODUCTION_ENABLED)) {
+      return { ok: false, code: 'not_available', reason: 'KI-Suche ist in der Produktionsumgebung nicht freigeschaltet.' };
+    }
+    if (supabaseRefOf(env?.SUPABASE_URL) !== PRODUCTION_REF) {
+      return { ok: false, code: 'wrong_environment', reason: 'Produktionsfreischaltung: Serverziel ist nicht das Produktionsprojekt — abgelehnt.' };
+    }
+    if (supabaseRefOf(env?.VITE_SUPABASE_URL) !== PRODUCTION_REF) {
+      return { ok: false, code: 'wrong_environment', reason: 'Produktionsfreischaltung: Browserziel ist nicht das Produktionsprojekt — abgelehnt.' };
+    }
+    return { ok: true, ref: PRODUCTION_REF, mode: 'production' };
   }
   const serverRef = supabaseRefOf(env?.SUPABASE_URL);
   if (serverRef !== AI_SEARCH_TEST_REF) {
@@ -50,7 +71,7 @@ export function checkAiSearchEnvironment(env) {
   if (supabaseRefOf(env?.VITE_SUPABASE_URL) !== AI_SEARCH_TEST_REF) {
     return { ok: false, code: 'wrong_environment', reason: 'Browserziel ist nicht die TESTumgebung KursNavi — abgelehnt.' };
   }
-  return { ok: true, ref: serverRef };
+  return { ok: true, ref: serverRef, mode: 'test' };
 }
 
 /**
@@ -62,4 +83,32 @@ export function isAiSearchPreviewHost(hostname) {
   const host = String(hostname ?? '').toLowerCase();
   if (host === 'localhost' || host === '127.0.0.1') return true;
   return host.endsWith('.vercel.app');
+}
+
+/**
+ * Betriebsart im Browser (reine Anzeige; verbindlich prüft der Server):
+ *  - 'test': Vorschauadresse mit Testdatenbank;
+ *  - 'blocked': Vorschauadresse mit anderer Datenbank (Einstieg sichtbar, Suche gesperrt);
+ *  - 'production': kursnavi.ch, Build mit VITE_AI_SEARCH_PRODUCTION = Projektkennung
+ *    und Produktionsdatenbank;
+ *  - 'off': sonst (kein Einstieg).
+ */
+export function aiSearchClientMode({ hostname, viteSupabaseUrl, productionFlag } = {}) {
+  const ref = supabaseRefOf(viteSupabaseUrl);
+  if (isAiSearchPreviewHost(hostname)) return ref === AI_SEARCH_TEST_REF ? 'test' : 'blocked';
+  const host = String(hostname ?? '').toLowerCase();
+  if (AI_SEARCH_PRODUCTION_HOSTS.includes(host) && isProductionSwitchOn(productionFlag) && ref === PRODUCTION_REF) return 'production';
+  return 'off';
+}
+
+/** Betriebsart dieses Browsers aus Adresse und Build-Variablen. */
+export function currentAiSearchClientMode() {
+  if (typeof window === 'undefined') return 'off';
+  const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
+  return aiSearchClientMode({ hostname: window.location.hostname, viteSupabaseUrl: env.VITE_SUPABASE_URL, productionFlag: env.VITE_AI_SEARCH_PRODUCTION });
+}
+
+/** Einstieg anzeigen (Navigation, Startseite, Route /ki-suche). */
+export function isAiSearchEntryVisible() {
+  return currentAiSearchClientMode() !== 'off';
 }

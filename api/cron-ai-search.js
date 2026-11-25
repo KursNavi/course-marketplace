@@ -40,6 +40,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   if (!requireCronSecret(req, res, 'cron-ai-search')) return;
+  // Produktionspaket 25.11.2026: In der Vercel-Produktion arbeitet ausschliesslich
+  // der Betriebsrunner mit Laufsperre v2 (scripts/ai-search-prod.mjs). Dieser
+  // Endpunkt (ohne Laufsperre, mit Alarm-Mails) bleibt dort gesperrt.
+  if (process.env.VERCEL_ENV === 'production') {
+    return res.status(200).json({ skipped: true, reason: 'In Produktion übernimmt der Betriebsrunner (Laufsperre v2) Index und Abgleich.' });
+  }
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

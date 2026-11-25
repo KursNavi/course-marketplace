@@ -30,6 +30,7 @@
     "embed:ai-test": "node scripts/ai-search-embed-test.mjs",
     "ops:ai-test": "node scripts/ai-search-ops.mjs",
     "ops:ai-index-backlog": "node scripts/ai-search-index-backlog.mjs",
+    "ops:ai-prod": "node scripts/ai-search-prod.mjs",
     "dev:finalize-yoga": "node scripts/finalize-yoga-cleanup-dev.mjs",
     "cleanup:check": "node scripts/cleanup-images.js --dry-run",
     "cleanup:execute": "node scripts/cleanup-images.js --execute",

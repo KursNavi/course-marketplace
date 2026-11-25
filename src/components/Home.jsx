@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ArrowRight, ChevronDown, CreditCard, Shield, Sparkles } from 'lucide-react';
-import { isAiSearchPreviewHost } from '../lib/aiSearch/previewGuard';
+import { isAiSearchEntryVisible } from '../lib/aiSearch/previewGuard';
 import { handOverAiSearchDraft } from '../lib/aiSearch/draft';
 import { LocationDropdown, DeliveryTypeFilter, LanguageDropdown } from './Filters';
 import { SEGMENT_CONFIG, COURSE_LEVELS } from '../lib/constants';
@@ -80,7 +80,7 @@ export const Home = ({
   // KI-Einstieg nur auf Vorschauadressen (nie auf kursnavi.ch) – gleiche
   // Regel wie der Navigationseintrag in Layout.jsx. Die App rendert per
   // createRoot (keine Hydration), daher direkt beim Rendern entscheidbar.
-  const showAiSearchCta = typeof window !== 'undefined' && isAiSearchPreviewHost(window.location.hostname);
+  const showAiSearchCta = isAiSearchEntryVisible();
 
   // --- ACTIONS ---
 

@@ -32,7 +32,7 @@ describe('previewGuard', () => {
 
   it('akzeptiert nur die TESTumgebung', () => {
     expect(checkAiSearchEnvironment({ VERCEL_ENV: 'preview', SUPABASE_URL: TEST_URL, VITE_SUPABASE_URL: `${TEST_URL}/` }))
-      .toEqual({ ok: true, ref: 'omoapbvfligjfznzivyu' });
+      .toEqual({ ok: true, ref: 'omoapbvfligjfznzivyu', mode: 'test' });
     expect(checkAiSearchEnvironment({ VERCEL_ENV: 'preview', SUPABASE_URL: undefined })).toMatchObject({ ok: false });
     expect(supabaseRefOf('http://omoapbvfligjfznzivyu.supabase.co')).toBeNull();
     expect(supabaseRefOf('https://omoapbvfligjfznzivyu.supabase.co.evil.example')).toBeNull();

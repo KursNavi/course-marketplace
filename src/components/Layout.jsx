@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Shield, Sparkles } from 'lucide-react';
-import { isAiSearchPreviewHost } from '../lib/aiSearch/previewGuard';
+import { isAiSearchEntryVisible } from '../lib/aiSearch/previewGuard';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { CareerIcon, PrivateHobbyIcon, ChildrenYouthIcon } from '../lib/segmentIcons';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
@@ -23,8 +23,8 @@ export const KursNaviLogo = ({ className }) => (
 
 export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, setShowResults, setSelectedCatPath }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // KI-Suche (Preview) nur auf Vorschauadressen anzeigen, nie auf kursnavi.ch.
-  const showAiSearch = typeof window !== 'undefined' && isAiSearchPreviewHost(window.location.hostname);
+  // KI-Suche: auf Vorschauadressen; auf kursnavi.ch nur nach Produktionsfreischaltung.
+  const showAiSearch = isAiSearchEntryVisible();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState(null);
   const [activePath, setActivePath] = useState(window.location.pathname);

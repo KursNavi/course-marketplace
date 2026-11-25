@@ -51,7 +51,7 @@ const OPENAI_BASE = 'https://api.openai.com/v1';
  * @returns {{enabled: boolean, reason: string|null, embeddingModel: string,
  *            embeddingVersion: string, lunaModel: string}}
  */
-export function readModelConfig(env) {
+export function readModelConfig(env, { checkEnvironment = checkAiSearchEnvironment } = {}) {
   const embeddingModel = env?.AI_SEARCH_EMBEDDING_MODEL || EMBEDDING_MODEL_DEFAULT;
   const effort = String(env?.AI_SEARCH_LUNA_EFFORT ?? '').trim();
   const batch = Number(env?.AI_SEARCH_LUNA_BATCH);
@@ -70,7 +70,9 @@ export function readModelConfig(env) {
   };
   if (env?.AI_SEARCH_MODELS_ENABLED !== '1') return { ...base, enabled: false, reason: 'Modellaufrufe nicht freigeschaltet (E3)' };
   if (!env?.OPENAI_API_KEY) return { ...base, enabled: false, reason: 'kein OpenAI-API-Zugang hinterlegt' };
-  const environment = checkAiSearchEnvironment(env);
+  // Web: Umgebungsschutz (TEST-Vorschau bzw. Produktionsfreischaltung). Betriebswerkzeuge
+  // übergeben ihre eigene, strengere Zielprüfung (scripts/ai-search-prod.mjs).
+  const environment = checkEnvironment(env);
   if (!environment.ok) return { ...base, enabled: false, reason: environment.reason };
   return { ...base, enabled: true, reason: null };
 }

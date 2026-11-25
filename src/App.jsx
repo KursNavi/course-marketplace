@@ -18,7 +18,7 @@ import { useTaxonomy } from './hooks/useTaxonomy';
 import { getSearchAreaSlugs } from './lib/searchAreaAliases';
 import { RADIUS_OPTIONS, courseWithinRadius, createGeoResolver, realCantonSelections } from './lib/courseGeo';
 import { loadSwissPlaces, resolvePlaceId } from './lib/swissPlaces';
-import { isAiSearchPreviewHost } from './lib/aiSearch/previewGuard';
+import { isAiSearchEntryVisible } from './lib/aiSearch/previewGuard';
 
 // Disable browser scroll auto-restoration synchronously so it can't override
 // React's scroll-to-top in useLayoutEffect before scrollRestoration is set in useEffect.
@@ -303,7 +303,7 @@ export default function KursNaviPro() {  // 1. Initial State Logic
 
       // KI-SUCHE (Preview): ausserhalb von Vorschauadressen wie eine unbekannte Seite
       if (path === '/ki-suche') {
-          return isAiSearchPreviewHost(window.location.hostname) ? 'ai-search' : 'not-found';
+          return isAiSearchEntryVisible() ? 'ai-search' : 'not-found';
       }
 
       // BLOG ROUTING
