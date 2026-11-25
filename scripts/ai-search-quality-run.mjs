@@ -39,7 +39,8 @@ import { ACCEPTANCE_RANGE, ID_OFFSET, BACKUP_BUCKET, QUALITY_PREFIX } from '../s
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const CASES_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/cases-36.json');
 export const STARTSET_PATH = resolve(ROOT, 'tests/fixtures/ai-search-goldstandard/tasks-initial.json');
-export const SOLL_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/soll-listen.json');
+// Version 2 (24.11.2026): drei belegte Soll-Fehler entfernt; Version 1 bleibt für die Abnahmen 1–4.
+export const SOLL_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/soll-listen-v2.json');
 export const MAX_USD_CEILING = 1;
 // Gezielte Proben (Freigabe 23.11.2026): vorab festgelegte Auswahl, höchstens 8 Suchen.
 export const PROBE_PATH = resolve(ROOT, 'tests/fixtures/ai-search-quality/proben-20261124.json');

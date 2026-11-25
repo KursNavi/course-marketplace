@@ -117,7 +117,10 @@ describe('3b. Nachbesserung nach der zweiten Gegenprüfung', () => {
 
   it('Budget: bekannter Betrag im Budget, aber offene Preisbasis wird so benannt; unbekannter Preis wie bisher', () => {
     expect(buildExplanation({ musts: { maxBudget: 300 }, mustUnknowns: ['budget'], price: 'Sommeraktion: CHF 19.90 statt CHF 29.90 pro Kids-Kurs.' }))
-      .toBe('Budgetvorgabe nicht bestätigt: genannt ist „Sommeraktion: CHF 19.90 statt CHF 29.90 pro Kids-Kurs“, ob als Gesamtpreis, ist nicht angegeben.');
+      .toBe('Budgetvorgabe nicht bestätigt: Preis nur als Freitext angegeben („Sommeraktion: CHF 19.90 statt CHF 29.90 pro Kids-Kurs“).');
+    // Fester Betrag im Budget, Preisbasis offen.
+    expect(buildExplanation({ musts: { maxBudget: 8000 }, mustUnknowns: ['budget'], price: 'CHF 3950' }))
+      .toBe('Budgetvorgabe nicht bestätigt: genannt ist „CHF 3950“, ob als Gesamtpreis, ist nicht angegeben.');
     expect(buildExplanation({ musts: { maxBudget: 300 }, mustUnknowns: ['budget'], price: 'Preis auf Anfrage' })).toBe('Nicht bestätigt: Preis im Budget (Preis auf Anfrage).');
   });
 });
@@ -199,7 +202,9 @@ describe('4. Vollständigkeit und Wortgrenze', () => {
     expect(text).toMatch(/Fähigkeitszeugnis/);
     expect(text).toMatch(/„CAS“ (laut Kursangaben )?nicht belegt/);
     // Betrag im Budget, Preisbasis offen: ausdrücklich so benannt (24.11.2026).
-    expect(text).toMatch(/Budgetvorgabe nicht bestätigt: genannt ist „CHF 3950“, ob als Gesamtpreis, ist nicht angegeben\./);
+    // Bei Überlänge in der Kurzform „Preisbasis offen“ (Aussage bleibt erhalten).
+    expect(text).toMatch(/Budgetvorgabe nicht bestätigt: genannt ist „CHF 3950“, (ob als Gesamtpreis, ist nicht angegeben|Preisbasis offen)\./);
+    expect(text).toMatch(/mindestens eines von: „Fähigkeitszeugnis eines…“ oder „Fachausweis einer…“ oder „Diplom einer…“/);
     expect(text).not.toMatch(/…$/);
     expect(text).not.toMatch(/Nächster Termin/); // weglassbar
     expect(typeof trace.ueberLaenge).toBe('boolean');

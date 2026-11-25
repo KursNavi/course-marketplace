@@ -1057,8 +1057,10 @@ describe('Begründungstext (Nachtrag 10)', () => {
     // 24.11.2026: Ist der Ort zugleich Formular-Vorgabe, heisst er nicht „Wunsch“;
     // die Vorgabe wird als nicht bestätigt genannt.
     expect(text).not.toMatch(/Wunsch „Zürich“/);
-    expect(text).toMatch(/Nicht bestätigt: ein Termin in Zürich\./);
-    expect(text).toMatch(/Nicht bestätigt: Preis im Budget/);
+    // Seit 24.11.2026 werden „Nicht bestätigt“-Zeilen bei Überlänge zusammengefasst.
+    expect(text).toMatch(/Nicht bestätigt: ein Termin in Zürich[.;]/);
+    expect(text).toMatch(/Preis im Budget \(Preis auf Anfrage\)/);
+    expect(text).toMatch(/Kurssprache/);
   });
 
   it('füllt bei knapper Evidenz nicht auf', () => {

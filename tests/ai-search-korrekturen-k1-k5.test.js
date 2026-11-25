@@ -237,6 +237,21 @@ describe('K3: nachvollziehbare Auswahlstufen', () => {
     expect(sha('tests/fixtures/ai-search-quality/soll-listen.json')).toBe('9a4636924b88b25fef01889165af3005c4c95404be8c8731953b1a3503fff459');
     expect(sha('docs/ai-search/abnahme-bewertungskriterien.md')).toBe('164d380942e5af241bc976a9ed544f78b320781c2465e815ab6b6f041a6234e0');
   });
+
+  it('Gesamtabnahme 24.11.2026: Soll-Listen v2, Belegregeln v2 und Auslegung eingefroren; v2 entfernt nur die drei belegten Fehler', async () => {
+    const { createHash } = await import('node:crypto');
+    const sha = (path) => createHash('sha256').update(readFileSync(path, 'utf8').replace(/\r\n/g, '\n')).digest('hex');
+    expect(sha('tests/fixtures/ai-search-quality/soll-listen-v2.json')).toBe('db8cf0a5ac182fc97ad75a4041bf4403284cc22a45885f8556344d202fb77476');
+    expect(sha('docs/ai-search/abnahme-belegregeln-v2.md')).toBe('03201db280523de40a8cb6b3d517ceaa9d7d224fd3f5b6f841174b48ef920d84');
+    expect(sha('docs/ai-search/abnahme-auslegung.md')).toBe('e1fe2ff50203b665d22d6a2cee9c97e1e62b9009f546417c9d9e256a785885ca');
+    const v1 = JSON.parse(readFileSync('tests/fixtures/ai-search-quality/soll-listen.json', 'utf8')).cases;
+    const v2 = JSON.parse(readFileSync('tests/fixtures/ai-search-quality/soll-listen-v2.json', 'utf8')).cases;
+    const removed = Object.keys(v1).flatMap((id) => v1[id].soll.filter((c) => !v2[id].soll.includes(c)).map((c) => `${id}:${c}`));
+    const added = Object.keys(v2).flatMap((id) => v2[id].soll.filter((c) => !v1[id].soll.includes(c)));
+    expect(removed.sort()).toEqual(['de-kinder-002:20422', 'q-fr-002:20531', 'q-kinder-004:20809']);
+    expect(added).toEqual([]);
+    expect(Object.keys(v2).sort()).toEqual(Object.keys(v1).sort());
+  });
 });
 
 function scenario(courses, chunks) {

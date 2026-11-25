@@ -93,6 +93,8 @@ jobs:
           AI_SEARCH_LUNA_EFFORT: none
           AI_SEARCH_LUNA_DISTRIBUTION: stripe
           AI_SEARCH_LUNA_MODE: single
+          # Doppelbewertung bleibt aus (Entscheidung 24.11.2026).
+          AI_SEARCH_LUNA_SCORE_SAMPLES: '1'
           # Verschluesselte Kopie fuer die Auswertung (privater Schluessel nicht im Repo).
           AI_RESULTS_PUBLIC_KEY_PATH: scripts/keys/ai-acceptance-results.pub.pem
           AI_RESULTS_OUT: abnahme-ergebnisse.enc.json

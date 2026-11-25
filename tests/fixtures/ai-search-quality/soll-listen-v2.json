@@ -1,0 +1,362 @@
+{
+  "version": "2026-11-24-v2",
+  "frozenAt": "2026-11-24T21:27:51.364Z",
+  "catalog": "Abnahmebestand TEST, Export 2026-11-22T19:41Z (697 öffentliche Kurse), IDs = Produktions-ID + 20000",
+  "method": "ohne KI: Katalogabfragen über Titel, Beschreibung, Stichworte, Kategorie, Ort, Zielgruppe, Lernform (Rater A); siehe docs/ai-search/abnahme-bewertungskriterien.md",
+  "cases": {
+    "de-beruf-001": {
+      "soll": [
+        20120,
+        20127
+      ],
+      "grenzfaelle": [
+        20168,
+        20285
+      ]
+    },
+    "de-beruf-002": {
+      "soll": [
+        20380
+      ],
+      "grenzfaelle": [
+        21045,
+        20379,
+        20390,
+        20389
+      ]
+    },
+    "de-beruf-003": {
+      "soll": [],
+      "grenzfaelle": [
+        20377,
+        20163
+      ]
+    },
+    "de-beruf-005": {
+      "soll": [],
+      "grenzfaelle": [
+        20624,
+        20654
+      ]
+    },
+    "de-beruf-007": {
+      "soll": [],
+      "grenzfaelle": [
+        20196,
+        20164,
+        20186,
+        20188,
+        20189,
+        20191,
+        20192
+      ]
+    },
+    "de-beruf-008": {
+      "soll": [
+        20378
+      ],
+      "grenzfaelle": [
+        20280,
+        20381,
+        20296
+      ]
+    },
+    "de-privat-002": {
+      "soll": [
+        20610,
+        20798,
+        20594,
+        20587,
+        20588,
+        20592,
+        20612,
+        20611,
+        20800,
+        20869
+      ],
+      "grenzfaelle": [
+        20589,
+        20590,
+        20591,
+        20850,
+        20853,
+        20799,
+        20874,
+        20880
+      ]
+    },
+    "de-privat-003": {
+      "soll": [],
+      "grenzfaelle": [
+        20475
+      ]
+    },
+    "de-privat-005": {
+      "soll": [
+        20441,
+        20442,
+        20449
+      ],
+      "grenzfaelle": [
+        20448,
+        20466,
+        20464,
+        20462,
+        20460
+      ]
+    },
+    "de-privat-006": {
+      "soll": [],
+      "grenzfaelle": [
+        20263,
+        20268,
+        20440
+      ]
+    },
+    "fr-beruf-001": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "fr-beruf-002": {
+      "soll": [],
+      "grenzfaelle": [
+        20103,
+        20116,
+        20109,
+        20108
+      ]
+    },
+    "fr-privat-001": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "fr-kinder-001": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "it-beruf-001": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "it-privat-001": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "it-kinder-001": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "q-fr-001": {
+      "soll": [
+        20610,
+        20798,
+        20594,
+        20587,
+        20588,
+        20592,
+        20612,
+        20611
+      ],
+      "grenzfaelle": [
+        20589,
+        20590,
+        20591,
+        20800,
+        20850,
+        20869
+      ]
+    },
+    "q-fr-002": {
+      "soll": [
+        20111,
+        20112
+      ],
+      "grenzfaelle": [
+        20528,
+        20533,
+        20566,
+        20943,
+        20529,
+        20530
+      ]
+    },
+    "q-it-001": {
+      "soll": [
+        20223,
+        20258,
+        20402,
+        20751
+      ],
+      "grenzfaelle": [
+        20022,
+        20263,
+        20264,
+        20268,
+        20403,
+        20099,
+        20224
+      ]
+    },
+    "q-muss-001": {
+      "soll": [
+        20751
+      ],
+      "grenzfaelle": []
+    },
+    "q-muss-002": {
+      "soll": [
+        20380
+      ],
+      "grenzfaelle": [
+        20389,
+        20390,
+        21045
+      ]
+    },
+    "q-muss-003": {
+      "soll": [
+        20110,
+        20104
+      ],
+      "grenzfaelle": [
+        20108,
+        20113
+      ]
+    },
+    "q-muss-004": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "de-beruf-004": {
+      "soll": [
+        20196
+      ],
+      "grenzfaelle": [
+        20197,
+        20140,
+        20193,
+        20194,
+        20166,
+        20169
+      ]
+    },
+    "de-privat-004": {
+      "soll": [
+        20955
+      ],
+      "grenzfaelle": [
+        20443,
+        20444,
+        20445
+      ]
+    },
+    "de-beruf-006": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "de-privat-001": {
+      "soll": [
+        20258
+      ],
+      "grenzfaelle": [
+        20022,
+        20263,
+        20264,
+        20268
+      ]
+    },
+    "de-kinder-001": {
+      "soll": [
+        20331,
+        20579
+      ],
+      "grenzfaelle": []
+    },
+    "de-kinder-002": {
+      "soll": [
+        20613,
+        20178
+      ],
+      "grenzfaelle": [
+        20177,
+        20617,
+        20421,
+        20482
+      ]
+    },
+    "de-kinder-003": {
+      "soll": [],
+      "grenzfaelle": [
+        20220,
+        20171
+      ]
+    },
+    "q-kinder-004": {
+      "soll": [
+        20646,
+        20748,
+        20887,
+        20888
+      ],
+      "grenzfaelle": [
+        20431,
+        20808,
+        20821,
+        20822,
+        20823,
+        20824,
+        20825,
+        20609,
+        20585
+      ]
+    },
+    "q-lernform-001": {
+      "soll": [],
+      "grenzfaelle": [
+        20107,
+        20118,
+        20108
+      ]
+    },
+    "q-lernform-002": {
+      "soll": [
+        20173
+      ],
+      "grenzfaelle": [
+        20174,
+        20175
+      ]
+    },
+    "q-null-001": {
+      "soll": [],
+      "grenzfaelle": []
+    },
+    "q-null-002": {
+      "soll": [],
+      "grenzfaelle": []
+    }
+  },
+  "basedOn": {
+    "file": "tests/fixtures/ai-search-quality/soll-listen.json",
+    "version": "2026-11-22-abnahme",
+    "sha256": "9a4636924b88b25fef01889165af3005c4c95404be8c8731953b1a3503fff459"
+  },
+  "korrekturen": [
+    {
+      "fall": "q-fr-002",
+      "entfernt": 20531,
+      "beleg": "Kursdaten: min_age = 12; Beschreibung \"für Jugendliche von 12 bis 17 Jahren\". Anfrage: Sohn von 10 Jahren."
+    },
+    {
+      "fall": "q-kinder-004",
+      "entfernt": 20809,
+      "beleg": "Kursdaten: min_age = 10; Text \"ab zehn Jahren\". Anfrage: Kinder ab 7 Jahren."
+    },
+    {
+      "fall": "de-kinder-002",
+      "entfernt": 20422,
+      "beleg": "Kursdaten: price_info \"ab CHF315 pro Trimester\"; kleinster Betrag über der Formular-Budgetvorgabe CHF 300."
+    }
+  ],
+  "hinweis": "Version 2 korrigiert ausschliesslich die drei belegten Soll-Fehler (docs/ai-search/abnahme-soll-listen-befunde.md). Version 1 und alle bisherigen Abnahmeberichte bleiben unverändert und massgeblich für die Abnahmen 1–4."
+}

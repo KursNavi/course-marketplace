@@ -70,7 +70,16 @@ const MESSAGES = {
     qualMissing: (label) => `${q.de(label)} laut Kursangaben nicht belegt.`,
     objectives: (list) => `Lernziele laut Kursangaben: ${list}.`,
     descriptionLine: (x) => `Laut Kursbeschreibung: ${q.de(x)}.`,
-    compact: [[' laut Kursangaben', ''], ['Laut Kursbeschreibung:', 'Beschreibung:'], ['Zulassungsbedingungen:', 'Zulassung:'], [' laut Adressangabe', '']],
+    compact: [[' laut Kursangaben', ''], ['Laut Kursbeschreibung:', 'Beschreibung:'], ['Zulassungsbedingungen:', 'Zulassung:'], [' laut Adressangabe', ''],
+      // Kürzere Formulierung bei gleichem Inhalt (Verdichtung vor jeder Weglassung, 24.11.2026).
+      [/ – die Adressangabe nennt ([^,]+), ein Kursort ist aber nicht eingetragen\./, ' (nur in der Adressangabe genannt).'],
+      [/Vorgabe „nicht online“: Die Lernform nennt ([^,]+), als Kursort ist aber „Online“ eingetragen – widersprüchlich\./, 'Vorgabe „nicht online“: Lernform $1, Kursort aber als „Online“ eingetragen.'],
+      [/^Wunsch („[^“]+“) nicht bestätigt: Das Niveau ist als („[^“]+“) angegeben, die Beschreibung nennt („[^“]+“)\./, '$1 nicht bestätigt: Niveau $2, Beschreibung $3.'],
+      [/^Wunsch („[^“]+“) nicht bestätigt: kein Termin angegeben\./, '$1: kein Termin angegeben.'],
+      [/, ob als Gesamtpreis, ist nicht angegeben\./, ', Preisbasis offen.']],
+    notConfirmedPrefix: 'Nicht bestätigt: ',
+    oneOf: 'und mindestens eines von:',
+    budgetFreeText: (price) => `Budgetvorgabe nicht bestätigt: Preis nur als Freitext angegeben (${price}).`,
     levelFact: (a) => `Niveau laut Kursangaben: ${a}.`,
     formFact: (a) => `Lernform laut Kursangaben: ${a}.`,
     timeFact: (x) => `Zeitangabe laut Kursangaben: ${q.de(x)}.`,
@@ -129,7 +138,13 @@ const MESSAGES = {
     qualMissing: (label) => `${q.fr(label)} non confirmé selon les indications du cours.`,
     objectives: (list) => `Objectifs selon les indications du cours : ${list}.`,
     descriptionLine: (x) => `Selon la description du cours : ${q.fr(x)}.`,
-    compact: [[' selon les indications du cours', ''], ['Selon la description du cours :', 'Description :'], [' selon l’adresse', '']],
+    compact: [[' selon les indications du cours', ''], ['Selon la description du cours :', 'Description :'], [' selon l’adresse', ''],
+      [/ – l’adresse mentionne ([^,]+), mais aucun lieu n’est indiqué\./, ' (mentionné seulement dans l’adresse).'],
+      [/^Souhait (« [^»]+ ») non confirmé : aucune date indiquée\./, '$1 : aucune date indiquée.'],
+      [/, sans précision s’il s’agit du prix total\./, ', base de prix inconnue.']],
+    notConfirmedPrefix: 'Non confirmé : ',
+    oneOf: 'et au moins l’un de :',
+    budgetFreeText: (price) => `Budget non confirmé : prix indiqué seulement en texte libre (${price}).`,
     levelFact: (a) => `Niveau selon les indications du cours : ${a}.`,
     formFact: (a) => `Forme d’apprentissage selon les indications du cours : ${a}.`,
     timeFact: (x) => `Horaire selon les indications du cours : ${q.fr(x)}.`,
@@ -188,7 +203,13 @@ const MESSAGES = {
     qualMissing: (label) => `${q.it(label)} non confermato secondo le indicazioni del corso.`,
     objectives: (list) => `Obiettivi secondo le indicazioni del corso: ${list}.`,
     descriptionLine: (x) => `Secondo la descrizione del corso: ${q.it(x)}.`,
-    compact: [[' secondo le indicazioni del corso', ''], ['Secondo la descrizione del corso:', 'Descrizione:'], [' secondo l’indirizzo', '']],
+    compact: [[' secondo le indicazioni del corso', ''], ['Secondo la descrizione del corso:', 'Descrizione:'], [' secondo l’indirizzo', ''],
+      [/ – l’indirizzo cita ([^,]+), ma non è indicata una sede\./, ' (citato solo nell’indirizzo).'],
+      [/^Desiderio («[^»]+») non confermato: nessuna data indicata\./, '$1: nessuna data indicata.'],
+      [/, senza precisare se è il prezzo totale\./, ', base di prezzo ignota.']],
+    notConfirmedPrefix: 'Non confermato: ',
+    oneOf: 'e almeno uno tra:',
+    budgetFreeText: (price) => `Budget non confermato: prezzo indicato solo come testo libero (${price}).`,
     levelFact: (a) => `Livello secondo le indicazioni del corso: ${a}.`,
     formFact: (a) => `Forma di apprendimento secondo le indicazioni del corso: ${a}.`,
     timeFact: (x) => `Orario secondo le indicazioni del corso: ${q.it(x)}.`,
@@ -770,6 +791,16 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
       ? conditions.map((c) => qf(c)).join('; ')
       : [...conditions.slice(0, connectorAt + 1).map((c) => qf(c)), conditions.slice(connectorAt + 1).map((c) => qf(c)).join(` ${m.or} `)].filter(Boolean).join('; ');
     add(16, 0, m.admission(formatted));
+    // Verdichtete Fassung (nur bei Platzmangel): Bindeglied sinngleich als
+    // „und mindestens eines von:“, Alternativen als kürzere wörtliche Anfänge.
+    if (connectorAt >= 0) {
+      const cut = (c, n) => { const w = c.replace(/…$/, '').split(/\s+/); return w.length <= n ? c : `${w.slice(0, n).join(' ').replace(/[,;:.–-]+$/, '')}…`; };
+      const before = conditions.slice(0, connectorAt).map((c) => qf(c)).join('; ');
+      const alternatives = [...new Set(conditions.slice(connectorAt + 1).map((c) => cut(c, 2)))].map((c) => qf(c)).join(` ${m.or} `);
+      const part = parts[parts.length - 1];
+      part.admission = true;
+      part.short = m.admission(`${before}${before ? ' ' : ''}${m.oneOf} ${alternatives}`);
+    }
   } else {
     const prereq = prerequisiteQuote(prerequisites);
     if (prereq) add(16, 1.5, m.prereq(prereq));
@@ -841,9 +872,19 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
       // Langer Preis-Freitext (z. B. mit Gutscheincode): nur die genannten Beträge.
       // Langer Freitext: wörtlicher Anfang mit Auslassung (Befund 20613: Zitat muss wörtlich sein).
       const words = String(price).replace(/\s+/g, ' ').trim().split(' ');
-      const priceText = words.length > 8 ? `${words.slice(0, 8).join(' ').replace(/[,;:.–-]+$/, '')}…` : String(price).replace(/[.\s]+$/, '');
+      // Freitext-Preis (Prüfung 24.11.2026): wörtlich bis zum letzten Betrag, dann
+      // die Preisbasis („pro Kids-Kurs“) – sonst ginge genau die Basis verloren.
+      const source = String(price ?? '').replace(/\s+/g, ' ').trim();
+      const freeText = !/^(?:ab )?CHF\s*\d+(?:[.,]\d+)?(?: pro Einheit)?$/i.test(source);
+      let priceText = source.replace(/[.\s]+$/, '');
+      if (freeText && words.length > 8) {
+        const lastAmount = [...source.matchAll(/CHF\s*\d+(?:[.,]\d+)?/gi)].pop();
+        const head = lastAmount ? source.slice(0, lastAmount.index + lastAmount[0].length) : words.slice(0, 8).join(' ');
+        const basis = /\b(?:pro|je|par|per)\s+[\p{L}-]+/iu.exec(source.slice(head.length))?.[0];
+        priceText = `${head}${basis ? ` … ${basis}` : ' …'}`;
+      }
       const quoted = q[EXPLANATION_LANGUAGES.includes(language) ? language : 'de'](priceText);
-      add(31, 0, within ? m.budgetBasis(quoted) : m.budget(price || m.prices.unknown));
+      add(31, 0, !within ? m.budget(price || m.prices.unknown) : (freeText ? m.budgetFreeText(quoted) : m.budgetBasis(quoted)));
     }
     if (unknown === 'language') add(32, 0, m.language);
   }
@@ -858,7 +899,23 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   const kept = [...parts];
   const total = () => kept.reduce((sum, p) => sum + countWords(p.text), 0);
   if (total() > MAX_EXPLANATION_WORDS) {
-    for (const p of kept) if (!p.lead) for (const [from, to] of m.compact ?? []) p.text = p.text.split(from).join(to);
+    for (const p of kept) {
+      if (p.lead) continue;
+      for (const [from, to] of m.compact ?? []) p.text = from instanceof RegExp ? p.text.replace(from, to) : p.text.split(from).join(to);
+    }
+    // Mehrere „Nicht bestätigt: …“ zu einem Satz zusammenfassen (gleicher Inhalt).
+    const prefix = m.notConfirmedPrefix;
+    const unconfirmed = prefix ? kept.filter((p) => !p.lead && p.text.startsWith(prefix)) : [];
+    if (unconfirmed.length > 1) {
+      unconfirmed[0].text = `${prefix}${unconfirmed.map((p) => p.text.slice(prefix.length).replace(/\.$/, '')).join('; ')}.`;
+      for (const p of unconfirmed.slice(1)) kept.splice(kept.indexOf(p), 1);
+    }
+    // Zulassung: verdichtete Fassung, ebenfalls mit den kürzeren Formulierungen.
+    const admissionPart = kept.find((p) => p.admission);
+    if (admissionPart && total() > MAX_EXPLANATION_WORDS && admissionPart.short) {
+      admissionPart.text = admissionPart.short;
+      for (const [from, to] of m.compact ?? []) admissionPart.text = from instanceof RegExp ? admissionPart.text.replace(from, to) : admissionPart.text.split(from).join(to);
+    }
   }
   while (total() > MAX_EXPLANATION_WORDS) {
     const droppable = kept.filter((p) => p.priority > 1 && !p.lead).sort((a, b) => b.priority - a.priority)[0];
