@@ -1,0 +1,56 @@
+name: KI-Suche Produktionsmigrationen
+
+# Ausführungsweg der 7 KI-Migrationen in PRODUKTION (nplxmpfasgpumpiddjfl),
+# Produktionspaket 25.11.2026, Phase C. Nur manuell, nur vom Branch main.
+# Die Umgebung "ki-produktion-migration" verlangt eine Freigabe durch den PO,
+# bevor der Job startet, und enthält das einzige Secret SUPABASE_DB_URL_PROD
+# (Session Pooler). Die Adresse wird nie ausgegeben.
+# Standard ist der PLAN (lesend). Ausführen nur mit modus=ausfuehren.
+# Kein pull_request-, push- oder Zeitplan-Auslöser.
+
+on:
+  workflow_dispatch:
+    inputs:
+      modus:
+        description: 'plan (lesend) oder ausfuehren'
+        type: choice
+        default: plan
+        options: [plan, ausfuehren]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ki-produktionsmigrationen
+  cancel-in-progress: false
+
+jobs:
+  migration:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: ki-produktion-migration
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: psql bereitstellen
+        run: command -v psql >/dev/null || (sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client) && psql --version
+
+      - name: Plan (lesend)
+        if: inputs.modus == 'plan'
+        env:
+          SUPABASE_DB_URL_PROD: ${{ secrets.SUPABASE_DB_URL_PROD }}
+        run: node scripts/ai-search-prod-migrate.mjs
+
+      - name: Ausführung (Stopp beim ersten Fehler)
+        if: inputs.modus == 'ausfuehren'
+        env:
+          SUPABASE_DB_URL_PROD: ${{ secrets.SUPABASE_DB_URL_PROD }}
+          AI_MIGRATE_CONFIRM: nplxmpfasgpumpiddjfl
+        run: node scripts/ai-search-prod-migrate.mjs --execute

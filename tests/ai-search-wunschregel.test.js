@@ -134,7 +134,7 @@ describe('Begrenzter Wunschbeitrag; Paketregel unverändert', () => {
 
   it('Anweisung an Luna: score nur fachlich, Wünsche getrennt in wishScore', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', usage: {}, output_text: JSON.stringify({ results: [] }) }) }));
-    await createOpenAiGateway({ apiKey: 'k', fetchImpl }).rerank('Fotografie', [{ courseId: 1, evidence: { title: 'x' } }]);
+    await createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl }).rerank('Fotografie', [{ courseId: 1, evidence: { title: 'x' } }]);
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body);
     expect(body.instructions).toMatch(/score bewertet ausschliesslich die fachliche Eignung/);
     expect(body.instructions).toMatch(/fliessen NICHT in score ein/);
@@ -147,7 +147,7 @@ describe('Wesentliche Teilnahmebeschränkungen und Angebotsformen (Punkt 4)', ()
   it('Stabilisierung: Luna schreibt keine Eignung; Beschränkungen setzt der Server aus dem Kurstext', async () => {
     // Ersetzt die frühere Anweisung an Luna, Beschränkungen selbst zu nennen.
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', usage: {}, output_text: JSON.stringify({ results: [] }) }) }));
-    await createOpenAiGateway({ apiKey: 'k', fetchImpl }).rerank('Führung', [{ courseId: 1, evidence: { title: 'x' } }]);
+    await createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl }).rerank('Führung', [{ courseId: 1, evidence: { title: 'x' } }]);
     const { instructions } = JSON.parse(fetchImpl.mock.calls[0][1].body);
     expect(instructions).toMatch(/genau EIN Satz/);
     expect(instructions).toMatch(/Keine Aussage dazu, ob oder warum der Kurs passt/);

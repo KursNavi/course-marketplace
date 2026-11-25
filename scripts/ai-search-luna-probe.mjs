@@ -40,7 +40,7 @@ const sentByCase = {};
 
 async function runOne(service, config, testCase, round) {
   const modelConfig = readModelConfig({ ...process.env, SUPABASE_URL: process.env.SUPABASE_URL_TEST, VITE_SUPABASE_URL: process.env.SUPABASE_URL_TEST });
-  const gateway = createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: modelConfig.embeddingModel, reasoningEffort: config.effort, batchSize: config.batchSize, distribution: config.distribution, mode: config.mode });
+  const gateway = createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, region: modelConfig.openaiRegion, embeddingModel: modelConfig.embeddingModel, reasoningEffort: config.effort, batchSize: config.batchSize, distribution: config.distribution, mode: config.mode });
   // Gesendete Kandidaten und gültig zurückgegebene Bewertungen mitschreiben
   // (nur IDs), ohne die Produktlogik zu ändern. Gesendet = was der Gateway
   // tatsächlich an Luna gibt (sentIds), nicht was abgerufen wurde.

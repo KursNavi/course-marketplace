@@ -175,7 +175,7 @@ describe('K4: Begründung in der Sprache der Anfrage', () => {
 
   it('Gateway sendet die Sprachanweisung je Anfrage mit', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', usage: {}, output_text: JSON.stringify({ results: [{ courseId: '1', score: 80, explanation: '', reasons: [] }] }) }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, batchSize: 5 });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl, batchSize: 5 });
     await gateway.rerank('Cours de photo', [{ courseId: 1, evidence: { title: 'Fotokurs' } }], { language: 'fr' });
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body);
     expect(body.instructions).toMatch(/Schreibe explanation auf Französisch/);

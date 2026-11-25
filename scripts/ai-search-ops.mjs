@@ -184,7 +184,7 @@ async function main() {
   const report = await runOps(service, parsed.options, {
     embeddingVersion: config.embeddingVersion,
     modelsEnabled: config.enabled && Boolean(process.env.OPENAI_API_KEY),
-    createGateway: () => createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: config.embeddingModel }),
+    createGateway: () => createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, region: config.openaiRegion, embeddingModel: config.embeddingModel }),
     holder: randomUUID(),
     onSession: (value) => { session = value; },
   });

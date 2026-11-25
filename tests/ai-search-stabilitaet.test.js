@@ -87,7 +87,7 @@ describe('2. Zweite Score-Stichprobe', () => {
 
   it('startet beide Stichproben GLEICHZEITIG, mit anderer Zusammensetzung der Teilaufrufe', async () => {
     const { fetchImpl, calls } = deferredFetch();
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, batchSize: 2, distribution: 'stripe', scoreSamples: 2 });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl, batchSize: 2, distribution: 'stripe', scoreSamples: 2 });
     const candidates = ['1', '2', '3', '4'].map((id) => ({ courseId: id, evidence: { title: `Kurs ${id}` } }));
     const pending = gateway.rerank('Fotografie', candidates, { language: 'de' });
     await new Promise((r) => setTimeout(r, 0));
@@ -114,7 +114,7 @@ describe('2. Zweite Score-Stichprobe', () => {
       if (/keine Begründung/.test(body.instructions)) return { ok: false, status: 500, json: async () => ({}) };
       return answer('rank', ids, () => 72);
     });
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, batchSize: 5, scoreSamples: 2 });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl, batchSize: 5, scoreSamples: 2 });
     const result = await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }], {});
     expect(result.accepted[0]).toMatchObject({ score: 72, scoreSamples: [72] });
     expect(gateway.usage.lunaSampleFailures).toBe(1);

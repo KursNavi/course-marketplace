@@ -70,6 +70,40 @@ describe('1. Produktionsfreischaltung', () => {
   });
 });
 
+describe('1b. OpenAI-Region (Datenresidenz) ohne Ausweichroute', () => {
+  const env = { VERCEL_ENV: 'preview', SUPABASE_URL: TEST_URL, VITE_SUPABASE_URL: TEST_URL, AI_SEARCH_MODELS_ENABLED: '1', OPENAI_API_KEY: 'k' };
+
+  it('Standard global; „eu“ nutzt eu.api.openai.com; unbekannte Werte sperren die Modelle', () => {
+    expect(readModelConfig(env)).toMatchObject({ enabled: true, openaiRegion: 'global', openaiBaseUrl: 'https://api.openai.com/v1' });
+    expect(readModelConfig({ ...env, AI_SEARCH_OPENAI_REGION: 'eu' })).toMatchObject({ enabled: true, openaiRegion: 'eu', openaiBaseUrl: 'https://eu.api.openai.com/v1' });
+    expect(readModelConfig({ ...env, AI_SEARCH_OPENAI_REGION: 'europe' })).toMatchObject({ enabled: false, openaiRegion: null });
+  });
+
+  it('in der Region nicht belegtes Modell → keine Modellaufrufe (statt globaler Verarbeitung)', () => {
+    expect(readModelConfig({ ...env, AI_SEARCH_OPENAI_REGION: 'eu', AI_SEARCH_EMBEDDING_MODEL: 'text-embedding-3-large' }).enabled).toBe(false);
+  });
+
+  it('Zugang ohne Region wird nicht erzeugt; mit „eu“ gehen Responses und Embeddings nur an den EU-Endpunkt', async () => {
+    const { createOpenAiGateway } = await import('../src/lib/aiSearch/openaiGateway.js');
+    expect(() => createOpenAiGateway({ apiKey: 'k' })).toThrow(/Region/);
+    expect(() => createOpenAiGateway({ apiKey: 'k', region: 'mars' })).toThrow(/Region/);
+    const urls = [];
+    const fetchImpl = async (url) => { urls.push(String(url)); return { ok: true, json: async () => ({ data: [{ index: 0, embedding: new Array(1024).fill(0.1) }], usage: { total_tokens: 1 } }) }; };
+    const gateway = createOpenAiGateway({ apiKey: 'k', region: 'eu', fetchImpl });
+    await gateway.embed(['abc']);
+    expect(urls).toEqual(['https://eu.api.openai.com/v1/embeddings']);
+  });
+
+  it('alle Aufrufer übergeben die konfigurierte Region', () => {
+    for (const file of ['api/ai-search.js', 'scripts/ai-search-prod.mjs', 'scripts/ai-search-ops.mjs', 'scripts/ai-search-quality-run.mjs', 'scripts/ai-search-embed-test.mjs']) {
+      const source = readFileSync(path.join(ROOT, file), 'utf8');
+      const calls = source.match(/createOpenAiGateway\(\{[^}]*/g) ?? [];
+      expect(calls.length).toBeGreaterThan(0);
+      for (const call of calls) expect(call).toMatch(/region: (modelConfig|config)\.openaiRegion/);
+    }
+  });
+});
+
 describe('2. Produktionswerkzeug', () => {
   it('Zielprüfung: nur das Produktionsprojekt, nie TEST; Schlüssel Pflicht', () => {
     expect(prod.checkProductionTarget({ SUPABASE_URL_PROD: TEST_URL, SUPABASE_SECRET_KEY_PROD: 'k' })).toMatchObject({ ok: false });
@@ -195,6 +229,16 @@ describe('2. Produktionswerkzeug', () => {
     }
   });
 
+  it('Abbruch laufender Läufe: Trockenlauf listet offene Läufe; Ausführung fordert je Lauf den Abbruch an', async () => {
+    const rpc = vi.fn(async () => ({ data: true, error: null }));
+    const client = { rpc, from: () => ({ select: () => ({ is: async () => ({ data: [{ id: 9, modes: ['index'], lease_until: 'x', abort_requested_at: null }], error: null }) }) }) };
+    expect(await prod.runAbort(client, { execute: false })).toMatchObject({ outcome: 'dry-run', plan: { open: [{ id: 9 }] } });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(await prod.runAbort(client, { execute: true })).toMatchObject({ outcome: 'ok', requested: [{ id: 9, requested: true }] });
+    expect(rpc).toHaveBeenCalledWith('ai_search_ops_request_abort', expect.objectContaining({ p_run_id: 9 }));
+    expect(prod.parseProdArgs('abort', ['--execute'], {}).ok).toBe(false);
+  });
+
   it('TEST-Werkzeuge bleiben TEST-gebunden (unverändert)', () => {
     for (const file of ['scripts/ai-search-ops.mjs', 'scripts/ai-search-embed-test.mjs', 'scripts/ai-search-backfill-test.mjs']) {
       expect(readFileSync(path.join(ROOT, file), 'utf8')).toMatch(/checkTestTarget\(process\.env\)/);
@@ -211,6 +255,18 @@ describe('3. Produktionszeitplan', () => {
     expect(wf).not.toMatch(/^\s*(pull_request|pull_request_target|push|workflow_run):/m);
     expect(wf).toMatch(/environment: ki-produktion/);
     expect(wf).toMatch(/permissions:\s*\n\s*contents: read/);
+  });
+
+  it('Abbruch-Job steht nicht in der Betriebs-Warteschlange (wartet nicht auf den laufenden Lauf)', () => {
+    const jobs = wf.split(/\n {2}(?=[a-z]+:\n)/);
+    const produktion = jobs.find((j) => j.startsWith('produktion:'));
+    const abbruch = jobs.find((j) => j.startsWith('abbruch:'));
+    expect(produktion).toMatch(/group: ki-produktionsbetrieb/);
+    expect(produktion).toMatch(/!startsWith\(inputs\.befehl, 'abbrechen'\)/);
+    expect(abbruch).toBeTruthy();
+    expect(abbruch).not.toMatch(/concurrency:/);
+    expect(abbruch).toMatch(/abort --execute/);
+    expect(wf).not.toMatch(/^concurrency:/m);
   });
 
   it('Kostenschwellen und Überwachung: Zyklus ≤ USD 0.01 je Lauf, roter Lauf bei kritischem Alarm', () => {

@@ -53,7 +53,7 @@ describe('Fachliches Anliegen ohne optionale Wünsche (Luna-Eingabe)', () => {
 
   it('Gateway sendet optional_wishes und die Trennregel an Luna', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', output: [{ content: [{ type: 'output_text', text: JSON.stringify({ results: [{ courseId: '1', score: 80, wishScore: 0, explanation: '', reasons: [] }] }) }] }], usage: {} }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, batchSize: 5 });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl, batchSize: 5 });
     await gateway.rerank('Ich will besser fotografieren lernen', [{ courseId: 1, evidence: { title: 'Fotokurs' } }], { language: 'de', optionalWishes: ['am liebsten in Bern'] });
     const body = JSON.parse(fetchImpl.mock.calls[0][1].body);
     const input = JSON.parse(body.input);

@@ -25,6 +25,10 @@
  *   node scripts/ai-search-prod.mjs deactivate [--execute]
  *       Rückweg: aktive Version entfernen (Suche fällt auf lexikalischen Abruf
  *       zurück; Embeddings bleiben erhalten).
+ *   node scripts/ai-search-prod.mjs abort [--execute]
+ *       Abschaltung laufender Hintergrundläufe: fordert für jeden offenen Lauf
+ *       den Abbruch an (ai_search_ops_request_abort). Geschützte Schreibzugriffe
+ *       schlagen ab sofort fehl; der Runner endet vor dem nächsten Schritt.
  *
  * Schreibende Befehle brauchen zusätzlich:
  *   AI_PROD_CONFIRM=nplxmpfasgpumpiddjfl
@@ -50,7 +54,7 @@ import {
 import { LeaseSession, LEASE_DEFAULTS } from '../src/lib/aiSearch/opsLease.js';
 import { formatReport, timeoutFetch } from './ai-search-ops.mjs';
 
-export const COMMANDS = Object.freeze(['status', 'ops', 'initial-embed', 'activate', 'deactivate']);
+export const COMMANDS = Object.freeze(['status', 'ops', 'initial-embed', 'activate', 'deactivate', 'abort']);
 /** Tabellen/Funktionen, ohne die das Werkzeug nicht arbeitet (Migrationen M1–M7). */
 export const REQUIRED_TABLES = Object.freeze(['ai_search_config', 'ai_search_documents', 'ai_search_chunks', 'ai_search_jobs', 'ai_search_index_state', 'ai_search_usage', 'ai_search_results', 'ai_search_ops_runs']);
 
@@ -105,6 +109,7 @@ export function parseProdArgs(command, argv, env) {
     'initial-embed': ['execute', 'max-usd', 'max-embed-chunks', 'max-runtime-sec', 'json'],
     activate: ['execute', 'json'],
     deactivate: ['execute', 'json'],
+    abort: ['execute', 'json'],
   }[command];
   if (!allowed) return { ok: false, errors: [`Unbekannter Befehl: ${command}`], options: {} };
   const { flags, errors } = readFlags(argv, allowed);
@@ -217,6 +222,22 @@ export async function runDeactivate(client, options) {
   return { exitCode: 0, outcome: 'ok', plan: { activeVersion }, activeVersion: null };
 }
 
+/** Abbruch offener Betriebsläufe (Abschaltplan, Schritt 3). */
+export async function runAbort(client, options, reason = 'Abschaltung (Produktionswerkzeug)') {
+  const { data, error } = await client.from('ai_search_ops_runs').select('id, modes, lease_until, abort_requested_at').is('finished_at', null);
+  if (error) throw new OpsError(`Laufprotokoll lesen: ${error.message}`);
+  const open = (data ?? []).map((row) => ({ id: row.id, modes: row.modes, leaseUntil: row.lease_until, abortRequested: Boolean(row.abort_requested_at) }));
+  if (open.length === 0) return { exitCode: 0, outcome: 'no-work', plan: { open }, message: 'Kein offener Betriebslauf.' };
+  if (!options.execute) return { exitCode: 0, outcome: 'dry-run', plan: { open } };
+  const requested = [];
+  for (const run of open) {
+    const { data: ok, error: abortError } = await client.rpc('ai_search_ops_request_abort', { p_run_id: run.id, p_reason: reason });
+    if (abortError) throw new OpsError(`Abbruch Lauf ${run.id}: ${abortError.message}`);
+    requested.push({ id: run.id, requested: ok === true });
+  }
+  return { exitCode: 0, outcome: 'ok', plan: { open }, requested, message: 'Abbruch angefordert. Prüfen: „status“ zeigt keinen aktiven Lauf mehr (spätestens nach Ablauf der Sperrfrist).' };
+}
+
 function printResult(command, result, json) {
   if (json) { console.log(JSON.stringify({ command, ...result }, null, 2)); return; }
   console.log(`Befehl: ${command} – Ergebnis: ${result.outcome}`);
@@ -238,7 +259,7 @@ async function main() {
   const config = prodModelConfig(process.env);
   const deployment = await checkDeployment(client);
   if (!deployment.ok) { console.error(`Abbruch: KI-Migrationen fehlen in Produktion: ${deployment.missing.join(', ')}.`); process.exit(2); }
-  console.log(`Ziel: Produktion ${PRODUCTION_REF} · Modellversion ${config.embeddingVersion} · Modellaufrufe ${config.enabled ? 'freigeschaltet' : `gesperrt (${config.reason})`}`);
+  console.log(`Ziel: Produktion ${PRODUCTION_REF} · OpenAI-Region ${config.openaiRegion ?? 'ungültig'} · Modellversion ${config.embeddingVersion} · Modellaufrufe ${config.enabled ? 'freigeschaltet' : `gesperrt (${config.reason})`}`);
 
   let session = null;
   const stop = (signal) => { if (session) session.requestStop(signal); else process.exit(130); };
@@ -247,7 +268,7 @@ async function main() {
   const deps = {
     embeddingVersion: config.embeddingVersion,
     modelsEnabled: config.enabled && Boolean(process.env.OPENAI_API_KEY),
-    createGateway: () => createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: config.embeddingModel }),
+    createGateway: () => createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, region: config.openaiRegion, embeddingModel: config.embeddingModel }),
     holder: randomUUID(),
     onSession: (value) => { session = value; },
   };
@@ -267,7 +288,8 @@ async function main() {
   if (!parsed.ok) { for (const message of parsed.errors) console.error(`Abbruch: ${message}`); process.exit(2); }
   const result = command === 'initial-embed'
     ? await runInitialEmbed(client, parsed.options, deps)
-    : command === 'activate' ? await runActivate(client, parsed.options, deps) : await runDeactivate(client, parsed.options);
+    : command === 'activate' ? await runActivate(client, parsed.options, deps)
+      : command === 'abort' ? await runAbort(client, parsed.options) : await runDeactivate(client, parsed.options);
   printResult(command, result, parsed.options.json);
   process.exit(result.exitCode);
 }

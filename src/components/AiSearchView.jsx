@@ -416,7 +416,10 @@ export default function AiSearchView({ user, setView }) {
               </div>
 
               {result.restored && (
-                <p className="mt-3 text-sm text-gray-600" data-testid="ai-restored">Wiederhergestelltes Ergebnis dieser Suche – nicht erneut gezählt.</p>
+                <p className="mt-3 text-sm text-gray-600" data-testid="ai-restored">
+                  Wiederhergestelltes Ergebnis dieser Suche – nicht erneut gezählt.
+                  {result.withdrawnSinceSearch > 0 && ` ${result.withdrawnSinceSearch === 1 ? 'Ein Kurs ist' : `${result.withdrawnSinceSearch} Kurse sind`} inzwischen nicht mehr verfügbar und wurde${result.withdrawnSinceSearch === 1 ? '' : 'n'} entfernt.`}
+                </p>
               )}
 
               {coverageAlert && (

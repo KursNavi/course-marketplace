@@ -36,6 +36,7 @@ import { normalizeQuery, validateQuery } from '../src/lib/aiSearch/queryParse.js
 import { QUOTA_LIMIT, quotaResetDate } from '../src/lib/aiSearch/quota.js';
 import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openaiGateway.js';
 import { GUARD_LIMITS, evaluateGuard, storablePayload, isMissingFunction, isDefinitiveDbError } from '../src/lib/aiSearch/abuseGuard.js';
+import { isPubliclySearchable } from '../src/lib/aiSearch/publication.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -133,6 +134,38 @@ async function fetchStoredResult(service, requestId, userId, queryHash) {
   return data && typeof data === 'object' && !Array.isArray(data) ? data : null;
 }
 
+/**
+ * Statusprüfung vor Ausgabe auch für gespeicherte Ergebnisse (Datenvertrag §1,
+ * indexdesign.md „Kontingent“): Kurse, die seit der Suche nicht mehr
+ * veröffentlicht sind, werden vor dem Wiederabruf entfernt. Nur ein lesender
+ * Statusabgleich – keine neue Suche, keine Zählung, kein Modellaufruf.
+ * Fehlt der Abgleich, wird nichts ausgeliefert (fail closed).
+ * @returns {Promise<{payload: object, withdrawn: number} | null>} null = Abgleich nicht möglich
+ */
+export async function recheckStoredResult(service, payload) {
+  const lists = ['results', 'incompleteResults'];
+  const ids = [...new Set(lists.flatMap((key) => (Array.isArray(payload?.[key]) ? payload[key] : []).map((card) => card?.courseId))
+    .filter((id) => id !== null && id !== undefined).map(String))];
+  if (ids.length === 0) return { payload, withdrawn: 0 };
+  const { data, error } = await service.from('courses').select('id, status').in('id', ids);
+  if (error) {
+    console.error('ai-search: Statusabgleich beim Wiederabruf fehlgeschlagen:', error.message);
+    return null;
+  }
+  const fresh = new Map((data ?? []).map((row) => [String(row.id), row]));
+  let withdrawn = 0;
+  const next = { ...payload };
+  for (const key of lists) {
+    if (!Array.isArray(payload?.[key])) continue;
+    next[key] = payload[key].filter((card) => {
+      const keep = isPubliclySearchable(fresh.get(String(card?.courseId)));
+      if (!keep) withdrawn += 1;
+      return keep;
+    });
+  }
+  return { payload: next, withdrawn };
+}
+
 async function quotaStatus(service, userId) {
   const { data, error } = await service.rpc('ai_search_quota_remaining', { p_user_id: userId, p_limit: QUOTA_LIMIT });
   if (error) throw new Error(`Kontingent lesen: ${error.message}`);
@@ -172,7 +205,7 @@ export default async function handler(req, res) {
       const modelConfig = readModelConfig(process.env);
       return res.status(200).json({
         environment: environment.mode,
-        models: { enabled: modelConfig.enabled, reason: modelConfig.reason },
+        models: { enabled: modelConfig.enabled, reason: modelConfig.reason, region: modelConfig.openaiRegion },
         quota: await quotaStatus(service, user.id),
       });
     }
@@ -241,7 +274,10 @@ export default async function handler(req, res) {
       // Speicher noch nicht eingerichtet), kein stiller kostenloser Neulauf.
       const restored = await fetchStoredResult(service, body.requestId, user.id, queryHash);
       if (restored) {
-        return res.status(200).json({ ...restored, requestId: body.requestId, restored: true, quota: await quotaStatus(service, user.id) });
+        // Erneute Statusprüfung: zurückgezogene Kurse fallen heraus (keine neue Suche).
+        const checked = await recheckStoredResult(service, restored);
+        if (!checked) return res.status(503).json({ error: 'guard_unavailable' });
+        return res.status(200).json({ ...checked.payload, requestId: body.requestId, restored: true, withdrawnSinceSearch: checked.withdrawn, quota: await quotaStatus(service, user.id) });
       }
       return res.status(409).json({ error: 'result_not_stored', quota: await quotaStatus(service, user.id) });
     }
@@ -260,6 +296,7 @@ export default async function handler(req, res) {
       ? {
         gateway: createOpenAiGateway({
           apiKey: process.env.OPENAI_API_KEY,
+          region: modelConfig.openaiRegion,
           embeddingModel: modelConfig.embeddingModel,
           reasoningEffort: modelConfig.lunaReasoningEffort,
           batchSize: modelConfig.lunaBatchSize,
@@ -328,6 +365,7 @@ export default async function handler(req, res) {
       usage: models ? models.gateway.usage : null,
       luna: result.method.luna,
       semantic: result.method.semantic,
+      region: models ? modelConfig.openaiRegion : null,
       effort: models ? modelConfig.lunaReasoningEffort : null,
       batch: models ? modelConfig.lunaBatchSize : null,
       distribution: models ? modelConfig.lunaDistribution : null,

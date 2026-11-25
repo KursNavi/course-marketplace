@@ -71,7 +71,7 @@ async function main() {
   if (!Number.isFinite(maxUsd) || maxUsd <= 0) { console.error('Abbruch: --max-usd=<Grenze> ist Pflicht.'); process.exit(2); }
   if (estimate.usd > maxUsd) { console.error(`Abbruch: Schätzung USD ${estimate.usd.toFixed(4)} über Grenze ${maxUsd}.`); process.exit(2); }
 
-  const gateway = createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, embeddingModel: config.embeddingModel });
+  const gateway = createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, region: config.openaiRegion, embeddingModel: config.embeddingModel });
   let done = 0;
   for (let i = 0; i < pending.length; i += BATCH) {
     const batch = pending.slice(i, i + BATCH);

@@ -285,6 +285,12 @@ function apiScenario(overrides = {}) {
       if (overrides.guardError) return { data: null, error: { message: 'down' } };
       return { data: overrides.guardRows ?? [], error: null };
     }
+    if (call.table === 'courses' && call.columns === 'id, status') {
+      // Statusabgleich beim Wiederabruf (Produktionspaket 25.11.2026).
+      if (overrides.statusError) return { data: null, error: { message: 'down' } };
+      const ids = [...(overrides.stored?.results ?? []), ...(overrides.stored?.incompleteResults ?? [])].map((c) => c.courseId);
+      return { data: overrides.courseStatus ?? ids.map((id) => ({ id, status: 'published' })), error: null };
+    }
     if (call.op === 'rpc') {
       if (call.table === 'ai_search_quota_finalize_and_store') {
         if (overrides.storeMissing) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
@@ -414,6 +420,31 @@ describe('Such-API /api/ai-search', () => {
     // Abruf an Konto UND Suchinhalt gebunden.
     const fetchCall = calls.find((c) => c.table === 'ai_search_result_fetch');
     expect(fetchCall.payload ?? fetchCall.args).toMatchObject({ p_request_id: REQUEST_ID, p_user_id: USER.id, p_query_hash: buildQueryHash('Yoga', {}) });
+  });
+
+  it('Wiederabruf prüft den Kursstatus erneut: zurückgezogene Kurse fallen heraus – ohne neue Suche, Zählung oder Modellaufruf', async () => {
+    const stored = { criteria: { terms: ['yoga'], wishes: [], musts: {} }, results: [{ courseId: 1, title: 'Yoga sanft' }, { courseId: 2, title: 'Yoga Flow' }], incompleteResults: [{ courseId: 3, title: 'Yoga Bern' }] };
+    const calls = apiScenario({ reserve: 'already_completed', stored, remaining: 7, courseStatus: [{ id: 1, status: 'published' }, { id: 2, status: 'draft' }] });
+    const res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.results.map((c) => c.courseId)).toEqual([1]);
+    expect(res.body.incompleteResults).toEqual([]);
+    expect(res.body).toMatchObject({ restored: true, withdrawnSinceSearch: 2, quota: { remaining: 7 } });
+    expect(calls.find((c) => c.table === 'courses' && c.columns === 'id, status')).toBeTruthy();
+    expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
+    expect(calls.some((c) => /ai_search_quota_finalize/.test(c.table))).toBe(false);
+  });
+
+  it('Wiederabruf ohne möglichen Statusabgleich: nichts ausgeliefert (fail closed), Kennung bleibt wiederholbar', async () => {
+    const stored = { criteria: { terms: ['yoga'], wishes: [], musts: {} }, results: [{ courseId: 1, title: 'Yoga sanft' }], incompleteResults: [] };
+    const calls = apiScenario({ reserve: 'already_completed', stored, statusError: true });
+    const res = mockRes();
+    await handler(post({ query: 'Yoga', requestId: REQUEST_ID }), res);
+    expect(res.statusCode).toBe(503);
+    expect(res.body).toEqual({ error: 'guard_unavailable' });
+    expect(calls.some((c) => c.table === 'ai_search_lexical')).toBe(false);
+    expect(calls.some((c) => /ai_search_quota_finalize|ai_search_quota_release/.test(c.table))).toBe(false);
   });
 
   it('Erfolg: Abschluss und Speicherung in EINEM Aufruf (Nutzlast ohne Kontingent-/Zeitangaben)', async () => {
@@ -642,7 +673,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
   it('Embedding-Anfrage nutzt Modell und Dimension und zählt Tokens', async () => {
     const vector = Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0.01);
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ data: [{ index: 0, embedding: vector }], usage: { prompt_tokens: 3, total_tokens: 3 } }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl });
     const vectors = await gateway.embed('Yoga');
     expect(vectors).toEqual([vector]);
     expect(gateway.usage).toMatchObject({ embeddingCalls: 1, embeddingTokens: 3 });
@@ -653,14 +684,14 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
 
   it('Embedding mit falscher Dimension wird abgelehnt', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl });
     await expect(gateway.embed('Yoga')).rejects.toThrow(/Antwortform/);
   });
 
   it('Luna-Anfrage setzt store:false, keine Tools und erfasst den Verbrauch', async () => {
     const answer = { results: [{ courseId: '1', score: 80, explanation: '', reasons: [] }] };
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify(answer), usage: { input_tokens: 1200, output_tokens: 300, output_tokens_details: { reasoning_tokens: 50 } } }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl });
     await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }]);
     const sent = JSON.parse(fetchImpl.mock.calls[0][1].body);
     expect(sent.store).toBe(false);
@@ -673,14 +704,14 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
 
   it('Unvollständige Luna-Antwort (Tokenlimit) schlägt ehrlich fehl', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' }, output_text: '{"results":[' }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl });
     await expect(gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }])).rejects.toThrow(/incomplete.*max_output_tokens/);
     expect(gateway.usage.lunaCalls).toBe(1);
   });
 
   it('Abgebrochener Luna-Aufruf wird als Versuch gezählt (Kosten möglich)', async () => {
     const fetchImpl = vi.fn(async () => { throw new Error('This operation was aborted'); });
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl });
     await expect(gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }])).rejects.toThrow(/aborted/);
     expect(gateway.usage).toMatchObject({ lunaCalls: 1, lunaFailedCalls: 1 });
   });
@@ -701,7 +732,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
       { courseId: '999', score: 99, reasons: [] },
     ] };
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ output_text: JSON.stringify(answer) }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl });
     const result = await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga', description: 'Sanftes Yoga am Abend.', contact_email: 'x@y' } }]);
     // scoreSamples: Rohwert(e) der Score-Stichprobe(n) für den Prüfbericht (Stabilität, 23.11.2026).
     // explanationRaw/explanationRejectedBecause: nur für den privaten Prüfbericht (24.11.2026).
@@ -714,7 +745,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
   });
 
   it('Providerfehler wird als Fehler gemeldet (Reservierung wird dann freigegeben)', async () => {
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl: async () => ({ ok: false, status: 500 }) });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl: async () => ({ ok: false, status: 500 }) });
     await expect(gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }])).rejects.toThrow(/HTTP 500/);
   });
 
@@ -727,7 +758,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
       { courseId: '4', score: 78, explanation: 'Der Kurs dauert 12 Wochen.', reasons: [{ field: 'title', quote: 'Pilates' }] },
     ] };
     const fetchImpl = vi.fn(async () => ({ ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify(answer) }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl });
     const result = await gateway.rerank('Yoga', [
       { courseId: 1, evidence: { title: 'Yoga', description: 'Sanftes Yoga am Abend.' } },
       { courseId: 2, evidence: { title: 'Yoga', description: 'Kraftvolles Yoga am Morgen.' } },
@@ -763,7 +794,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
       const results = sent.candidates.map((c) => ({ courseId: c.courseId, score: 50, explanation: '', reasons: [] }));
       return { ok: true, json: async () => ({ status: 'completed', output_text: JSON.stringify({ results }), usage: { input_tokens: 10, output_tokens: 5 } }) };
     });
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, reasoningEffort: 'none', batchSize: 10 });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl, reasoningEffort: 'none', batchSize: 10 });
     const candidates = Array.from({ length: 25 }, (_, i) => ({ courseId: i + 1, evidence: { title: `Kurs ${i + 1}` } }));
     const result = await gateway.rerank('Yoga', candidates);
     expect(fetchImpl).toHaveBeenCalledTimes(3);
@@ -784,7 +815,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
         { type: 'message', content: [{ type: 'output_text', text: valid }] },
       ],
     }) }));
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl });
     const result = await gateway.rerank('Yoga', [{ courseId: 1, evidence: { title: 'Yoga' } }]);
     expect(result.accepted).toHaveLength(1);
     expect(gateway.usage.lunaMultiPartAnswers).toBe(1);
@@ -809,7 +840,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
       const input = JSON.parse(JSON.parse(init.body).input);
       return lunaReply(input.candidates.map((c) => ({ courseId: c.courseId, score: c.courseId === '2' ? 90 : 40 })));
     });
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, mode: 'twoStage', batchSize: 2, distribution: 'stripe' });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl, mode: 'twoStage', batchSize: 2, distribution: 'stripe' });
     expect(gateway.mode).toBe('twoStage');
     const candidates = [1, 2, 3].map((id) => ({ courseId: id, evidence: { title: `Kurs ${id}` } }));
     const result = await gateway.scoreCandidates('Yoga', candidates);
@@ -838,7 +869,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
     ];
     for (const reply of cases) {
       const fetchImpl = vi.fn(async (url, init) => reply(JSON.parse(JSON.parse(init.body).input).candidates.map((c) => c.courseId)));
-      const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, mode: 'twoStage', batchSize: 10 });
+      const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl, mode: 'twoStage', batchSize: 10 });
       await expect(gateway.scoreCandidates('Yoga', [1, 2, 3].map((id) => ({ courseId: id, evidence: { title: 'Yoga' } })))).rejects.toThrow(/Luna/);
     }
   });
@@ -852,7 +883,7 @@ describe('openaiGateway – Aufrufe (gemockt, kein Netz)', () => {
         reasons: [{ field: 'description', quote: c.courseId === '2' ? 'erfundenes Zitat' : 'Sanftes Yoga' }],
       })));
     });
-    const gateway = createOpenAiGateway({ apiKey: 'k', fetchImpl, mode: 'twoStage' });
+    const gateway = createOpenAiGateway({ region: 'global',  apiKey: 'k', fetchImpl, mode: 'twoStage' });
     const candidates = [1, 2, 3].map((id) => ({ courseId: id, evidence: { title: `Kurs ${id}`, description: 'Sanftes Yoga am Abend.' } }));
     const result = await gateway.explainCandidates('Yoga', candidates);
     const byId = Object.fromEntries(result.accepted.map((a) => [a.courseId, a]));

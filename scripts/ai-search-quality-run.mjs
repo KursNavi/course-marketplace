@@ -347,7 +347,7 @@ async function main() {
     if (!canStartNext({ spentUsd, maxFactor, maxUsd: args.maxUsd })) { stoppedBy = 'usd'; break; }
     if (errorCount >= MAX_ERRORS) { stoppedBy = 'errors'; break; }
     const gateway = createOpenAiGateway({
-      apiKey: process.env.OPENAI_API_KEY, embeddingModel: config.embeddingModel, reasoningEffort: config.lunaReasoningEffort,
+      apiKey: process.env.OPENAI_API_KEY, region: config.openaiRegion, embeddingModel: config.embeddingModel, reasoningEffort: config.lunaReasoningEffort,
       batchSize: config.lunaBatchSize, distribution: config.lunaDistribution, mode: config.lunaMode,
       scoreSamples: config.lunaScoreSamples,
     });

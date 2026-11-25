@@ -32,7 +32,7 @@ on:
         description: 'Befehl (Standard: nur lesender Statusbericht)'
         type: choice
         default: status
-        options: [status, index-aufbau, ersteinbettung-trocken, ersteinbettung, aktivieren-trocken, aktivieren, deaktivieren]
+        options: [status, index-aufbau, ersteinbettung-trocken, ersteinbettung, aktivieren-trocken, aktivieren, deaktivieren, abbrechen-trocken, abbrechen]
       max_usd:
         description: 'Stoppschwelle Ersteinbettung in USD (Schätzung, höchstens 1)'
         type: string
@@ -41,15 +41,15 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ki-produktionsbetrieb
-  cancel-in-progress: false
-
 jobs:
   produktion:
     if: >-
       (github.event_name == 'schedule' && vars.AI_OPS_PROD_SCHEDULE_ENABLED == 'true') ||
-      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !startsWith(inputs.befehl, 'abbrechen'))
+    # Warteschlange nur für Betriebsläufe; der Abbruch (Job unten) steht bewusst NICHT darin.
+    concurrency:
+      group: ki-produktionsbetrieb
+      cancel-in-progress: false
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: ki-produktion
@@ -57,6 +57,9 @@ jobs:
       SUPABASE_URL_PROD: ${{ secrets.SUPABASE_URL_PROD }}
       SUPABASE_SECRET_KEY_PROD: ${{ secrets.SUPABASE_SECRET_KEY_PROD }}
       AI_SEARCH_EMBEDDING_MODEL: text-embedding-3-small
+      # Verarbeitungsregion des OpenAI-Produktionsprojekts ('eu' nur bei Projekt mit
+      # Datenresidenz Europa; leer = global). Keine Ausweichroute.
+      AI_SEARCH_OPENAI_REGION: ${{ vars.AI_SEARCH_OPENAI_REGION }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -116,3 +119,40 @@ jobs:
       - name: Bericht mit Überwachung (lesend, rot bei kritischem Alarm)
         if: always()
         run: node scripts/ai-search-prod.mjs status --alarm-exit
+
+  # Abschaltung laufender Hintergrundläufe (Abschaltplan R1, Schritt 3): eigener
+  # Job ohne die Betriebs-Warteschlange, damit er nicht auf den laufenden Lauf wartet.
+  abbruch:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && startsWith(inputs.befehl, 'abbrechen')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: ki-produktion
+    env:
+      SUPABASE_URL_PROD: ${{ secrets.SUPABASE_URL_PROD }}
+      SUPABASE_SECRET_KEY_PROD: ${{ secrets.SUPABASE_SECRET_KEY_PROD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Offene Läufe anzeigen (Trockenlauf)
+        if: inputs.befehl == 'abbrechen-trocken'
+        run: node scripts/ai-search-prod.mjs abort
+
+      - name: Abbruch anfordern
+        if: inputs.befehl == 'abbrechen'
+        env:
+          AI_PROD_CONFIRM: nplxmpfasgpumpiddjfl
+        run: node scripts/ai-search-prod.mjs abort --execute
+
+      - name: Bericht (lesend)
+        if: always()
+        run: node scripts/ai-search-prod.mjs status

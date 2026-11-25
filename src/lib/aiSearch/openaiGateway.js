@@ -45,7 +45,32 @@ export const LUNA_DISTRIBUTIONS = Object.freeze(['block', 'stripe']);
 export const LUNA_DISTRIBUTION = 'block';
 export const LUNA_MODES = Object.freeze(['single', 'twoStage']);
 export const LUNA_MODE = 'single';
-const OPENAI_BASE = 'https://api.openai.com/v1';
+/**
+ * OpenAI-Endpunkte je Verarbeitungsregion (Leitfaden „Data residency“, gelesen
+ * 25.11.2026): Europa (EEA + Schweiz) über eu.api.openai.com. Ein Projekt mit
+ * Datenresidenz Europa wird mit seinem Schlüssel über den regionalen Endpunkt
+ * angesprochen. KEINE Ausweichroute: Ist eine Region konfiguriert, gehen alle
+ * Aufrufe ausschliesslich dorthin; unbekannte Werte schalten die Modelle ab.
+ */
+export const OPENAI_REGIONS = Object.freeze({
+  global: 'https://api.openai.com/v1',
+  eu: 'https://eu.api.openai.com/v1',
+});
+/**
+ * Laut Leitfaden in Europa verarbeitete Modelle (nur die hier genutzten):
+ * /v1/responses mit gpt-6-luna („GPT-6 Luna support EU data residency“),
+ * /v1/embeddings mit text-embedding-3-small. Ein anderes Modell in der Region
+ * EU schaltet die Modellaufrufe ab, bis die Unterstützung belegt ist.
+ */
+export const REGION_MODEL_SUPPORT = Object.freeze({
+  eu: Object.freeze({ responses: Object.freeze(['gpt-6-luna']), embeddings: Object.freeze(['text-embedding-3-small']) }),
+});
+
+/** Region aus der Umgebung ('' = global); null bei unbekanntem Wert. */
+export function resolveOpenAiRegion(value) {
+  const region = String(value ?? '').trim().toLowerCase() || 'global';
+  return Object.hasOwn(OPENAI_REGIONS, region) ? region : null;
+}
 
 /**
  * @returns {{enabled: boolean, reason: string|null, embeddingModel: string,
@@ -67,7 +92,14 @@ export function readModelConfig(env, { checkEnvironment = checkAiSearchEnvironme
     lunaScoreSamples: String(env?.AI_SEARCH_LUNA_SCORE_SAMPLES ?? '').trim() === '2' ? 2 : 1,
     // Anfragetext der Bedeutungssuche: 'full' (bisher) oder 'topic' (fachliches Anliegen).
     semanticQuery: String(env?.AI_SEARCH_SEMANTIC_QUERY ?? '').trim() === 'topic' ? 'topic' : 'full',
+    openaiRegion: resolveOpenAiRegion(env?.AI_SEARCH_OPENAI_REGION),
   };
+  base.openaiBaseUrl = base.openaiRegion ? OPENAI_REGIONS[base.openaiRegion] : null;
+  if (!base.openaiRegion) return { ...base, enabled: false, reason: `Unbekannte OpenAI-Region „${env?.AI_SEARCH_OPENAI_REGION}“ – Modellaufrufe gesperrt` };
+  const support = REGION_MODEL_SUPPORT[base.openaiRegion];
+  if (support && (!support.responses.includes(base.lunaModel) || !support.embeddings.includes(base.embeddingModel))) {
+    return { ...base, enabled: false, reason: `Modell in Region ${base.openaiRegion} nicht als unterstützt belegt – Modellaufrufe gesperrt` };
+  }
   if (env?.AI_SEARCH_MODELS_ENABLED !== '1') return { ...base, enabled: false, reason: 'Modellaufrufe nicht freigeschaltet (E3)' };
   if (!env?.OPENAI_API_KEY) return { ...base, enabled: false, reason: 'kein OpenAI-API-Zugang hinterlegt' };
   // Web: Umgebungsschutz (TEST-Vorschau bzw. Produktionsfreischaltung). Betriebswerkzeuge
@@ -77,11 +109,11 @@ export function readModelConfig(env, { checkEnvironment = checkAiSearchEnvironme
   return { ...base, enabled: true, reason: null };
 }
 
-async function postJson(fetchImpl, path, apiKey, body, timeoutMs) {
+async function postJson(fetchImpl, baseUrl, path, apiKey, body, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetchImpl(`${OPENAI_BASE}${path}`, {
+    const response = await fetchImpl(`${baseUrl}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify(body),
@@ -401,9 +433,13 @@ export function combineScoreSamples(accepted, second) {
 }
 
 /**
- * @param {{apiKey: string, fetchImpl?: Function, embeddingModel?: string}} options
+ * @param {{apiKey: string, region: 'global'|'eu', fetchImpl?: Function, embeddingModel?: string}} options
+ *   region ist Pflicht (aus readModelConfig): kein stiller Standard, keine Ausweichroute.
  */
 export function createOpenAiGateway(options) {
+  const region = resolveOpenAiRegion(options.region);
+  if (!options.region || !region) throw new Error(`OpenAI-Region fehlt oder unbekannt (${options.region ?? '—'}) – kein Modellaufruf.`);
+  const baseUrl = OPENAI_REGIONS[region];
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   const apiKey = options.apiKey;
   const embeddingModel = options.embeddingModel ?? EMBEDDING_MODEL_DEFAULT;
@@ -435,7 +471,7 @@ export function createOpenAiGateway(options) {
     const schema = stageName === 'rank' ? stage.schema : boundedSchema(stageName, ids);
     usage.lunaCalls += 1; // Versuche, auch abgebrochene
     const started = Date.now();
-    const body = await postJson(fetchImpl, '/responses', apiKey, {
+    const body = await postJson(fetchImpl, baseUrl, '/responses', apiKey, {
       model: request.model,
       instructions: stageName === 'score' ? stage.instructions : `${stage.instructions} ${languageInstruction(language)}`,
       input: JSON.stringify({ ...request.input, task: stage.task }),
@@ -505,7 +541,7 @@ export function createOpenAiGateway(options) {
 
     async embed(texts) {
       const input = (Array.isArray(texts) ? texts : [texts]).map((t) => String(t ?? '').slice(0, 8000));
-      const body = await postJson(fetchImpl, '/embeddings', apiKey, {
+      const body = await postJson(fetchImpl, baseUrl, '/embeddings', apiKey, {
         model: embeddingModel,
         input,
         dimensions: EMBEDDING_DIMENSIONS,
