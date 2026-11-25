@@ -25,8 +25,7 @@ describe('1. Ort und Lernform zusammen', () => {
   });
 
   it('Ortsfeld „Online“, Lernform Präsenz, kein Ort: Widerspruch ausdrücklich (Befund 20163)', () => {
-    // Seit 25.11.2026: Mit Online-Angebot ist es kein Widerspruch, sondern ein fehlender Präsenzort.
-    expect(placeSummary({ canton: 'Online', address: 'Online', deliveryTypes: ['presence', 'online_live'] })).toEqual({ kind: 'online_presence_open', text: 'Online; ein Präsenzort ist nicht angegeben' });
+    expect(placeSummary({ canton: 'Online', address: 'Online', deliveryTypes: ['presence', 'online_live'] }).kind).toBe('conflict');
     expect(placeSummary({ canton: 'Online', address: 'Online', deliveryTypes: ['presence'] }).kind).toBe('conflict');
     const text = buildExplanation({ lead: 'Du lernst Marketingstrategien zu planen und umzusetzen.', wishes: [{ type: 'location', label: 'Bern', value: 'Bern' }], canton: 'Online', address: 'Online', deliveryTypes: ['presence'] });
     expect(text).toMatch(/Ortsangaben widersprüchlich: Als Kursort ist „Online“ eingetragen, die Lernform nennt aber Präsenz; ein Präsenzort fehlt\./);
@@ -48,7 +47,10 @@ describe('1. Ort und Lernform zusammen', () => {
     expect(ok).toMatch(/Vorgabe „Kanton Bern“ erfüllt: 3400 Burgdorf \(Kanton Bern\)\./);
     expect(ok).toMatch(/Vorgabe „nicht online“ erfüllt: Lernform Präsenz\./);
     const conflict = buildExplanation({ lead: 'Du verbesserst deine Technik in dynamischen Sequenzen.', musts: { location: 'Bern', onlineAllowed: false }, mustUnknowns: ['location'], canton: 'Online', address: 'Thurgau, Online, Bern', deliveryTypes: ['presence'] });
-    expect(conflict).toMatch(/Vorgabe „nicht online“: Die Lernform nennt Präsenz, als Kursort ist aber „Online“ eingetragen – widersprüchlich\./);
+    // Seit 25.11.2026 (Belegregeln v2): Kantone in der Adressangabe gelten als Präsenzangabe – kein Widerspruch.
+    expect(conflict).toMatch(/Vorgabe „nicht online“ erfüllt: Lernform Präsenz\./);
+    const onlyOnline = buildExplanation({ lead: 'Du verbesserst deine Technik in dynamischen Sequenzen.', musts: { location: 'Bern', onlineAllowed: false }, mustUnknowns: ['location'], canton: 'Online', address: 'Online', deliveryTypes: ['presence'] });
+    expect(onlyOnline).toMatch(/Vorgabe „nicht online“: Die Lernform nennt Präsenz, als Kursort ist aber „Online“ eingetragen – widersprüchlich\./);
     // Adressangabe nennt Bern, ein Kursort fehlt: so benannt (Befund 20099).
     expect(conflict).toMatch(/Nicht bestätigt: Kursort in Bern – die Adressangabe nennt Bern, ein Kursort ist aber nicht eingetragen\./);
     const mustWish = buildExplanation({ lead: 'Du lernst ein Digital-Marketing-Konzept zu erstellen.', wishes: [{ type: 'location', label: 'Zürich', value: 'Zürich' }], musts: { location: 'Zürich' }, mustUnknowns: ['location'], canton: 'Online', deliveryTypes: ['presence'] });
@@ -60,8 +62,9 @@ describe('2. Zeit', () => {
   const evening = { type: 'time', label: 'abends', value: 'evening' };
   it('Tageskurs laut Kursdauer: Abweichung mit tatsächlicher Zeit (Befund 20587/20589/20592)', () => {
     const check = checkWish({ title: 'Foto', description: 'Fotokurs', session_length: '1 Tag, 09:00 bis 16:00 Uhr', course_events: [] }, evening);
-    expect(check).toMatchObject({ status: 'deviating', actual: '09:00–16:00' });
-    expect(buildExplanation({ wishChecks: [check] })).toBe('Abweichung vom Wunsch „abends“: Kurszeit laut Kursangaben „09:00–16:00“.');
+    // Seit 25.11.2026 wörtlich aus dem Feld (Zitat), nicht normalisiert.
+    expect(check).toMatchObject({ status: 'deviating', actual: '1 Tag, 09:00 bis 16:00 Uhr' });
+    expect(buildExplanation({ wishChecks: [check] })).toBe('Abweichung vom Wunsch „abends“: Kurszeit laut Kursangaben „1 Tag, 09:00 bis 16:00 Uhr“.');
   });
   it('bestätigt bei Beginn ab 18 Uhr, unbekannt ohne Zeitangabe', () => {
     expect(checkWish({ title: 'Foto', description: '', session_length: 'Di 18:30–21:00', course_events: [] }, evening).status).toBe('confirmed');
@@ -69,7 +72,7 @@ describe('2. Zeit', () => {
   });
   it('Wochenendwunsch: Wochentag belegt → Abweichung ohne Datum', () => {
     const check = checkWish({ title: 'Reise', description: '', session_length: 'Dienstag, 23.06.2026, 09:00–16:00 Uhr', course_events: [] }, { type: 'time', label: 'am Wochenende', value: 'weekend' });
-    expect(check).toMatchObject({ status: 'deviating', actual: 'Dienstag 09:00–16:00' });
+    expect(check).toMatchObject({ status: 'deviating', actual: 'Dienstag, 23.06.2026, 09:00–16:00 Uhr' });
     expect(dayAndTime('25 Kurstage; Sa/So, ca. 1–2×/Monat, 09:30–16:30')).toBe('Sa/So 09:30–16:30');
   });
   it('bestätigter Wochenendwunsch bleibt bei Platzmangel sichtbar (Befund 20798)', () => {
@@ -88,7 +91,7 @@ describe('3. Zulassung, Vorgaben, Abschluss', () => {
     expect(conditions.join(' ')).toMatch(/mind\. einer/);
     expect(conditions.join(' ')).toMatch(/Fähigkeitszeugnis.*Fachausweis.*Diplom/);
     const text = buildExplanation({ lead: 'Du lernst ein Digital-Marketing-Konzept zu erstellen.', prerequisites });
-    expect(text).toMatch(/Zulassungsbedingungen laut Kursangaben: „Gute Deutschkenntnisse \(Niveau C1\)“; „Zusätzlich muss mind\. einer der…“; „Fähigkeitszeugnis/);
+    expect(text).toMatch(/Zulassungsbedingungen laut Kursangaben: „Gute Deutschkenntnisse \(Niveau C1\)“; „Zusätzlich muss mind\. einer der folgenden Punkte erfüllt sein“; „Fähigkeitszeugnis/);
   });
 
   it('Abschluss: CAS nicht belegt, Diplom genannt; Zertifikat belegt; nichts genannt', () => {
@@ -114,7 +117,7 @@ describe('3b. Nachbesserung nach der zweiten Gegenprüfung', () => {
 
   it('Zulassung: nach „mind. einer der folgenden“ sind die Punkte Alternativen („oder“)', () => {
     const text = buildExplanation({ lead: 'Du lernst ein Digital-Marketing-Konzept zu erstellen.', prerequisites: 'Gute Deutschkenntnisse (Niveau C1)\nZusätzlich muss mind. einer der folgenden Punkte erfüllt sein:\n- Fähigkeitszeugnis eines Berufes\n- Fachausweis einer Berufsprüfung' });
-    expect(text).toMatch(/„Zusätzlich muss mind\. einer der…“; „Fähigkeitszeugnis eines Berufes“ oder „Fachausweis einer Berufsprüfung“\./);
+    expect(text).toMatch(/„Zusätzlich muss mind\. einer der folgenden Punkte erfüllt sein“; „Fähigkeitszeugnis eines Berufes“ oder „Fachausweis einer Berufsprüfung“\./);
   });
 
   it('Budget: bekannter Betrag im Budget, aber offene Preisbasis wird so benannt; unbekannter Preis wie bisher', () => {
@@ -156,7 +159,7 @@ describe('3c. Nachbesserung nach der dritten Gegenprüfung', () => {
 describe('3d. Nachbesserung nach der vierten Gegenprüfung', () => {
   it('vergangenes Datum in der Zeitangabe wird genannt (Befund 20592)', () => {
     const check = checkWish({ title: 'Reise', description: '', session_length: 'Dienstag, 23.06.2026, 09:00–16:00 Uhr', course_events: [] }, { type: 'time', label: 'nach der Arbeit', value: 'evening' }, { now: new Date('2026-11-24T12:00:00Z') });
-    expect(buildExplanation({ wishChecks: [check] })).toBe('Abweichung vom Wunsch „nach der Arbeit“: Kurszeit laut Kursangaben „Dienstag 09:00–16:00“ (angegebener Termin 23.06.2026, bereits vorbei).');
+    expect(buildExplanation({ wishChecks: [check] })).toBe('Abweichung vom Wunsch „nach der Arbeit“: Kurszeit laut Kursangaben „Dienstag, 23.06.2026, 09:00–16:00 Uhr“ (bereits vorbei).');
     const future = checkWish({ title: 'Reise', description: '', session_length: 'Dienstag, 23.06.2027, 09:00–16:00 Uhr', course_events: [] }, { type: 'time', label: 'nach der Arbeit', value: 'evening' }, { now: new Date('2026-11-24T12:00:00Z') });
     expect(future.pastDate).toBeNull();
   });

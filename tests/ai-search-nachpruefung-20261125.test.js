@@ -33,11 +33,24 @@ describe('1. Ort und Lernform aus einer gemeinsamen Faktenbasis', () => {
     expect(fr).not.toMatch(/contradictoire/);
   });
 
-  it('Ortsfeld „Online“, Lernform nur Präsenz: Widerspruch wird weiterhin benannt', () => {
-    const presenceOnly = { canton: 'Online', address: null, deliveryTypes: ['presence'] };
-    expect(placeFacts(presenceOnly).conflict).toBe(true);
-    expect(buildExplanation({ lead: LEAD, ...presenceOnly, musts: { location: 'Bern', onlineAllowed: false }, mustUnknowns: ['location'] }))
-      .toMatch(/Kursort aber als „Online“ eingetragen|als Kursort ist aber „Online“ eingetragen/);
+  it('Kursort nur „Online“, Lernform Präsenz, kein Präsenzort (auch nicht in der Adresse): Widerspruch – mit und ohne Online-Angebot', () => {
+    for (const deliveryTypes of [['presence'], ['presence', 'online_live']]) {
+      const onlyOnline = { canton: 'Online', address: 'Online', deliveryTypes };
+      expect(placeFacts(onlyOnline).conflict).toBe(true);
+      expect(buildExplanation({ lead: LEAD, ...onlyOnline, musts: { location: 'Zürich', onlineAllowed: false }, mustUnknowns: ['location'] }))
+        .toMatch(/Kursort aber als „Online“ eingetragen|als Kursort ist aber „Online“ eingetragen/);
+    }
+    // Nennt die Adresse Kantone, gilt sie als Präsenzangabe: kein Widerspruch.
+    expect(placeFacts({ canton: 'Online', address: 'Online, Bern, Zürich', deliveryTypes: ['presence'] }).conflict).toBe(false);
+  });
+
+  it('Stadtwunsch innerhalb der erfüllten Kantonsvorgabe wird als Abweichung genannt, wenn die Kursorte ihn nicht enthalten', () => {
+    const wishes = parseQuery('Schwimmkurs für meine 6-jährige Tochter in Winterthur, samstags').wishes;
+    const text = buildExplanation({ lead: LEAD, wishes, cities: ['8810 Horgen'], canton: 'Zürich', deliveryTypes: ['presence'], musts: { location: 'Zürich', onlineAllowed: false } });
+    expect(text).toMatch(/Vorgabe „Kanton Zürich“ erfüllt: Kanton Zürich\./);
+    expect(text).toMatch(/Abweichung vom Wunsch „Winterthur“: Ort ist 8810 Horgen \(Kanton Zürich\)\./);
+    const inCity = buildExplanation({ lead: LEAD, wishes, cities: ['8400 Winterthur'], canton: 'Zürich', deliveryTypes: ['presence'], musts: { location: 'Zürich', onlineAllowed: false } });
+    expect(inCity).not.toMatch(/Abweichung vom Wunsch „Winterthur“/);
   });
 
   it('nur Online laut Lernform: Kantonsfeld ist kein Kursort; Vorgabe „Kanton oder online“ über das Online-Angebot', () => {
@@ -103,6 +116,24 @@ describe('3. Zitate wörtlich, ohne Feldgrenzen und ohne Sinnverlust', () => {
   it('Abschluss-Ausschnitt verbindet nie Titel und Beschreibung; „eidg.“ ist kein Satzende', () => {
     const courseText = 'Fachleute Finanz- und Rechnungswesen mit eidg. Fachausweis\nBei Ihnen stimmen die Zahlen!';
     expect(qualificationCheck(courseText, 'fachausweis')).toEqual({ status: 'confirmed', actual: 'eidg. Fachausweis' });
+  });
+
+  it('Zulassung: kurze Teilsätze vollständig, damit keine Bedingung wegfällt', () => {
+    expect(admissionConditions('eine kaufmännische oder ähnliche Grundbildung, frühere kaufmännische Berufstätigkeit, PC-Grundkenntnisse, Tastaturschreiben'))
+      .toEqual(['eine kaufmännische oder ähnliche Grundbildung, frühere kaufmännische Berufstätigkeit, PC-Grundkenntnisse, Tastaturschreiben']);
+  });
+
+  it('Abschluss-Ausschnitt mit Bezugswort und Nummer („Vorbereitung auf Zertifikate nach ISO 17024“)', () => {
+    expect(qualificationCheck('Durch die Vorbereitung auf Zertifikate nach ISO 17024 oder IPMA gewinnen alle.', 'zertifikat').actual)
+      .toBe('Vorbereitung auf Zertifikate nach ISO 17024');
+  });
+
+  it('Zeitangabe in Anführungszeichen ist wörtlich; berechnete Zeiten stehen ohne Anführungszeichen', () => {
+    const evening = { type: 'time', label: 'nach der Arbeit', value: 'evening' };
+    const verbatim = checkWish({ title: 'Kurs', description: '', session_length: '1 Tag, 09:00 bis 16:00 Uhr', course_events: [] }, evening);
+    expect(buildExplanation({ wishChecks: [verbatim] })).toBe('Abweichung vom Wunsch „nach der Arbeit“: Kurszeit laut Kursangaben „1 Tag, 09:00 bis 16:00 Uhr“.');
+    const computed = checkWish({ title: 'Kurs', description: '15.00 – 17.00 Uhr Indoor\n17.00 – 19.00 Uhr Outdoor', course_events: [] }, evening);
+    expect(buildExplanation({ wishChecks: [computed] })).toBe('Abweichung vom Wunsch „nach der Arbeit“: Kurszeit laut Kursangaben 15:00–19:00.');
   });
 
   it('Zulassung: keine Bruchstücke nach Abkürzungen („inkl. Grundbildung“)', () => {

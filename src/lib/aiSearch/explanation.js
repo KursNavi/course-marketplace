@@ -61,7 +61,6 @@ const MESSAGES = {
     admission: (x) => `Zulassungsbedingungen laut Kursangaben: ${x}.`,
     placeMulti: (list, online, more, n) => `${n > 1 ? 'Kantone' : 'Kanton'} ${list}${more ? ' u. a.' : ''} (Präsenz laut Adressangabe)${online ? ', zudem online' : ''}`,
     placeConflict: 'Ortsangaben widersprüchlich: Als Kursort ist „Online“ eingetragen, die Lernform nennt aber Präsenz; ein Präsenzort fehlt.',
-    placeOnlinePresenceOpen: 'Online; ein Präsenzort ist nicht angegeben',
     mustPlaceOk: (name, place) => `Vorgabe „Kanton ${name}“ erfüllt: ${place}.`,
     mustOnlineOk: (form) => `Vorgabe „nicht online“ erfüllt: Lernform ${form}.`,
     alsoOnline: (x) => ` (zudem ${x})`,
@@ -76,6 +75,8 @@ const MESSAGES = {
     subjectMissing: (label) => `${q.de(label)} wird in den Kursangaben nicht genannt.`,
     mustOnlineConflict: (form) => `Vorgabe „nicht online“: Die Lernform nennt ${form}, als Kursort ist aber „Online“ eingetragen – widersprüchlich.`,
     timeDeviates: (label, actual) => `Abweichung vom Wunsch ${q.de(label)}: Kurszeit laut Kursangaben ${q.de(actual)}.`,
+    timeDeviatesPlain: (label, actual) => `Abweichung vom Wunsch ${q.de(label)}: Kurszeit laut Kursangaben ${actual}.`,
+    pastShort: ' (bereits vorbei)',
     qualFact: (x) => `Abschluss laut Kursangaben: ${q.de(x)}.`,
     qualDeviates: (label, x) => `${q.de(label)} laut Kursangaben nicht belegt; genannt wird ${q.de(x)}.`,
     qualMissing: (label) => `${q.de(label)} laut Kursangaben nicht belegt.`,
@@ -140,7 +141,6 @@ const MESSAGES = {
     admission: (x) => `Conditions d’admission selon les indications du cours : ${x}.`,
     placeMulti: (list, online, more, n) => `${n > 1 ? 'cantons' : 'canton'} ${list}${more ? ', entre autres' : ''} (présentiel selon l’adresse)${online ? ', aussi en ligne' : ''}`,
     placeConflict: 'Indications de lieu contradictoires : le lieu indiqué est « Online », mais la forme est présentielle ; aucun lieu présentiel indiqué.',
-    placeOnlinePresenceOpen: 'en ligne ; aucun lieu en présentiel indiqué',
     mustPlaceOk: (name, place) => `Exigence « canton ${name} » remplie : ${place}.`,
     mustOnlineOk: (form) => `Exigence « pas en ligne » remplie : ${form}.`,
     alsoOnline: (x) => ` (aussi ${x})`,
@@ -155,6 +155,8 @@ const MESSAGES = {
     subjectMissing: (label) => `${q.fr(label)} n’est pas mentionné dans les indications du cours.`,
     mustOnlineConflict: (form) => `Exigence « pas en ligne » : la forme indiquée est ${form}, mais le lieu indiqué est « Online » – contradictoire.`,
     timeDeviates: (label, actual) => `Écart par rapport au souhait ${q.fr(label)} : horaire selon les indications du cours ${q.fr(actual)}.`,
+    timeDeviatesPlain: (label, actual) => `Écart par rapport au souhait ${q.fr(label)} : horaire selon les indications du cours ${actual}.`,
+    pastShort: ' (déjà passée)',
     qualFact: (x) => `Diplôme selon les indications du cours : ${q.fr(x)}.`,
     qualDeviates: (label, x) => `${q.fr(label)} non confirmé selon les indications du cours ; mentionné : ${q.fr(x)}.`,
     qualMissing: (label) => `${q.fr(label)} non confirmé selon les indications du cours.`,
@@ -216,7 +218,6 @@ const MESSAGES = {
     admission: (x) => `Condizioni di ammissione secondo le indicazioni del corso: ${x}.`,
     placeMulti: (list, online, more, n) => `${n > 1 ? 'cantoni' : 'cantone'} ${list}${more ? ', tra l’altro' : ''} (in presenza secondo l’indirizzo)${online ? ', anche online' : ''}`,
     placeConflict: 'Indicazioni sul luogo contraddittorie: come luogo è indicato «Online», ma la forma è in presenza; manca un luogo in presenza.',
-    placeOnlinePresenceOpen: 'online; nessun luogo in presenza indicato',
     mustPlaceOk: (name, place) => `Requisito «cantone ${name}» soddisfatto: ${place}.`,
     mustOnlineOk: (form) => `Requisito «non online» soddisfatto: ${form}.`,
     alsoOnline: (x) => ` (anche ${x})`,
@@ -231,6 +232,8 @@ const MESSAGES = {
     subjectMissing: (label) => `${q.it(label)} non è menzionato nelle indicazioni del corso.`,
     mustOnlineConflict: (form) => `Requisito «non online»: la forma indicata è ${form}, ma come luogo è indicato «Online» – contraddittorio.`,
     timeDeviates: (label, actual) => `Differenza rispetto al desiderio ${q.it(label)}: orario secondo le indicazioni del corso ${q.it(actual)}.`,
+    timeDeviatesPlain: (label, actual) => `Differenza rispetto al desiderio ${q.it(label)}: orario secondo le indicazioni del corso ${actual}.`,
+    pastShort: ' (già passata)',
     qualFact: (x) => `Titolo secondo le indicazioni del corso: ${q.it(x)}.`,
     qualDeviates: (label, x) => `${q.it(label)} non confermato secondo le indicazioni del corso; indicato: ${q.it(x)}.`,
     qualMissing: (label) => `${q.it(label)} non confermato secondo le indicazioni del corso.`,
@@ -513,8 +516,10 @@ export function wishCheckSentence(check, language = 'de') {
     // Wunsch mit den Worten der Anfrage („nach der Arbeit“), sonst die Standardbezeichnung.
     const label = check.wishLabel || ((check.key && m.wishLabels[check.key]) ?? '');
     // Bekannte, abweichende Kurszeit wird genannt (24.11.2026), sonst „nicht belegt“.
-    const past = check.pastDate ? m.pastNote(check.pastDate) : '';
-    return check.status === 'deviating' && check.actual ? m.timeDeviates(label, check.actual).replace(/\.$/, `${past}.`) : m.timeUnconfirmed(label);
+    // Zitat nur wörtlich; normalisierte Zeitangaben stehen ohne Anführungszeichen (25.11.2026).
+    const past = check.pastDate ? (String(check.actual ?? '').includes(check.pastDate) ? m.pastShort : m.pastNote(check.pastDate)) : '';
+    if (check.status !== 'deviating' || !check.actual) return m.timeUnconfirmed(label);
+    return (check.normalized ? m.timeDeviatesPlain(label, check.actual) : m.timeDeviates(label, check.actual)).replace(/\.$/, `${past}.`);
   }
   if (check.aspect === 'Kursart') {
     // Ferienkurs-Wunsch gegen die Kursart (24.11.2026); widersprüchliche Angaben
@@ -742,7 +747,6 @@ export function placeSummary({ cities = [], canton = null, address = null, deliv
   }
   if (facts.conflict) return { text: null, kind: 'conflict' };
   // Präsenz und Online angeboten, aber kein Präsenzort: offen benennen, nicht „Online“ allein.
-  if (presence && facts.onlineField && facts.onlineForm) return { text: m.placeOnlinePresenceOpen, kind: 'online_presence_open' };
   if (cantonName) return { text: m.canton(cantonName), kind: 'canton' };
   if (online) return { text: 'Online', kind: 'online' };
   return { text: null, kind: null };
@@ -768,7 +772,9 @@ export function placeFacts({ cities = [], canton = null, address = null, deliver
   const cantonName = canton && !onlineField ? String(canton) : null;
   const fromAddress = addressCantons(address);
   const onlineOnly = types.length > 0 && types.every((t) => t === 'online' || t === 'online_live');
-  const conflict = presence && onlineField && !onlineForm && known.length === 0;
+  // Plattformregel (Belegregeln v2): Kursort nur „Online“, Lernform Präsenz und kein
+  // Präsenzort aus Kursorten/Terminen oder Adressangabe = Widerspruch (auch mit Online-Angebot).
+  const conflict = presence && onlineField && known.length === 0 && fromAddress.length === 0;
   return { presence, online, onlineForm, onlineOnly, onlineField, known, cantonName, fromAddress, conflict, conflictWithAddress: conflict && fromAddress.length > 0 };
 }
 
@@ -785,7 +791,9 @@ export function admissionConditions(text, perClause = 5, maxClauses = 7) {
   if (picked.length === 0) return null;
   return picked.slice(0, maxClauses).map((c) => {
     const words = c.split(/\s+/);
-    return words.length <= perClause ? c : `${words.slice(0, perClause).join(' ').replace(/[,;:–-]+$/, '')}…`;
+    // Bis 12 Wörter vollständig (Nachprüfung 25.11.2026: „frühere kaufmännische
+    // Berufstätigkeit“ fiel weg); längere Teilsätze wörtlich gekürzt mit „…“.
+    return words.length <= Math.max(perClause, 12) ? c : `${words.slice(0, perClause).join(' ').replace(/[,;:–-]+$/, '')}…`;
   });
 }
 
@@ -816,8 +824,13 @@ export function qualificationCheck(courseText, wanted) {
     const i = tokens.findIndex((t) => t.index <= hit.index && hit.index < t.index + t[0].length);
     if (i < 0) return hit[0];
     const prev = i > 0 ? tokens[i - 1][0] : '';
-    const from = i > 0 && (!/[.!?:;]$/.test(prev) || /^(?:eidg|dipl|inkl|staatl|anerk|zert)\.$/i.test(prev)) ? i - 1 : i;
-    let picked = tokens.slice(from, i + 3).map((t) => t[0]);
+    let from = i > 0 && (!/[.!?:;]$/.test(prev) || /^(?:eidg|dipl|inkl|staatl|anerk|zert)\.$/i.test(prev)) ? i - 1 : i;
+    // Steht davor nur eine Präposition („auf Zertifikate“), gehört das Bezugswort dazu
+    // („Vorbereitung auf Zertifikate“), sonst ginge der Sinn verloren (25.11.2026).
+    if (from === i - 1 && i >= 2 && /^(?:auf|zur|zum|für|ohne)$/i.test(prev) && !/[.!?:;,]$/.test(tokens[i - 2][0])) from = i - 2;
+    // Eine angehängte Nummer („ISO 17024“) wird nicht abgeschnitten.
+    const tail = tokens[i + 3] && /^\d[\d./-]*[.,;]?$/.test(tokens[i + 3][0]) ? 4 : 3;
+    let picked = tokens.slice(from, i + tail).map((t) => t[0]);
     const cut = picked.findIndex((w, k) => k > i - from && /[.!?;:,)]$/.test(w));
     if (cut >= 0) picked = picked.slice(0, cut + 1);
     while (picked.length > i - from + 1 && /^(wird|werden|ist|sind|und|oder|der|die|das|des|nach|von|mit|für|im|in|zu|am|als)$/i.test(picked[picked.length - 1])) picked.pop();
@@ -931,6 +944,10 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   // 3. Ort und Vorgaben. Formular-Vorgaben heissen „Vorgabe“, nie „Wunsch“.
   const mustCanton = musts?.location ? String(musts.location) : null;
   const positivePlaces = wishes.filter((w) => w.type === 'location' && !w.negated && !(mustCanton && cantonForPlace(w.value) === mustCanton));
+  // Stadtwunsch innerhalb einer ERFÜLLTEN Kantonsvorgabe (z. B. Winterthur bei Vorgabe
+  // Kanton Zürich) bleibt ein eigener Wunsch (Nachprüfung 25.11.2026); bei unbekanntem
+  // Kursort nennt die Zeile „Nicht bestätigt: Kursort …“ die Lücke.
+  const cityWishesInMust = mustCanton ? wishes.filter((w) => w.type === 'location' && !w.negated && cantonForPlace(w.value) === mustCanton && String(w.value).toLowerCase() !== mustCanton.toLowerCase()) : [];
   const excludedPlaces = wishes.filter((w) => w.type === 'location' && w.negated);
   const summary = placeSummary({ cities, canton, address, deliveryTypes: deliveryTypes ?? [], prefer: positivePlaces.map((w) => w.value).concat(mustCanton ? [mustCanton] : []), language });
   const placeText = summary.text ?? (summary.kind === 'conflict' ? null : place);
@@ -944,6 +961,10 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   if (mustOk && facts.onlineOnly && musts?.onlineAllowed === true) {
     // Vorgabe „Kanton oder online“ über das Online-Angebot erfüllt (Befund 20380).
     add(19, 0, m.mustOnlineAllowedOk(mustCanton, typeLabel(onlineTypes)));
+  } else if (mustOk && cityWishesInMust.length > 0 && (cities ?? []).length > 0 && !cityWishesInMust.some((w) => cities.some((c) => String(c).toLowerCase().includes(String(w.value).toLowerCase())))) {
+    // Vorgabe erfüllt, gewünschte Stadt laut Kursorten aber nicht: beides nennen.
+    add(19, 0, m.mustPlaceOk(mustCanton, m.canton(mustCanton)));
+    add(20, 0, m.placeDeviates(cityWishesInMust.map((w) => w.value).join(' / '), placeText ?? m.canton(mustCanton)));
   } else if (mustOk) {
     add(19, 0, m.mustPlaceOk(mustCanton, placeText ?? m.canton(mustCanton)));
     parts[parts.length - 1].mustPlace = { name: mustCanton, place: placeText ?? m.canton(mustCanton) };
@@ -966,7 +987,7 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   if (musts?.onlineAllowed === false && mustCanton) {
     // Aus derselben Faktenbasis wie die Ortszeile: widersprüchlich nur, wenn das
     // Ortsfeld „Online“ lautet, die Lernform aber kein Online-Angebot nennt.
-    if (facts.presence && facts.onlineField && !facts.onlineForm) add(21, 0, m.mustOnlineConflict(typeLabel(allTypes)));
+    if (facts.conflict) add(21, 0, m.mustOnlineConflict(typeLabel(allTypes)));
     // Hinweis zu einer Formular-Vorgabe gehört zur Vollständigkeit (Belegregeln v2): nie weglassen.
     else if (facts.presence) {
       const formText = `${typeLabel(presenceTypes)}${onlineTypes.length ? m.alsoOnline(typeLabel(onlineTypes)) : ''}`;
@@ -989,7 +1010,7 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   // 5. Abschluss (CAS, Diplom, Zertifikat …) aus belegten Kursangaben.
   for (const wish of wishes.filter((w) => w.type === 'qualification')) {
     const result = qualificationCheck(courseText ?? `${description ?? ''}`, wish.value);
-    if (result.status === 'confirmed') add(24, 1.2, m.qualFact(result.actual));
+    if (result.status === 'confirmed') add(24, 0, m.qualFact(result.actual));
     else if (result.status === 'deviating') add(24, 0, m.qualDeviates(wish.label, result.actual));
     else add(24, 0, m.qualMissing(wish.label));
   }

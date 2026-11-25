@@ -150,6 +150,25 @@ export function knownScheduleDeviation(course, value) {
   return null;
 }
 
+/**
+ * Wörtliche Zeitangabe (Terminbeschreibung oder Kursdauer-Feld, höchstens 14
+ * Wörter) zur selben Abweichung wie knownScheduleDeviation, sonst null.
+ */
+export function verbatimSchedule(course, value) {
+  const events = (Array.isArray(course?.course_events) ? course.course_events : []).filter((e) => !e?.cancelled_at);
+  const lines = [...events.map((e) => e?.schedule_description), course?.session_length].filter(Boolean);
+  const clean = (s) => String(s).replace(/\s+/g, ' ').trim().replace(/[.;,]+$/, '');
+  const short = (s) => (s && clean(s).split(' ').length <= 14 ? clean(s) : null);
+  if (value === 'evening') return short(lines.find((s) => new RegExp(TIME_RANGE.source, 'i').test(s)));
+  if (['weekend', 'saturday', 'sunday'].includes(value)) {
+    const line = lines.find((s) => WEEKDAY.test(s));
+    if (line) return short(line);
+    const word = WEEKDAY_FULL.exec(scheduleText(course));
+    return word ? word[0] : null;
+  }
+  return null;
+}
+
 const HOLIDAY_TEXT = /schulferien|ferienkurs|ferienwoche|in den ferien|sommerferien|herbstferien|frühlingsferien|winterferien/i;
 const FLEXIBLE_BOOKING = /flexibel buchbar|einzeln buchbar|jederzeit (?:ein(?:steigen|stieg)|buchbar|möglich)|einstieg jederzeit|laufende[rn]? einstieg|drop-?in|einzellektionen? buchbar|termine? nach (?:absprache|vereinbarung)|individuell (?:vereinbar|planbar|buchbar)/i;
 const FIXED_SERIES = /\b\d+\s*(?:kursabende|abende|termine|kurstage|lektionen)\b|\bwochenkurs\b|\bsemesterkurs\b|\bkursreihe\b/i;
@@ -272,7 +291,11 @@ export function checkWish(course, wish, options = {}) {
     if (hit) return { ...base, status: 'confirmed', actual: timeExcerpt(source, hit.index, hit[0].length), pastDate };
     // Bekannt abweichend (24.11.2026): belegte Kurszeit, aber nicht passend.
     const known = knownScheduleDeviation(course, wish.value);
-    return known ? { ...base, status: 'deviating', actual: known, pastDate } : { ...base, status: 'unknown', actual: null };
+    if (!known) return { ...base, status: 'unknown', actual: null };
+    // Wörtliche Zeitangabe bevorzugt (Nachprüfung 25.11.2026: „09:00–16:00“ statt
+    // „09:00 bis 16:00 Uhr“ war kein wörtliches Zitat); sonst normalisiert, ohne Zitat.
+    const verbatim = verbatimSchedule(course, wish.value);
+    return { ...base, status: 'deviating', actual: verbatim ?? known, normalized: !verbatim, pastDate };
   }
   if (wish?.type === 'level' && wish.value === 'beginner') {
     const level = String(course?.level ?? '').toLowerCase().trim();
