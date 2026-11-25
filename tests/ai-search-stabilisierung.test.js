@@ -111,7 +111,8 @@ describe('1. Tatsachen aus Kursangaben', () => {
   });
 
   it('Zielgruppen-Aussage der Beschreibung wörtlich, auch über „ca.“ hinweg', () => {
-    expect(audienceStatement('Der Kurs richtet sich an Kinder ab ca. 8 Jahren sowie an Erwachsene.')).toBe('richtet sich an Kinder ab ca. 8 Jahren…');
+    // Seit 25.11.2026 nie sinnverändernd gekürzt: die zweite Zielgruppe bleibt.
+    expect(audienceStatement('Der Kurs richtet sich an Kinder ab ca. 8 Jahren sowie an Erwachsene.')).toBe('richtet sich an Kinder ab ca. 8 Jahren sowie an Erwachsene');
     expect(audienceStatement('Dieser Kurs richtet sich an Ärztinnen und Ärzte.')).toBe('richtet sich an Ärztinnen und Ärzte');
     expect(audienceStatement('Ein Kurs über Farben.')).toBeNull();
   });

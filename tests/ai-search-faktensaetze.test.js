@@ -25,7 +25,9 @@ describe('1. Ort und Lernform zusammen', () => {
   });
 
   it('Ortsfeld „Online“, Lernform Präsenz, kein Ort: Widerspruch ausdrücklich (Befund 20163)', () => {
-    expect(placeSummary({ canton: 'Online', address: 'Online', deliveryTypes: ['presence', 'online_live'] }).kind).toBe('conflict');
+    // Seit 25.11.2026: Mit Online-Angebot ist es kein Widerspruch, sondern ein fehlender Präsenzort.
+    expect(placeSummary({ canton: 'Online', address: 'Online', deliveryTypes: ['presence', 'online_live'] })).toEqual({ kind: 'online_presence_open', text: 'Online; ein Präsenzort ist nicht angegeben' });
+    expect(placeSummary({ canton: 'Online', address: 'Online', deliveryTypes: ['presence'] }).kind).toBe('conflict');
     const text = buildExplanation({ lead: 'Du lernst Marketingstrategien zu planen und umzusetzen.', wishes: [{ type: 'location', label: 'Bern', value: 'Bern' }], canton: 'Online', address: 'Online', deliveryTypes: ['presence'] });
     expect(text).toMatch(/Ortsangaben widersprüchlich: Als Kursort ist „Online“ eingetragen, die Lernform nennt aber Präsenz; ein Präsenzort fehlt\./);
     expect(text).not.toMatch(/Ort ist Online/);

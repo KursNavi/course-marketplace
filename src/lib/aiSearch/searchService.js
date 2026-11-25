@@ -389,7 +389,7 @@ export function courseImageUrl(value) {
   }
 }
 
-function buildCard(course, ranked, mustResult, context, now, request) {
+export function buildCard(course, ranked, mustResult, context, now, request) {
   const priceStatus = derivePriceStatus(course);
   const price = describePrice(priceStatus);
   const event = mustResult.matchingEvent ?? nextUpcomingEvent(course, now);
@@ -428,7 +428,10 @@ function buildCard(course, ranked, mustResult, context, now, request) {
     address: course.address ?? null,
     deliveryTypes: Array.isArray(course.delivery_types) && course.delivery_types.length > 0 ? course.delivery_types : (course.delivery_type ? [course.delivery_type] : []),
     objectives: course.objectives ?? null,
-    courseText: [course.title, course.description, Array.isArray(course.objectives) ? course.objectives.join(' ') : course.objectives, Array.isArray(course.keywords) ? course.keywords.join(' ') : course.keywords].filter(Boolean).join(' '),
+    // Felder zeilenweise getrennt: ein Zitat darf nie zwei Felder verbinden (Befund 20378).
+    courseText: [course.title, course.description, Array.isArray(course.objectives) ? course.objectives.join('\n') : course.objectives, Array.isArray(course.keywords) ? course.keywords.join(', ') : course.keywords].filter(Boolean).join('\n'),
+    title: course.title ?? null,
+    keywords: Array.isArray(course.keywords) ? course.keywords.join(', ') : (course.keywords ?? null),
     lead: ranked.lunaExplanation ?? null,
     reasons: ranked.reasons,
     wishes: request.wishes,
@@ -788,7 +791,8 @@ export async function runAiSearch(client, input) {
     criteria: {
       language: parsed.language,
       terms: parsed.terms,
-      wishes: parsed.wishes,
+      // Thema (gewünschte Sprache) ist kein Wunsch-Chip; nur für die Begründung.
+      wishes: parsed.wishes.filter((w) => w.type !== 'subject'),
       musts: {
         canton: musts.location ?? null,
         onlineAllowed: musts.onlineAllowed ?? false,

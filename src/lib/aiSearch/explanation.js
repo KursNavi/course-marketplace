@@ -45,7 +45,7 @@ const MESSAGES = {
     priceLine: (price) => `Preis laut Angaben: ${price}.`,
     nextDate: (day) => `Nächster Termin: ${day}.`,
     offerForm: (x) => `Angebotsform laut Kursangaben: ${x}.`,
-    offerForms: { birthday: 'Kindergeburtstag', company: 'Angebot für Firmen und Teams', training: 'berufliche Aus- oder Weiterbildung', self_study: 'Selbststudium', camp: 'Ferienlager', camp_overnight: 'Ferienlager mit Unterkunft', holiday: 'Ferienkurs', group_event: 'Event für Gruppen und Teams' },
+    offerForms: { birthday: 'Kindergeburtstag', company: 'Angebot für Firmen und Teams', training: 'berufliche Aus- oder Weiterbildung', self_study: 'Selbststudium', camp: 'Ferienlager', camp_overnight: 'Ferienlager mit Unterkunft', holiday: 'Ferienkurs', group_event: 'Event für Gruppen und Teams', private: 'Privat- bzw. Einzelunterricht' },
     pastNote: (d) => ` (angegebener Termin ${d}, bereits vorbei)`,
     selfStudyOnly: 'Lernform laut Kursangaben: Selbststudium.',
     holidayFact: (x) => `Kursart laut Kursangaben: ${x}.`,
@@ -61,8 +61,19 @@ const MESSAGES = {
     admission: (x) => `Zulassungsbedingungen laut Kursangaben: ${x}.`,
     placeMulti: (list, online, more, n) => `${n > 1 ? 'Kantone' : 'Kanton'} ${list}${more ? ' u. a.' : ''} (Präsenz laut Adressangabe)${online ? ', zudem online' : ''}`,
     placeConflict: 'Ortsangaben widersprüchlich: Als Kursort ist „Online“ eingetragen, die Lernform nennt aber Präsenz; ein Präsenzort fehlt.',
+    placeOnlinePresenceOpen: 'Online; ein Präsenzort ist nicht angegeben',
     mustPlaceOk: (name, place) => `Vorgabe „Kanton ${name}“ erfüllt: ${place}.`,
     mustOnlineOk: (form) => `Vorgabe „nicht online“ erfüllt: Lernform ${form}.`,
+    alsoOnline: (x) => ` (zudem ${x})`,
+    mustBothOk: (name, place, form) => `Vorgaben „Kanton ${name}“ und „nicht online“ erfüllt: ${place}; Lernform ${form}.`,
+    mustOnlineAllowedOk: (name, form) => `Vorgabe „Kanton ${name} oder online“ erfüllt: Lernform ${form}.`,
+    companyTitle: (x) => `Angebot laut Kurstitel ${q.de(x)}.`,
+    bookingFact: (x) => `Buchung laut Kursangaben: ${q.de(x)}.`,
+    bookingDeviates: (label, x) => `Abweichung vom Wunsch ${q.de(label)}: laut Kursangaben ${x}.`,
+    bookingSeries: (n) => `Kursreihe mit ${n} Terminen`,
+    bookingUnknown: (label) => `Wunsch ${q.de(label)} nicht belegt.`,
+    holidayUnclear: (label, x, y) => `Wunsch ${q.de(label)} nicht eindeutig: Kursart laut Kursangaben ${q.de(x)}, die Stichworte nennen ${q.de(y)}.`,
+    subjectMissing: (label) => `${q.de(label)} wird in den Kursangaben nicht genannt.`,
     mustOnlineConflict: (form) => `Vorgabe „nicht online“: Die Lernform nennt ${form}, als Kursort ist aber „Online“ eingetragen – widersprüchlich.`,
     timeDeviates: (label, actual) => `Abweichung vom Wunsch ${q.de(label)}: Kurszeit laut Kursangaben ${q.de(actual)}.`,
     qualFact: (x) => `Abschluss laut Kursangaben: ${q.de(x)}.`,
@@ -113,7 +124,7 @@ const MESSAGES = {
     priceLine: (price) => `Prix selon les indications : ${price}.`,
     nextDate: (day) => `Prochaine date : ${day}.`,
     offerForm: (x) => `Forme de l’offre selon les indications du cours : ${x}.`,
-    offerForms: { birthday: 'anniversaire d’enfant', company: 'offre pour entreprises et équipes', training: 'formation professionnelle', self_study: 'autoformation', camp: 'camp de vacances', camp_overnight: 'camp de vacances avec hébergement', holiday: 'cours de vacances', group_event: 'événement pour groupes et équipes' },
+    offerForms: { birthday: 'anniversaire d’enfant', company: 'offre pour entreprises et équipes', training: 'formation professionnelle', self_study: 'autoformation', camp: 'camp de vacances', camp_overnight: 'camp de vacances avec hébergement', holiday: 'cours de vacances', group_event: 'événement pour groupes et équipes', private: 'cours privé ou individuel' },
     pastNote: (d) => ` (date indiquée ${d}, déjà passée)`,
     selfStudyOnly: 'Forme d’apprentissage selon les indications du cours : autoformation.',
     holidayFact: (x) => `Type de cours selon les indications du cours : ${x}.`,
@@ -129,8 +140,19 @@ const MESSAGES = {
     admission: (x) => `Conditions d’admission selon les indications du cours : ${x}.`,
     placeMulti: (list, online, more, n) => `${n > 1 ? 'cantons' : 'canton'} ${list}${more ? ', entre autres' : ''} (présentiel selon l’adresse)${online ? ', aussi en ligne' : ''}`,
     placeConflict: 'Indications de lieu contradictoires : le lieu indiqué est « Online », mais la forme est présentielle ; aucun lieu présentiel indiqué.',
+    placeOnlinePresenceOpen: 'en ligne ; aucun lieu en présentiel indiqué',
     mustPlaceOk: (name, place) => `Exigence « canton ${name} » remplie : ${place}.`,
     mustOnlineOk: (form) => `Exigence « pas en ligne » remplie : ${form}.`,
+    alsoOnline: (x) => ` (aussi ${x})`,
+    mustBothOk: (name, place, form) => `Exigences « canton ${name} » et « pas en ligne » remplies : ${place} ; ${form}.`,
+    mustOnlineAllowedOk: (name, form) => `Exigence « canton ${name} ou en ligne » remplie : ${form}.`,
+    companyTitle: (x) => `Offre selon le titre du cours : ${q.fr(x)}.`,
+    bookingFact: (x) => `Réservation selon les indications du cours : ${q.fr(x)}.`,
+    bookingDeviates: (label, x) => `Écart par rapport au souhait ${q.fr(label)} : selon les indications du cours, ${x}.`,
+    bookingSeries: (n) => `série de ${n} séances`,
+    bookingUnknown: (label) => `Souhait ${q.fr(label)} non confirmé.`,
+    holidayUnclear: (label, x, y) => `Souhait ${q.fr(label)} pas clair : type de cours ${q.fr(x)}, les mots-clés mentionnent ${q.fr(y)}.`,
+    subjectMissing: (label) => `${q.fr(label)} n’est pas mentionné dans les indications du cours.`,
     mustOnlineConflict: (form) => `Exigence « pas en ligne » : la forme indiquée est ${form}, mais le lieu indiqué est « Online » – contradictoire.`,
     timeDeviates: (label, actual) => `Écart par rapport au souhait ${q.fr(label)} : horaire selon les indications du cours ${q.fr(actual)}.`,
     qualFact: (x) => `Diplôme selon les indications du cours : ${q.fr(x)}.`,
@@ -178,7 +200,7 @@ const MESSAGES = {
     priceLine: (price) => `Prezzo secondo le indicazioni: ${price}.`,
     nextDate: (day) => `Prossima data: ${day}.`,
     offerForm: (x) => `Forma dell’offerta secondo le indicazioni del corso: ${x}.`,
-    offerForms: { birthday: 'festa di compleanno per bambini', company: 'offerta per aziende e team', training: 'formazione professionale', self_study: 'autoapprendimento', camp: 'campo vacanze', camp_overnight: 'campo vacanze con alloggio', holiday: 'corso durante le vacanze', group_event: 'evento per gruppi e team' },
+    offerForms: { birthday: 'festa di compleanno per bambini', company: 'offerta per aziende e team', training: 'formazione professionale', self_study: 'autoapprendimento', camp: 'campo vacanze', camp_overnight: 'campo vacanze con alloggio', holiday: 'corso durante le vacanze', group_event: 'evento per gruppi e team', private: 'lezione privata o individuale' },
     pastNote: (d) => ` (data indicata ${d}, già passata)`,
     selfStudyOnly: 'Forma di apprendimento secondo le indicazioni del corso: autoapprendimento.',
     holidayFact: (x) => `Tipo di corso secondo le indicazioni del corso: ${x}.`,
@@ -194,8 +216,19 @@ const MESSAGES = {
     admission: (x) => `Condizioni di ammissione secondo le indicazioni del corso: ${x}.`,
     placeMulti: (list, online, more, n) => `${n > 1 ? 'cantoni' : 'cantone'} ${list}${more ? ', tra l’altro' : ''} (in presenza secondo l’indirizzo)${online ? ', anche online' : ''}`,
     placeConflict: 'Indicazioni sul luogo contraddittorie: come luogo è indicato «Online», ma la forma è in presenza; manca un luogo in presenza.',
+    placeOnlinePresenceOpen: 'online; nessun luogo in presenza indicato',
     mustPlaceOk: (name, place) => `Requisito «cantone ${name}» soddisfatto: ${place}.`,
     mustOnlineOk: (form) => `Requisito «non online» soddisfatto: ${form}.`,
+    alsoOnline: (x) => ` (anche ${x})`,
+    mustBothOk: (name, place, form) => `Requisiti «cantone ${name}» e «non online» soddisfatti: ${place}; ${form}.`,
+    mustOnlineAllowedOk: (name, form) => `Requisito «cantone ${name} o online» soddisfatto: ${form}.`,
+    companyTitle: (x) => `Offerta secondo il titolo del corso: ${q.it(x)}.`,
+    bookingFact: (x) => `Prenotazione secondo le indicazioni del corso: ${q.it(x)}.`,
+    bookingDeviates: (label, x) => `Differenza rispetto al desiderio ${q.it(label)}: secondo le indicazioni del corso, ${x}.`,
+    bookingSeries: (n) => `serie di ${n} incontri`,
+    bookingUnknown: (label) => `Desiderio ${q.it(label)} non confermato.`,
+    holidayUnclear: (label, x, y) => `Desiderio ${q.it(label)} non chiaro: tipo di corso ${q.it(x)}, le parole chiave indicano ${q.it(y)}.`,
+    subjectMissing: (label) => `${q.it(label)} non è menzionato nelle indicazioni del corso.`,
     mustOnlineConflict: (form) => `Requisito «non online»: la forma indicata è ${form}, ma come luogo è indicato «Online» – contraddittorio.`,
     timeDeviates: (label, actual) => `Differenza rispetto al desiderio ${q.it(label)}: orario secondo le indicazioni del corso ${q.it(actual)}.`,
     qualFact: (x) => `Titolo secondo le indicazioni del corso: ${q.it(x)}.`,
@@ -249,7 +282,13 @@ const OFFER_FORM_MENTIONS = {
   camp_overnight: /unterkunft|übernacht|hébergement|alloggio|pernott/i,
   holiday: /ferienkurs|ferien|vacances|vacanze/i,
   group_event: /event|gruppen|groupe|gruppi/i,
+  private: /privat|einzel|personal training|1:1|individuel|privé|privat[ao]|individual/i,
 };
+// Privat-/Einzelunterricht als wesentliche Angebotsform (Nachprüfung 25.11.2026,
+// Befunde 20268 „Einzeltraining“, 20108 „besonders als Privatunterricht“): im Titel
+// oder in der Beschreibung, nicht wenn der Titel zugleich Gruppenunterricht nennt.
+const PRIVATE_FORM = /\b(?:einzeltraining|einzelunterricht|einzellektion\p{L}*|einzelcoaching|privatunterricht|privatlektion\p{L}*|personal training|cours privés?|lezioni? privat[ae])\b/iu;
+const GROUP_IN_TITLE = /gruppe|groupe|gruppo|abendkurs|kurse\b|semesterkurs/i;
 // Berufliche Aus-/Weiterbildung (Befund 23.11.2026: Fachausbildung für
 // Kursleitende bei einer privaten Suche nicht als solche benannt).
 const TRAINING_TITLE = /\b(ausbildung|lehrgang|fernlehrgang|studiengang|nachdiplom\p{L}*|fachausweis|dipl\.|diplom\p{L}*|wiedereinstieg)/iu;
@@ -293,7 +332,22 @@ export function offerFormsOf(course) {
   // Gruppen-/Team-Event (Befund 20734: „Foto-Event für Gruppen, Teams …“, Stichwort „Teamevent“).
   const keywords = Array.isArray(course?.keywords) ? course.keywords.join(' ') : String(course?.keywords ?? '');
   if (!forms.includes('company') && (/\b(?:event|anlass)\s+für\s+(?:gruppen|teams)\b/i.test(String(course?.description ?? '')) || /\bteam-?events?\b/i.test(keywords))) forms.push('group_event');
+  // Nur als HAUPTform: im Titel (ohne weitere Form wie Gruppe/Abendkurs) oder im
+  // ersten Satz der Beschreibung; eine Nebenbemerkung („auch Privatlektionen“) zählt nicht.
+  const title = String(course?.title ?? '');
+  const firstSentence = (String(course?.description ?? '').match(/^[^.!?\n]+/) ?? [''])[0];
+  if ((PRIVATE_FORM.test(title) && !GROUP_IN_TITLE.test(title)) || PRIVATE_FORM.test(firstSentence)) forms.push('private');
   return [...new Set(forms.filter(Boolean))];
+}
+
+/**
+ * Wörtliche Zielgruppe eines Firmenangebots aus dem Titel (Nachprüfung
+ * 25.11.2026, Befund 20440: „Chair Yoga für Firmen und Altersheime“ wurde
+ * pauschal als „Angebot für Firmen und Teams“ wiedergegeben).
+ */
+export function companyTitlePhrase(title) {
+  const match = /\bfür\s+[^,.;:()–|]+/iu.exec(String(title ?? ''));
+  return match && COMPANY_TITLE.test(match[0]) ? match[0].trim() : null;
 }
 
 // Sprache des Luna-Textes (K4): typische Funktionswörter je Sprache; bewusst
@@ -463,9 +517,16 @@ export function wishCheckSentence(check, language = 'de') {
     return check.status === 'deviating' && check.actual ? m.timeDeviates(label, check.actual).replace(/\.$/, `${past}.`) : m.timeUnconfirmed(label);
   }
   if (check.aspect === 'Kursart') {
-    // Ferienkurs-Wunsch gegen die Kursart (24.11.2026).
+    // Ferienkurs-Wunsch gegen die Kursart (24.11.2026); widersprüchliche Angaben
+    // werden beide genannt (25.11.2026).
+    if (check.unclear && check.actual) return m.holidayUnclear(check.wishLabel, m.kursarten[check.actual] ?? check.actual, check.unclear);
     return check.status === 'deviating' && check.actual ? m.holidayDeviates(check.wishLabel, m.kursarten[check.actual] ?? check.actual) : m.holidayUnknown(check.wishLabel);
   }
+  if (check.aspect === 'Buchung') {
+    if (check.status === 'deviating') return m.bookingDeviates(check.wishLabel, check.sessions ? m.bookingSeries(check.sessions) : q[EXPLANATION_LANGUAGES.includes(language) ? language : 'de'](check.actual));
+    return m.bookingUnknown(check.wishLabel);
+  }
+  if (check.aspect === 'Thema') return m.subjectMissing(check.wishLabel);
   if (check.aspect === 'Zeitraum') {
     const day = formatDay(check.actual, m.locale);
     return check.status === 'deviating' && day ? m.periodDeviates(check.wishLabel, day) : m.periodUnconfirmed(check.wishLabel);
@@ -496,6 +557,7 @@ export function wishFactSentence(check, language = 'de') {
   if (check.aspect === 'Lernform' && check.actual) return m.formFact(translateValues(check.actual, m));
   if (check.aspect === 'Zeit' && check.actual) return m.timeFact(check.actual).replace(/\.$/, `${check.pastDate ? m.pastNote(check.pastDate) : ''}.`);
   if (check.aspect === 'Kursart') return m.holidayFact(m.kursarten[check.actual] ?? m.offerForms.holiday);
+  if (check.aspect === 'Buchung' && check.actual) return m.bookingFact(check.actual);
   if (check.aspect === 'Zeitraum') {
     const day = formatDay(check.actual, m.locale);
     return day ? m.periodFact(day) : null;
@@ -575,14 +637,34 @@ function sentenceRest(text) {
   }
   return text.slice(0, end);
 }
-export function audienceStatement(description, maxWords = 8) {
+export function audienceStatement(description, maxWords = 8, clauseMax = 14) {
   const source = String(description ?? '');
   const match = AUDIENCE_STATEMENT.exec(source);
   if (!match) return null;
   const phrase = match[0] + sentenceRest(source.slice(match.index + match[0].length));
-  const words = phrase.replace(/\s+/g, ' ').trim().split(' ');
+  return clauseQuote(phrase, maxWords, clauseMax);
+}
+
+/**
+ * Wörtliches Zitat ohne Sinnverlust (Nachprüfung 25.11.2026, Befund 20173:
+ * „richtet sich an Kinder ab ca. 8 Jahren…“ unterschlug „sowie an Erwachsene“):
+ * der ganze erste Teilsatz bis zum Komma, solange er höchstens `clauseMax`
+ * Wörter hat; sonst die ersten `maxWords` Wörter. Jede Auslassung am Ende
+ * wird mit „…“ gekennzeichnet.
+ */
+export function clauseQuote(text, maxWords = 8, clauseMax = 14) {
+  const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
+  const words = clean.split(' ').filter(Boolean);
   if (words.length < 4) return null;
-  return words.length <= maxWords ? words.join(' ').replace(/[,–-]+$/, '') : `${words.slice(0, maxWords).join(' ').replace(/[,;:–-]+$/, '')}…`;
+  const tidy = (s) => s.replace(/[\s.,;:–-]+$/, '');
+  if (words.length <= maxWords) return tidy(words.join(' '));
+  const commaAt = clean.search(/,\s/);
+  const clause = commaAt > 0 ? clean.slice(0, commaAt) : clean;
+  const clauseWords = clause.split(' ').filter(Boolean);
+  // Nur verlängern, nie kürzer als bisher: ein kurzer erster Teilsatz („eignet
+  // sich für Teams“) bleibt bei den ersten `maxWords` Wörtern.
+  if (clauseWords.length > maxWords && clauseWords.length <= clauseMax) return clause.length < clean.length ? `${tidy(clause)}…` : tidy(clause);
+  return `${tidy(words.slice(0, maxWords).join(' '))}…`;
 }
 
 // Einschränkende Angaben (nie gekürzt): Berufsgruppe, Teams/Organisationen,
@@ -590,7 +672,9 @@ export function audienceStatement(description, maxWords = 8) {
 // Beschränkung. Übrige Zielgruppen- und Voraussetzungsangaben (z. B. „eigene
 // Kamera“) weichen bei Platzmangel vor dem Inhaltssatz. Nur für die
 // Kürzungsreihenfolge, nie zum Sperren von Text.
-const RESTRICTIVE = /\b(?:nur|ausschlie(?:ss|\xdf)lich|exklusiv|reserviert|uniquement|exclusivement|solo)\b|réservé|riservat|ärzt|fachperson|fachleute|lehrperson|pflegefach|therapeut|mitarbeitende|führungskr|\bteams?\b|organisation|unternehmen|firmen|grundbildung|berufsbildung|abschluss|berufspraxis|berufserfahrung|berufstätigkeit|fachausweis|diplom|\befz\b|bachelor|\bmaster\b|\b[abc][12]\b|mindestalter|zulassung|fähigkeitszeugnis|berufsprüfung|fachprüfung|matura|hochschul|studium|abgeschlossene/iu;
+// Altersgrenzen und Personengruppen gehören dazu (Nachprüfung 25.11.2026,
+// Befund 20263: „ab ca. 60 Jahren“ fiel bei Platzmangel weg).
+const RESTRICTIVE = /\b(?:nur|ausschlie(?:ss|\xdf)lich|exklusiv|reserviert|uniquement|exclusivement|solo)\b|\b(?:ab|bis|unter|über)\s+(?:ca\.\s*)?\d{1,2}\s*(?:jahr|j\.)|\b\d{2}\s*\+|senior|reiferen alter|ältere|büroangestellte|altersheim|seniors?\b|anziani|réservé|riservat|ärzt|fachperson|fachleute|lehrperson|pflegefach|therapeut|mitarbeitende|führungskr|\bteams?\b|organisation|unternehmen|firmen|grundbildung|berufsbildung|abschluss|berufspraxis|berufserfahrung|berufstätigkeit|fachausweis|diplom|\befz\b|bachelor|\bmaster\b|\b[abc][12]\b|mindestalter|zulassung|fähigkeitszeugnis|berufsprüfung|fachprüfung|matura|hochschul|studium|abgeschlossene/iu;
 
 // Voraussetzungen als wesentliche Teilnahmebeschränkung: wörtlich, gekürzt.
 const NO_PREREQ = /^\s*[-–•]?\s*(keine|keinerlei|aucun|aucune|nessun|nessuna|none)\b/i;
@@ -598,7 +682,7 @@ export function prerequisiteQuote(text, maxWords = 8) {
   const clean = String(text ?? '').replace(/\s+/g, ' ').replace(/^[\s–•-]+/, '').trim();
   if (clean.length < 4 || NO_PREREQ.test(clean)) return null;
   const words = clean.split(' ');
-  return words.length <= maxWords ? clean.replace(/[.;:]+$/, '') : `${words.slice(0, maxWords).join(' ').replace(/[,;:–-]+$/, '')}…`;
+  return words.length <= maxWords ? clean.replace(/[.;:]+$/, '') : clauseQuote(clean, maxWords, 10);
 }
 
 function capitalize(text) {
@@ -640,11 +724,11 @@ export function addressCantons(address) {
  */
 export function placeSummary({ cities = [], canton = null, address = null, deliveryTypes = [], prefer = [], language = 'de' }) {
   const m = messagesFor(language);
-  const types = (deliveryTypes ?? []).map((t) => String(t).toLowerCase());
-  const presence = types.some((t) => t === 'presence' || t === 'vor_ort');
-  const online = types.some((t) => t === 'online' || t === 'online_live') || /^online$/i.test(String(canton ?? ''));
-  const known = [...new Set((cities ?? []).filter(Boolean).map(String))];
-  const cantonName = canton && !/^online$/i.test(String(canton)) ? String(canton) : null;
+  const facts = placeFacts({ cities, canton, address, deliveryTypes });
+  const { presence, online, known, cantonName } = facts;
+  // Nur Online laut Lernform (Nachprüfung 25.11.2026, Befund 20380): Ein
+  // Kantonsfeld ist dann kein Kursort; Ort und Lernform kommen aus derselben Faktenbasis.
+  if (facts.onlineOnly && known.length === 0) return { text: 'Online', kind: 'online' };
   if (known.length > 0) {
     const text = cantonName && !known.some((c) => c.toLowerCase() === cantonName.toLowerCase()) ? `${known.join(', ')} (${m.canton(cantonName)})` : known.join(', ');
     return { text, kind: 'cities' };
@@ -656,10 +740,36 @@ export function placeSummary({ cities = [], canton = null, address = null, deliv
     const list = ordered.slice(0, 3);
     return { text: m.placeMulti(list.join(', '), online, ordered.length > list.length, list.length), kind: 'address' };
   }
-  if (presence && /^online$/i.test(String(canton ?? ''))) return { text: null, kind: 'conflict' };
+  if (facts.conflict) return { text: null, kind: 'conflict' };
+  // Präsenz und Online angeboten, aber kein Präsenzort: offen benennen, nicht „Online“ allein.
+  if (presence && facts.onlineField && facts.onlineForm) return { text: m.placeOnlinePresenceOpen, kind: 'online_presence_open' };
   if (cantonName) return { text: m.canton(cantonName), kind: 'canton' };
   if (online) return { text: 'Online', kind: 'online' };
   return { text: null, kind: null };
+}
+
+/**
+ * Gemeinsame Faktenbasis für Ort und Lernform (Nachprüfung 25.11.2026): Alle
+ * Aussagen zu Ort, Lernform und „nicht online“ werden daraus abgeleitet, damit
+ * derselbe Kurs bei gleichem Datenstand nie widersprüchlich beschrieben wird
+ * (Befund 20127: „widersprüchlich“ in einer Karte, „zudem online“ in der anderen).
+ *  - presence/online: aus der Lernform; ohne Lernform zählt ein Ortsfeld „Online“ als online;
+ *  - conflict: Ortsfeld „Online“, Lernform nennt Präsenz, aber kein Online-Angebot
+ *    und keinen Präsenzort (Kursorte/Termine oder Adressangabe);
+ *  - onlineOnly: Lernform nennt nur Online (ein Kantonsfeld ist dann kein Kursort).
+ */
+export function placeFacts({ cities = [], canton = null, address = null, deliveryTypes = [] }) {
+  const types = (deliveryTypes ?? []).map((t) => String(t).toLowerCase());
+  const onlineField = /^online$/i.test(String(canton ?? '').trim());
+  const presence = types.some((t) => t === 'presence' || t === 'vor_ort');
+  const onlineForm = types.some((t) => t === 'online' || t === 'online_live');
+  const online = onlineForm || (types.length === 0 && onlineField);
+  const known = [...new Set((cities ?? []).filter(Boolean).map(String))];
+  const cantonName = canton && !onlineField ? String(canton) : null;
+  const fromAddress = addressCantons(address);
+  const onlineOnly = types.length > 0 && types.every((t) => t === 'online' || t === 'online_live');
+  const conflict = presence && onlineField && !onlineForm && known.length === 0;
+  return { presence, online, onlineForm, onlineOnly, onlineField, known, cantonName, fromAddress, conflict, conflictWithAddress: conflict && fromAddress.length > 0 };
 }
 
 // Zulassungsbedingungen: alle einschränkenden Teilsätze sinngemäss (wörtlich,
@@ -668,7 +778,9 @@ const CONNECTOR = /mind(?:estens|\.)\s*(?:eine[rsn]?|ein)\b|eine[rs]? der folgen
 export function admissionConditions(text, perClause = 5, maxClauses = 7) {
   const clean = String(text ?? '').replace(/\r/g, '');
   if (!clean.trim()) return null;
-  const clauses = clean.split(/\n+|;|•|\s[–-]\s|(?<=[.:])\s+(?=[A-ZÄÖÜ])/).map((c) => c.replace(/^[\s–•-]+/, '').replace(/[\s.:;,]+$/, '').trim()).filter((c) => c.length > 2);
+  // Satzgrenze nicht nach Abkürzungen („inkl. Grundbildung“, „Eidg. Berufsattest“):
+  // sonst entstehen Bruchstücke mitten im Satz (Nachprüfung 25.11.2026, Befund 20388).
+  const clauses = clean.split(/\n+|;|•|\s[–-]\s|(?<=[.:])(?<!\b(?:inkl|ca|z\.\s?B|bzw|evtl|eidg|dipl|Eidg|Dipl|max|min|Nr|resp|vgl|usw|etc|ggf|u\.\s?a|d\.\s?h|Dr|Prof|St|mind|Mind)\.)\s+(?=[A-ZÄÖÜ])/).map((c) => c.replace(/^[\s–•-]+/, '').replace(/[\s.:;,]+$/, '').trim()).filter((c) => c.length > 2);
   const picked = clauses.filter((c) => RESTRICTIVE.test(c) || CONNECTOR.test(c));
   if (picked.length === 0) return null;
   return picked.slice(0, maxClauses).map((c) => {
@@ -689,14 +801,22 @@ const QUAL_PATTERNS = {
 export function qualificationCheck(courseText, wanted) {
   const text = String(courseText ?? '');
   const excerptAt = (re) => {
-    const hit = re.exec(text);
-    if (!hit) return null;
-    // Wörtlicher Ausschnitt: ein Wort davor (nicht über ein Satzende), das
-    // Trefferwort und bis zu zwei Wörter danach; Füllwörter am Ende entfallen.
-    const tokens = [...text.matchAll(/\S+/g)];
+    const found = re.exec(text);
+    if (!found) return null;
+    // Nur innerhalb EINES Feldes bzw. einer Zeile (Nachprüfung 25.11.2026, Befund
+    // 20378: „Fachausweis Bei Ihnen“ verband Titelende und Beschreibungsanfang).
+    const segStart = text.lastIndexOf('\n', found.index) + 1;
+    const segEnd = text.indexOf('\n', found.index);
+    const segment = text.slice(segStart, segEnd < 0 ? text.length : segEnd);
+    const hit = { index: found.index - segStart, 0: found[0] };
+    // Wörtlicher Ausschnitt: ein Wort davor (nicht über ein Satzende, Abkürzungen
+    // wie „eidg.“ zählen nicht als Satzende), das Trefferwort und bis zu zwei
+    // Wörter danach; Füllwörter am Ende entfallen.
+    const tokens = [...segment.matchAll(/\S+/g)];
     const i = tokens.findIndex((t) => t.index <= hit.index && hit.index < t.index + t[0].length);
     if (i < 0) return hit[0];
-    const from = i > 0 && !/[.!?:;]$/.test(tokens[i - 1][0]) ? i - 1 : i;
+    const prev = i > 0 ? tokens[i - 1][0] : '';
+    const from = i > 0 && (!/[.!?:;]$/.test(prev) || /^(?:eidg|dipl|inkl|staatl|anerk|zert)\.$/i.test(prev)) ? i - 1 : i;
     let picked = tokens.slice(from, i + 3).map((t) => t[0]);
     const cut = picked.findIndex((w, k) => k > i - from && /[.!?;:,)]$/.test(w));
     if (cut >= 0) picked = picked.slice(0, cut + 1);
@@ -735,7 +855,7 @@ export function contentFallback({ objectives = null, description = null, languag
  *   (Objekt, wird mit lunaText/verworfen gefüllt – nur für den privaten Prüfbericht).
  * @returns {string}
  */
-export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], canton = null, address = null, deliveryTypes = null, event = null, price = '', audience = null, language = 'de', offerForm = null, prerequisites = null, description = null, objectives = null, evidenceText = null, courseText = null, trace = null }) {
+export function buildExplanation({ lead = null, reasons = [], wishes = [], wishChecks = [], musts = {}, mustUnknowns = [], place = null, cities = [], canton = null, address = null, deliveryTypes = null, event = null, price = '', audience = null, language = 'de', offerForm = null, prerequisites = null, description = null, objectives = null, evidenceText = null, courseText = null, trace = null, title = null, keywords = null }) {
   const m = messagesFor(language);
   const audienceText = audience?.child ? ('minAge' in audience ? audienceLabel(audience, language) : audience.label) : null;
   // priority: 0 = nie kürzen (Einschränkungen, Abweichungen, Vorgaben),
@@ -777,7 +897,9 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
     const shown = `${parts.map((p) => p.text).join(' ')} ${wishTexts}`;
     if (OFFER_FORM_MENTIONS[form].test(shown)) return;
     // Selbststudium ist eine Lernform, keine Angebotsform (Lesbarkeit 24.11.2026).
-    add(14 + index / 10, 0, form === 'self_study' ? m.selfStudyOnly : m.offerForm(m.offerForms[form]));
+    // Firmenangebot mit der wörtlichen Zielgruppe aus dem Titel, wenn vorhanden.
+    const companyPhrase = form === 'company' ? companyTitlePhrase(title) : null;
+    add(14 + index / 10, 0, form === 'self_study' ? m.selfStudyOnly : (companyPhrase ? m.companyTitle(companyPhrase) : m.offerForm(m.offerForms[form])));
   });
   if (audienceText && audienceMissing(parts.map((p) => p.text).join(' '), audience)) add(15, 0, m.audience(audienceText));
   const statement = audienceText ? null : audienceStatement(description);
@@ -814,8 +936,17 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
   const placeText = summary.text ?? (summary.kind === 'conflict' ? null : place);
   const locationReason = reasons.find((r) => r.kind === 'location');
   const mustOk = mustCanton && !mustUnknowns.includes('location') && !mustUnknowns.includes('event');
-  if (mustOk) {
+  const facts = placeFacts({ cities, canton, address, deliveryTypes: deliveryTypes ?? [] });
+  const typeLabel = (types) => translateValues([...new Set(types.map((t) => DELIVERY_LABELS[t] ?? t))].join(' / '), m);
+  const allTypes = (deliveryTypes ?? []).map((t) => String(t).toLowerCase());
+  const presenceTypes = allTypes.filter((t) => t === 'presence' || t === 'vor_ort');
+  const onlineTypes = allTypes.filter((t) => t === 'online' || t === 'online_live');
+  if (mustOk && facts.onlineOnly && musts?.onlineAllowed === true) {
+    // Vorgabe „Kanton oder online“ über das Online-Angebot erfüllt (Befund 20380).
+    add(19, 0, m.mustOnlineAllowedOk(mustCanton, typeLabel(onlineTypes)));
+  } else if (mustOk) {
     add(19, 0, m.mustPlaceOk(mustCanton, placeText ?? m.canton(mustCanton)));
+    parts[parts.length - 1].mustPlace = { name: mustCanton, place: placeText ?? m.canton(mustCanton) };
   } else if (locationReason && positivePlaces.length > 0) {
     add(20, 1.2, m.place(placeText ?? String(locationReason.quote ?? '').replace(/^Ort laut Kursangaben:\s*/, '')));
   } else if (positivePlaces.length > 0) {
@@ -833,10 +964,15 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
     add(20, 2, m.placeConflict);
   }
   if (musts?.onlineAllowed === false && mustCanton) {
-    const types = (deliveryTypes ?? []).map((t) => String(t).toLowerCase());
-    const form = translateValues(types.map((t) => DELIVERY_LABELS[t] ?? t).filter((v, i, a) => a.indexOf(v) === i).join(' / '), m);
-    if (form && /^online$/i.test(String(canton ?? ''))) add(21, 0, m.mustOnlineConflict(form));
-    else if (form && types.some((t) => t === 'presence' || t === 'vor_ort')) add(21, 1.2, m.mustOnlineOk(form));
+    // Aus derselben Faktenbasis wie die Ortszeile: widersprüchlich nur, wenn das
+    // Ortsfeld „Online“ lautet, die Lernform aber kein Online-Angebot nennt.
+    if (facts.presence && facts.onlineField && !facts.onlineForm) add(21, 0, m.mustOnlineConflict(typeLabel(allTypes)));
+    // Hinweis zu einer Formular-Vorgabe gehört zur Vollständigkeit (Belegregeln v2): nie weglassen.
+    else if (facts.presence) {
+      const formText = `${typeLabel(presenceTypes)}${onlineTypes.length ? m.alsoOnline(typeLabel(onlineTypes)) : ''}`;
+      add(21, 0, m.mustOnlineOk(formText));
+      parts[parts.length - 1].mustOnline = formText;
+    }
   }
 
   // 4. Wünsche: eine Aussage je Wunsch; bestätigte als belegte Angabe.
@@ -876,12 +1012,17 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
       // die Preisbasis („pro Kids-Kurs“) – sonst ginge genau die Basis verloren.
       const source = String(price ?? '').replace(/\s+/g, ' ').trim();
       const freeText = !/^(?:ab )?CHF\s*\d+(?:[.,]\d+)?(?: pro Einheit)?$/i.test(source);
+      // Nachprüfung 25.11.2026 (20613): bis 20 Wörter vollständig wörtlich, damit
+      // auch Bedingungen wie „solange Vorrat“ erhalten bleiben; länger nur mit
+      // gekennzeichneten Auslassungen, auch am Ende.
       let priceText = source.replace(/[.\s]+$/, '');
-      if (freeText && words.length > 8) {
+      if (freeText && words.length > 20) {
         const lastAmount = [...source.matchAll(/CHF\s*\d+(?:[.,]\d+)?/gi)].pop();
         const head = lastAmount ? source.slice(0, lastAmount.index + lastAmount[0].length) : words.slice(0, 8).join(' ');
-        const basis = /\b(?:pro|je|par|per)\s+[\p{L}-]+/iu.exec(source.slice(head.length))?.[0];
-        priceText = `${head}${basis ? ` … ${basis}` : ' …'}`;
+        const rest = source.slice(head.length);
+        const basis = /\b(?:pro|je|par|per)\s+[\p{L}-]+/iu.exec(rest);
+        const tailOmitted = basis ? rest.slice(basis.index + basis[0].length).replace(/[.\s]+$/, '').length > 0 : true;
+        priceText = `${head}${basis ? ` … ${basis[0]}` : ''}${tailOmitted ? ' …' : ''}`;
       }
       const quoted = q[EXPLANATION_LANGUAGES.includes(language) ? language : 'de'](priceText);
       add(31, 0, !within ? m.budget(price || m.prices.unknown) : (freeText ? m.budgetFreeText(quoted) : m.budgetBasis(quoted)));
@@ -902,6 +1043,16 @@ export function buildExplanation({ lead = null, reasons = [], wishes = [], wishC
     for (const p of kept) {
       if (p.lead) continue;
       for (const [from, to] of m.compact ?? []) p.text = from instanceof RegExp ? p.text.replace(from, to) : p.text.split(from).join(to);
+    }
+    // Beide erfüllten Vorgaben (Kanton, nicht online) in einem Satz (gleicher Inhalt, 25.11.2026).
+    const placeMust = kept.find((p) => p.mustPlace);
+    const onlineMust = kept.find((p) => p.mustOnline);
+    if (placeMust && onlineMust) {
+      // Die Lernform steht danach ausdrücklich; Präsenz-/Online-Zusätze der Ortsangabe entfallen.
+      const placeOnly = String(placeMust.mustPlace.place).replace(/\s*\((?:Präsenz|présentiel|in presenza)[^)]*\)/g, '').replace(/,\s*(?:zudem|aussi|anche) (?:online|en ligne)$/, '');
+      placeMust.text = m.mustBothOk(placeMust.mustPlace.name, placeOnly, onlineMust.mustOnline);
+      for (const [from, to] of m.compact ?? []) placeMust.text = from instanceof RegExp ? placeMust.text.replace(from, to) : placeMust.text.split(from).join(to);
+      kept.splice(kept.indexOf(onlineMust), 1);
     }
     // Mehrere „Nicht bestätigt: …“ zu einem Satz zusammenfassen (gleicher Inhalt).
     const prefix = m.notConfirmedPrefix;

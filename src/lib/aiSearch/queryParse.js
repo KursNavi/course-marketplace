@@ -60,7 +60,19 @@ const STOPWORDS = new Set([
   'fils', 'fille', 'figlio', 'figlia',
 ]);
 
-const BEGINNER_WORDS = ['anfänger', 'anfaenger', 'einsteiger', 'einstieg', 'grundkurs', 'beginner', 'débutant', 'principiante'];
+// „principiant“ deckt Ein- und Mehrzahl ab (Nachprüfung 25.11.2026, Befund 20099:
+// „yoga per principianti“ wurde nicht als Niveauwunsch erkannt).
+const BEGINNER_WORDS = ['anfänger', 'anfaenger', 'einsteiger', 'einstieg', 'grundkurs', 'beginner', 'débutant', 'principiant'];
+
+// Gewünschte Sprache als Lerninhalt (Nachprüfung 25.11.2026, Befund 20108). Muster
+// erkennt die Sprache in Kursangaben in allen drei Sprachen sowie auf Englisch.
+const SUBJECT_LANGUAGES = [
+  { words: /\b(?:englisch\p{L}*|anglais|inglese)\b/iu, pattern: '\\b(?:englisch\\p{L}*|english|anglais|inglese)' },
+  { words: /\b(?:französisch\p{L}*|franzoesisch\p{L}*|français|francese)\b/iu, pattern: '\\b(?:französisch\\p{L}*|franzoesisch\\p{L}*|french|français|francese)' },
+  { words: /\b(?:spanisch\p{L}*|espagnol|spagnolo)\b/iu, pattern: '\\b(?:spanisch\\p{L}*|spanish|espagnol|spagnolo|español)' },
+  { words: /\b(?:italienisch\p{L}*|italien|italiano)\b/iu, pattern: '\\b(?:italienisch\\p{L}*|italian|italien|italiano)' },
+  { words: /\b(?:deutschkurs\p{L}*|allemand|tedesco)\b/iu, pattern: '\\b(?:deutsch\\p{L}*|german|allemand|tedesco)' },
+];
 
 /** Kleinschreibung + Unicode-Normalisierung, Umlaute bleiben erhalten. */
 export function normalizeQuery(query) {
@@ -329,6 +341,19 @@ export function parseQuery(query) {
     if (seenQualifications.has(value)) continue;
     seenQualifications.add(value);
     wishes.push({ type: 'qualification', label: match[0], value });
+  }
+
+  // „flexibel buchbar“ als Wunsch zur Buchungsform (Nachprüfung 25.11.2026, Befund 20442).
+  const bookingMatch = /\bflexibel buchbar|\beinzeln buchbar|\bjederzeit einsteigen|\beinstieg jederzeit|\bdrop-?in\b|\binscription flexible|\bprenotabile in modo flessibile/iu.exec(normalized);
+  if (bookingMatch && !isNegatedAt(lower, bookingMatch.index)) wishes.push({ type: 'booking', label: bookingMatch[0], value: 'flexible' });
+
+  // Sprache als Lerninhalt, mit dem Wort der Anfrage (z. B. „Englisch“).
+  for (const subject of SUBJECT_LANGUAGES) {
+    const match = subject.words.exec(normalized);
+    if (match && !isNegatedAt(lower, match.index)) {
+      wishes.push({ type: 'subject', label: match[0].replace(/kurs\p{L}*$/iu, '').replace(/^\p{Ll}/u, (c) => c.toUpperCase()), value: 'language', pattern: subject.pattern });
+      break;
+    }
   }
 
   // „nicht bloss Einführung“ ist kein Einsteigerwunsch.

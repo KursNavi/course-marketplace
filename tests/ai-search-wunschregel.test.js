@@ -180,6 +180,7 @@ describe('Wesentliche Teilnahmebeschränkungen und Angebotsformen (Punkt 4)', ()
   it('Ende-zu-Ende: Firmenkurs-Karte nennt das Firmenformat', async () => {
     const gateway = luna({ 1: { score: 80, wishScore: 50 } });
     const result = await runAiSearch(client([course(1, { title: 'Hatha-Yoga für Firmen' })]), { query: 'Fotografie lernen', now: NOW, models: models(gateway) });
-    expect(result.results[0].explanation).toMatch(/Angebot für Firmen und Teams/);
+    // Seit 25.11.2026 mit der wörtlichen Zielgruppe aus dem Titel.
+    expect(result.results[0].explanation).toMatch(/Angebot laut Kurstitel „für Firmen“\./);
   });
 });

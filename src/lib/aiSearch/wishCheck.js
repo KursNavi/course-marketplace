@@ -150,6 +150,14 @@ export function knownScheduleDeviation(course, value) {
   return null;
 }
 
+const HOLIDAY_TEXT = /schulferien|ferienkurs|ferienwoche|in den ferien|sommerferien|herbstferien|frühlingsferien|winterferien/i;
+const FLEXIBLE_BOOKING = /flexibel buchbar|einzeln buchbar|jederzeit (?:ein(?:steigen|stieg)|buchbar|möglich)|einstieg jederzeit|laufende[rn]? einstieg|drop-?in|einzellektionen? buchbar|termine? nach (?:absprache|vereinbarung)|individuell (?:vereinbar|planbar|buchbar)/i;
+const FIXED_SERIES = /\b\d+\s*(?:kursabende|abende|termine|kurstage|lektionen)\b|\bwochenkurs\b|\bsemesterkurs\b|\bkursreihe\b/i;
+
+function keywordText(course) {
+  return Array.isArray(course?.keywords) ? course.keywords.join(', ') : String(course?.keywords ?? '');
+}
+
 function scheduleText(course) {
   const events = (Array.isArray(course?.course_events) ? course.course_events : []).filter((e) => !e?.cancelled_at);
   // session_length trägt oft die Kurszeit („1 Tag, 09:00 bis 16:00 Uhr“, Befund 24.11.2026).
@@ -183,9 +191,33 @@ export function checkWish(course, wish, options = {}) {
     const base = { aspect: 'Kursart', wishLabel: wish.label, claimKey: 'time', key: null };
     const kursart = String(course?.kinder_kursart ?? '').toLowerCase();
     if (kursart === 'ferienkurs' || kursart === 'feriencamp') return { ...base, status: 'confirmed', actual: kursart };
-    if (/schulferien|ferienkurs|ferienwoche|in den ferien|sommerferien|herbstferien|frühlingsferien|winterferien/i.test(`${course?.title ?? ''} ${course?.description ?? ''}`)) return { ...base, status: 'confirmed', actual: 'ferienkurs' };
+    if (HOLIDAY_TEXT.test(`${course?.title ?? ''} ${course?.description ?? ''}`)) return { ...base, status: 'confirmed', actual: 'ferienkurs' };
+    // Kursart und Stichworte widersprechen sich (Nachprüfung 25.11.2026, Befund
+    // 20177): keine Abweichung behaupten, sondern beide Angaben nennen.
+    const keywordHit = HOLIDAY_TEXT.exec(keywordText(course));
+    if (kursart && keywordHit) return { ...base, status: 'unknown', actual: kursart, unclear: keywordHit[0] };
     if (kursart) return { ...base, status: 'deviating', actual: kursart };
     return { ...base, status: 'unknown', actual: null };
+  }
+  if (wish?.type === 'booking') {
+    // „flexibel buchbar“ (Nachprüfung 25.11.2026, Befund 20442): ausdrücklich
+    // flexibel = bestätigt; feste Kursreihe = bekannte Abweichung; sonst unbekannt.
+    const base = { aspect: 'Buchung', wishLabel: wish.label, claimKey: 'booking', key: null };
+    const source = [scheduleText(course), keywordText(course)].filter(Boolean).join('\n');
+    const flexible = FLEXIBLE_BOOKING.exec(source);
+    if (flexible) return { ...base, status: 'confirmed', actual: timeExcerpt(source, flexible.index, flexible[0].length) };
+    const count = Number.parseInt(String(course?.session_count ?? ''), 10);
+    if (Number.isFinite(count) && count > 1) return { ...base, status: 'deviating', actual: null, sessions: count };
+    const series = FIXED_SERIES.exec(source);
+    if (series) return { ...base, status: 'deviating', actual: timeExcerpt(source, series.index, series[0].length) };
+    return { ...base, status: 'unknown', actual: null };
+  }
+  if (wish?.type === 'subject') {
+    // Gewünschte Kurssprache als Lerninhalt („Englisch auffrischen“, Befund 20108):
+    // nur „nicht genannt“, wenn sie in den Kursangaben fehlt; nie als Abweichung.
+    const base = { aspect: 'Thema', wishLabel: wish.label, claimKey: 'subject', key: null };
+    const text = [course?.title, course?.description, Array.isArray(course?.objectives) ? course.objectives.join(' ') : course?.objectives, keywordText(course)].filter(Boolean).join(' ');
+    return wish.pattern && new RegExp(wish.pattern, 'iu').test(text) ? { ...base, status: 'confirmed', actual: wish.label } : { ...base, status: 'unknown', actual: null };
   }
   if (wish?.type === 'period' && Array.isArray(wish.value?.months)) {
     // Zeitraum: nur künftige, nicht abgesagte Termine entscheiden.

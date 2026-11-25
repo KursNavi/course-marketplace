@@ -56,7 +56,10 @@ export function childAudience(course, categoryRows = []) {
   }
   // Ohne jede Altersangabe gilt beim Kurstyp „kinder_jugend“ dessen eigene
   // Bezeichnung (Kinder und Jugendliche); sonst entscheiden Alter und Text.
-  const typeOnly = String(course?.category_type ?? '').toLowerCase() === 'kinder_jugend' && minAge === null && maxAge === null;
+  // Nennt der Text ausdrücklich nur Kinder, gilt das (Nachprüfung 25.11.2026,
+  // Befund 20177: „Kinder und Jugendliche“ nur aus dem Kurstyp abgeleitet).
+  const typeOnly = String(course?.category_type ?? '').toLowerCase() === 'kinder_jugend' && minAge === null && maxAge === null
+    && !/\bkinder\b|\bkids\b|\benfants\b|\bbambini\b/i.test(text);
   const teens = typeOnly || (minAge !== null && minAge >= 12) || (maxAge !== null && maxAge >= 13)
     || TEEN_WORDS.test(String(course?.title ?? '')) || TEEN_WORDS.test(String(course?.description ?? ''));
   const info = { child: true, minAge, maxAge, teens };
