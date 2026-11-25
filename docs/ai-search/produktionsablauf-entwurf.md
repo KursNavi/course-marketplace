@@ -1,5 +1,9 @@
 # Entwurf: späterer Produktionsablauf der KI-Suche
 
+> **Überholt (25.11.2026):** Massgeblich ist [produktionspaket-20261125.md](produktionspaket-20261125.md).
+> Korrektur zu §5: Einen Schalter „sofort, ohne Deploy“ gibt es nicht. Vercel-Variablen wirken
+> erst mit einem neuen Deployment; die schnellste Abschaltung ist der Instant Rollback (Rückweg R0).
+
 Stand 21.11.2026. **Nur Entwurf.** Nichts davon ist freigegeben oder
 ausgeführt; jeder nummerierte Schritt braucht eine eigene Freigabe. Die
 klassische Suche und alle Kategorien bleiben in jedem Zustand erhalten.
