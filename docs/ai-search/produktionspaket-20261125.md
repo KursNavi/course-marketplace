@@ -81,6 +81,8 @@ Jeder Schritt hat einen Prüfpunkt. Schlägt er fehl: **Stopp**, siehe Abschnitt
 | B2 | Merge von PR #198 nach `main`, exakter freigegebener Commit, CI grün | PO | – |
 | B3 | Kontrolle V0 **sofort nach dem Merge** | Claude (lesend) | Unverändert. Ein neuer Eintrag in der Migrationshistorie bedeutet: automatische Migration aktiv → **Stopp** (Abschnitt 6, Fall B) |
 | B4 | Produktion prüfen: `kursnavi.ch/ki-suche` zeigt „nicht gefunden“, kein KI-Einstieg sichtbar; `GET /api/ai-search` antwortet 404 `not_available` | Claude / PO | Abweichung → Stopp |
+| B5 | **Zugangstest Datenbank** (vor dem Merge nicht möglich, weil die Secrets nur für `main` freigegeben sind): Workflow „KI-Suche Produktionsmigrationen“, Modus `plan` (lesend) | PO startet und gibt frei | Prüfsummen ok; Ausgangslage letzte Version `20260926083826`, 0 KI-Objekte; Plan 7 Dateien. Verbindungsfehler → Secret `SUPABASE_DB_URL_PROD` korrigieren, nichts geschrieben |
+| B6 | **Zugangstest Service-Rolle:** Workflow „KI-Suche Produktionsbetrieb“, Befehl `status` (lesend) | PO | Erwarteter Abbruch „KI-Migrationen fehlen in Produktion“ mit Codes für fehlende Tabellen (`PGRST205` bzw. `42P01`). Das belegt URL und Schlüssel. Ein Berechtigungscode (z. B. 401) → Secret prüfen |
 
 ### Phase C – Migrationen M1–M7 (Abschnitt 7.2)
 
@@ -125,6 +127,8 @@ Die Kontrollen nach 1 Stunde, 24 Stunden und 7 Tagen stehen in Abschnitt 5.2.
 ## 4. Manuelle Einrichtungsschritte (gebündelt)
 
 ### 4.1 OpenAI-Produktionsprojekt (A2)
+
+**Erledigt am 26.11.2026 (Angabe PO):** globales Produktionsprojekt mit durchgesetztem Monatslimit USD 10, Schlüssel in Vercel und GitHub. `AI_SEARCH_OPENAI_REGION` ist nicht gesetzt (global, lesend bestätigt).
 
 1. **Projekt anlegen:** im OpenAI-Konto, eigenes Projekt „KursNavi Produktion“.
    - Wenn das Konto berechtigt ist: **Region Europa** wählen. Das lässt sich nachträglich
@@ -225,7 +229,7 @@ Nicht setzen: `AI_SEARCH_LEXICAL_PREFIX` (entfernt), `AI_OPS_SCHEDULE_ENABLED` (
 | 4 | Suche mit Formular-Vorgabe (Kanton) | Treffer erfüllen die Vorgabe belegt; Unbekanntes nur im Bereich „unvollständig“ | Muss-Verstoss → R0 |
 | 5 | Unsinnsanfrage, z. B. „xqzv blorp“ | ehrliche Leermeldung | Treffer im Bereich „Treffer“ → R0 |
 | 6 | Neu laden der Seite | gleiches Ergebnis ohne zweite Belastung | doppelte Zählung → R0 |
-| 7 | Vercel-Logs `/api/ai-search` | kein 5xx; keine Meldung „Abschluss/Speicherung fehlgeschlagen“ bzw. „Ausgang unklar“; nur Zahlen, keine Suchtexte | Fehler → R0 |
+| 7 | Vercel-Logs `/api/ai-search` | kein 5xx; keine Meldung „Abschluss/Speicherung fehlgeschlagen“ bzw. „Ausgang unklar“; nur Zahlen, keine Suchtexte. Die Zeile „ai-search timing+usage“ zeigt die gesetzte Konfiguration: `region: global`, `effort: none`, `batch: 5`, `distribution: stripe`, `mode: single`. Die Werte sind in Vercel verschlüsselt und wurden deshalb nicht gelesen. | Fehler oder abweichende Konfiguration → R0, Variable korrigieren |
 | 8 | Kosten im OpenAI-Projekt nach 1 Stunde | ≤ USD 0.02 | deutlich höher → R0 und prüfen |
 
 ### 5.2 Kontrollen (lesend, aggregiert, ohne Kontokennungen oder Inhalte)
@@ -393,7 +397,9 @@ Zusätzlich müssen die Kurszählungen vor und nach C gleich sein.
 
 ### 7.3 Prüfung auf automatische Migrationen (vor dem Merge, A1)
 
-1. **Supabase-Dashboard** → Projekt `nplxmpfasgpumpiddjfl` → Project Settings →
+**Ergebnis 26.11.2026:** Das Supabase-Dashboard zeigt „Connect GitHub“ und kein verbundenes Repository (Angabe PO). Im Repository gibt es keinen automatischen Migrationsweg. L15 ist damit erledigt; B3 bleibt als Nachweis nach dem Merge.
+
+1. Supabase-Dashboard → Projekt `nplxmpfasgpumpiddjfl` → Project Settings →
    Integrations → GitHub:
    - Ist ein Repository verbunden?
    - Falls ja, müssen „Deploy to production“ bzw. automatisches Branching **aus** sein,
@@ -437,13 +443,13 @@ Stufen:
 | L6 | Löschung Ergebnisse und Kontingentzeilen | Einrichtung | Löschung im Zyklus; Frist für Kontingentzeilen (laufender und Vormonat) vom PO akzeptiert |
 | L7 | Wiederabruf ohne erneute Statusprüfung | erledigt | Statusabgleich beim Wiederabruf (`recheckStoredResult`), getestet; keine Zählung, kein Modellaufruf |
 | L8 | Rollenwechsel nicht im Index | später | Profiltexte sind öffentlich; das Modell erhält keine Profilangaben |
-| L9 | OpenAI-Projekt, Schlüssel, Limit | Einrichtung | Entschieden (USD 10); Schritte in 4.1 und 4.2 |
+| L9 | OpenAI-Projekt, Schlüssel, Limit | erledigt | Globales Projekt, Limit USD 10 durchgesetzt, Schlüssel hinterlegt (26.11.2026) |
 | L10 | Datenschutzhinweis | **Startblocker** | Veröffentlichung vor F2 nötig. Die konkreten offenen Fragen stehen in [datenschutz-ki-suche-entwurf.md](datenschutz-ki-suche-entwurf.md) §4, unter anderem Übermittlungsgrundlage für Schweizer Daten und Region. |
 | L11 | Nicht-KI-Migrationshistorie weicht ab | Einrichtung | Vorgehen ohne `db push` (7.1, 7.2); Bereinigung bleibt eigene Aufgabe |
 | L12 | Standardrechte auf KI-Sequenzen | später | Keine Inhalte lesbar (P-Gesamt) |
 | L13 | Prüfsumme hängt von der Zeilenreihenfolge ab | später | Höchstens unnötige Abgleichsaufträge |
 | L14 | `vector` im Schema `public` | später | Wie TEST; mögliche Linter-Warnung, keine Funktionswirkung |
-| L15 | Automatische Migrationen | **Startblocker bis A1 bestätigt** | Prüfung vorbereitet (7.3), Nachweis B3 |
+| L15 | Automatische Migrationen | erledigt | Supabase ohne verbundenes Repository (26.11.2026); Nachweis nach dem Merge in B3 |
 | L16 | Keine kontoübergreifende Grenze im Code | später | Hartes Projektlimit USD 10 plus 10 Suchen je Konto und Monat begrenzen die Kosten |
 | L17 | TEST-Zyklus-Variable nach dem Merge | Einrichtung | `AI_OPS_SCHEDULE_ENABLED` nicht setzen |
 | L18 | Kategorieänderungen nur über die Prüfsummen-Stichprobe | später | Der Zyklus prüft alle 15 Minuten eine Stichprobe von 20 Kursen; volle Aktualität für Kategorien kann Stunden dauern |

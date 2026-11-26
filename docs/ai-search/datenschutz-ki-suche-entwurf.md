@@ -20,7 +20,12 @@
 | Server-Logs | nur Zahlen und die OpenAI-Region, kein Suchtext | Vercel | gemäss Vercel | `api/ai-search.js` |
 | Browser | Suchtext-Entwurf, letztes Ergebnis | `sessionStorage`, beim Abmelden verworfen | Sitzung | `AiSearchView.jsx` |
 
-**Region der Verarbeitung bei OpenAI:**
+**Region der Verarbeitung bei OpenAI – Entscheid 26.11.2026: globales Projekt.**
+- Das Produktionsprojekt wurde global angelegt, `AI_SEARCH_OPENAI_REGION` ist nicht gesetzt.
+- Alle Aufrufe gehen an `https://api.openai.com/v1`; eine Verarbeitung auch in den USA ist möglich.
+- Eine EU-Aussage entfällt im Text.
+
+Technische Regel für eine spätere Umstellung:
 - Ist `AI_SEARCH_OPENAI_REGION=eu` gesetzt, gehen alle Aufrufe an
   `https://eu.api.openai.com/v1`. Eine Ausweichroute gibt es nicht.
 - Sonst gehen sie an den globalen Endpunkt.
@@ -72,8 +77,7 @@
 
 ## 3. Entwurf der Ergänzungen in `legalText.js`
 
-Text in eckigen Klammern nur verwenden, wenn die Bedingungen für eine EU-Aussage aus
-Abschnitt 1 erfüllt sind.
+Fassung für das globale Produktionsprojekt (Entscheid 26.11.2026), ohne EU-Aussage.
 
 **Abschnitt 2 „Bearbeitung von Personendaten“** – neuer Punkt:
 
@@ -89,19 +93,21 @@ Abschnitt 1 erfüllt sind.
 
 **Abschnitt 4 „Technische Infrastruktur & Drittanbieter“** – neuer Punkt:
 
-> • KI-Suche: OpenAI (Vertragspartner: OpenAI Ireland Ltd.). Wenn Sie die KI-Suche nutzen,
-> wird Ihr Suchtext zusammen mit öffentlichen Kursangaben serverseitig an OpenAI
-> übermittelt, um passende Kurse zu ermitteln und zu begründen. Ihr Name, Ihre
-> E-Mail-Adresse und Ihre Kontokennung werden dabei nicht übermittelt. [Die Verarbeitung
-> erfolgt über die europäische Datenresidenz von OpenAI.] Gemäss Anbieter werden die Daten
+> • KI-Suche: OpenAI (Vertragspartner: OpenAI Ireland Ltd.; Datenbearbeitung auch in den
+> USA). Wenn Sie die KI-Suche nutzen, wird Ihr Suchtext zusammen mit öffentlichen
+> Kursangaben serverseitig an OpenAI übermittelt, um passende Kurse zu ermitteln und zu
+> begründen. Ihr Name, Ihre E-Mail-Adresse und Ihre Kontokennung werden dabei nicht
+> übermittelt. Gemäss Anbieter werden die Daten
 > nicht zum Training von Modellen verwendet; zur Erkennung von Missbrauch können sie beim
 > Anbieter bis zu 30 Tage gespeichert werden. Bitte geben Sie in der KI-Suche keine
 > sensiblen Angaben über sich oder Dritte ein.
 
-**Abschnitt 7 „Bekanntgabe ins Ausland“** – Ergänzung je nach Entscheid zu Frage 4.1:
+**Abschnitt 7 „Bekanntgabe ins Ausland“** – Ergänzung; Formulierung zur Grundlage je nach Entscheid zu Frage 4.1:
 
 > … Dies gilt auch für die automatisierte Lead-Qualitätsbewertung über die Google Gemini API
-> und für die KI-Suche über OpenAI. …
+> und für die KI-Suche über OpenAI. Für die KI-Suche ist OpenAI Ireland Ltd. unser
+> Vertragspartner; Übermittlungen in die USA erfolgen gemäss Auftragsbearbeitungsvertrag
+> des Anbieters auf Grundlage von Standardvertragsklauseln. …
 
 **Abschnitt 8 „Speicherdauer“** – neuer Absatz:
 
@@ -120,19 +126,16 @@ Datenschutzerklärung):
 
 ## 4. Konkrete offene Fragen (Entscheid PO, bei Bedarf mit Rechtsberatung)
 
-1. **Grundlage der Übermittlung Schweizer Daten:** Das DPA stützt Übermittlungen ausserhalb
-   von EWR und Schweiz auf die EU-SCC bzw. auf EU-Angemessenheitsbeschlüsse. Das DSG und
-   einen Schweizer Zusatz nennt es nicht.
+1. **Grundlage der Übermittlung Schweizer Daten in die USA** (mit dem globalen Projekt zentral):
+   - Das DPA stützt Übermittlungen ausserhalb von EWR und Schweiz auf die EU-SCC bzw. auf
+     EU-Angemessenheitsbeschlüsse. Das DSG und einen Schweizer Zusatz nennt es nicht.
    - Genügt das für Übermittlungen aus der Schweiz (Art. 16 DSG), oder braucht es eine
      Bestätigung bzw. Ergänzung von OpenAI?
-   - Mit Datenresidenz Europa (Irland bzw. EWR, für die die Schweiz Angemessenheit
-     anerkennt) verschiebt sich die Frage auf die Ausnahmen in Frage 4.2.
-2. **Ausnahmen der Datenresidenz:**
-   - Ausgenommen sind „system data“.
-   - Ob Missbrauchsprotokolle (bis 30 Tage, mit Ein- und Ausgaben) in der Region bleiben,
-     steht nicht in den gelesenen Quellen.
-   - Frage an OpenAI bzw. Entscheid: Ist eine Übermittlung dieser Protokolle in die USA
-     möglich, und wie wird sie im Text benannt?
+   - Ob OpenAI unter dem Swiss-U.S. Data Privacy Framework zertifiziert ist, war nicht
+     belegbar (Liste auf dataprivacyframework.gov prüfen).
+2. **Datenresidenz:** entfällt mit dem globalen Projekt. Eine spätere Umstellung auf Europa
+   braucht ein neues Projekt und `AI_SEARCH_OPENAI_REGION=eu`; dann gilt die technische Regel
+   aus Abschnitt 1.
 3. **Separater DPA-Abschluss:** Nach Vertragstext gilt das DPA durch Verweis.
    - Soll trotzdem „Execute Data Processing Agreement“ genutzt werden, um eine
      unterzeichnete Fassung abzulegen?
