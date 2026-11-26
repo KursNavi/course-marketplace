@@ -1,9 +1,43 @@
 # KI-Suche: Index- und Betriebsdesign (Phase 1 – Entwurf)
 
-Stand 13.11.2026. Architektur für S02 (Index/Aktualisierung) und die Schnittstellen zu
-S03 (Hybridsuche). Migrationen liegen als Dateien unter `supabase/migrations/` bereit und
-sind **nicht angewendet**; Anwendung zuerst auf dem verifizierten Supabase-Testprojekt
-nach Freigabe (E5), nie direkt in Produktion.
+Stand 15.11.2026. Architektur für S02 (Index/Aktualisierung) und die Schnittstellen zu
+S03 (Hybridsuche). Die drei Migrationen sind seit 14.11.2026 auf der freigegebenen
+TESTumgebung (`omoapbvfligjfznzivyu`) angewendet und per CI-DB-Tests verifiziert
+(PR #197); **Produktion weiterhin NICHT** (separate Freigabe nötig).
+
+**Umsetzungsstand Worker/Backfill/Reconciliation (dieser Branch):**
+Outbox-Worker (`src/lib/aiSearch/worker.js`), Reconciliation inkl. Stufe-1-Backfill
+(`src/lib/aiSearch/reconciliation.js`) und der Cron-Endpunkt (`api/cron-ai-search.js`,
+`?task=worker|reconcile|all`) sind implementiert und unit-getestet. Die eigentliche
+**Übernahme läuft atomar in der Datenbank** (Migration `20261115200229`, liegt zur
+Prüfung vor, noch nicht angewendet): `ai_search_apply_upsert`/`ai_search_apply_delete`
+mit kursbezogenem Advisory-Lock serialisieren parallele Worker; die Wasserstandstabelle
+`ai_search_index_state` trägt die zuletzt angewendete Version als Tombstone, damit ein
+älterer Lauf weder einen neueren Stand überschreibt noch einen zurückgezogenen Kurs
+wieder anlegt; ein unvollständiger früherer Stand wird beim Retry repariert statt
+übersprungen. Der Endpunkt ist bewusst **noch nicht** in `vercel.json` als Cron
+registriert: das Cron-Kontingent des Projekts ist mit den zwei bestehenden Jobs
+ausgeschöpft, und in Produktion fehlen die Tabellen (der Endpunkt erkennt das und
+beendet sich als No-op `provisioned:false`). Für die spätere Testbefüllung existiert
+ein ausdrücklich auf die TESTumgebung begrenzter Lauf (`npm run backfill:ai-test`,
+doppelter Zielschutz + `AI_BACKFILL_CONFIRM`, Kontingent-Cleanup aus, kein
+Mailversand) samt Nachweisen zu Abdeckung, Chunk-Vollständigkeit, offenen/
+fehlgeschlagenen Jobs und entfernten Rücknahmen; er ersetzt den E1-Abgleich mit dem
+aktuellen öffentlichen Katalog nicht. Embeddings entstehen weiterhin nicht
+(Gate E3: Modellwahl/Budget/API-Zugang offen) — der Worker schreibt Projektion,
+Chunks und Lexikalik; `embedding`/`model_version` bleiben NULL (Backfill-Stufe 2).
+
+**Preview-Stand (17.11.2026, nur Arbeitszweig, nicht gemergt):** Die Testbefüllung läuft
+als bewusst per Label `ki-befuellung-test` ausgelöster CI-Lauf (nur TESTumgebung). Die
+Such-API `api/ai-search.js` ist nur ausserhalb der Vercel-Produktion und nur gegen die
+TESTumgebung aktiv (`previewGuard.js`, serverseitig geprüft) und setzt Auth-Gate,
+Kontingent (reservieren → suchen → abschliessen/freigeben) und den Suchdienst
+`searchService.js` um: katalogweiter lexikalischer Abruf über Titel und vollständige
+Beschreibungen, Statusprüfung vor Ausgabe, eventgebundene Muss-Prüfung, begrenzte
+Paid-Priorität. Luna und Bedeutungssuche sind vorbereitet (`openaiGateway.js`), aber
+standardmässig aus. Bis zur Freigabe ersetzt eine gekennzeichnete Textpassung die
+Luna-Bewertung. Oberfläche: `/ki-suche` (`AiSearchView.jsx`), nur auf
+Vorschauadressen sichtbar. Entscheidungsvorlage: `docs/ai-search/e3-entscheidungsvorlage.md`.
 
 ## Komponenten
 
@@ -66,7 +100,7 @@ Die Such-API bekommt vor jeder Inferenz zwei Stufen:
 1. **Auth-Gate:** verifizierte, nicht-anonyme Kontositzung (Supabase-JWT serverseitig
    prüfen, `is_anonymous` abweisen). Kategorien/klassische Filter bleiben davon
    unberührt.
-2. **Kontingent-Gate:** `ai_search_usage` (Migration `20261113180200`) mit atomarer
+2. **Kontingent-Gate:** `ai_search_usage` (Migration `20261114205947`) mit atomarer
    Reservierung per nutzerbezogenem Advisory-Lock: Zustand `reserved` →
    `completed`/`released`, befristete Reservierung (`reserved_until`) für
    Crash-Recovery, eindeutige `request_id` für idempotente Wiederholungen.

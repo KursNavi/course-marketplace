@@ -114,7 +114,12 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
 
   it('bündelt für den 404-Handler bewusst keine SPA-Shell ein', () => {
     // Die Fehlerseite ist eigenständiges Markup — kein dist/index.html nötig.
-    expect(Object.keys(vercelConfig.functions)).toEqual([
+    // Nur diese beiden Funktionen bündeln Dateien ein; weitere Einträge (z. B.
+    // maxDuration der KI-Suche) dürfen keine includeFiles setzen.
+    const bundling = Object.entries(vercelConfig.functions)
+      .filter(([, config]) => config.includeFiles)
+      .map(([name]) => name);
+    expect(bundling).toEqual([
       'api/thema-redirect.js',
       'api/course-redirect.js',
     ]);

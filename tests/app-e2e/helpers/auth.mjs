@@ -10,9 +10,10 @@
  * Log in as the teacher / provider test user.
  * Navigates to /login, fills the form, and waits for the dashboard nav to appear.
  */
-export async function loginAsTeacher(page) {
-  const email = process.env.E2E_PROVIDER_EMAIL;
-  const password = process.env.E2E_PROVIDER_PASSWORD;
+export async function loginAsTeacher(page, credentials = null) {
+  // Optional eigenes Konto (z. B. isoliertes Testprofil), sonst der gemeinsame E2E-Anbieter.
+  const email = credentials?.email ?? process.env.E2E_PROVIDER_EMAIL;
+  const password = credentials?.password ?? process.env.E2E_PROVIDER_PASSWORD;
   if (!email || !password) {
     throw new Error('E2E_PROVIDER_EMAIL and E2E_PROVIDER_PASSWORD must be set');
   }
@@ -72,8 +73,8 @@ export async function waitForDashboardReady(page, timeout = 30_000) {
  * @param {'kursangebot' | 'profile' | 'anderes'} tab
  * @param {number} [timeout] - how long to wait for teacher role (default 30 s)
  */
-export async function loginAsTeacherAndOpenTab(page, tab, timeout = 30_000) {
-  await loginAsTeacher(page);
+export async function loginAsTeacherAndOpenTab(page, tab, timeout = 30_000, credentials = null) {
+  await loginAsTeacher(page, credentials);
   // h1 "Kursanbieter Dashboard" only renders when user.role === 'teacher'
   await page.locator('h1').filter({ hasText: 'Kursanbieter Dashboard' }).waitFor({ timeout });
   // Click the appropriate overview tile (no page reload — keeps the warm connection)

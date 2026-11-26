@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowRight, ChevronDown, CreditCard, Shield } from 'lucide-react';
+import { Search, ArrowRight, ChevronDown, CreditCard, Shield, Sparkles } from 'lucide-react';
+import { isAiSearchEntryVisible } from '../lib/aiSearch/previewGuard';
+import { handOverAiSearchDraft } from '../lib/aiSearch/draft';
 import { LocationDropdown, DeliveryTypeFilter, LanguageDropdown } from './Filters';
 import { SEGMENT_CONFIG, COURSE_LEVELS } from '../lib/constants';
 import { BASE_URL } from '../lib/siteConfig';
@@ -24,6 +26,42 @@ const HOME_SEARCH_BTN_LABEL = {
   de: 'Kurse finden', en: 'Find courses', fr: 'Trouver des cours', it: 'Trova corsi',
 };
 
+// Nachtrag 13: klarer KI-Einstieg direkt unter der klassischen Suchkarte.
+// Auch für Gäste sichtbar; die Anmeldung verlangt erst die KI-Suche selbst.
+// Ein bereits ins Startseitenfeld getippter Text wird lokal übergeben
+// (sessionStorage, nie in der URL) und dort NICHT automatisch abgeschickt –
+// Öffnen und Login verbrauchen also kein Kontingent.
+const AiSearchHomeCta = ({ searchQuery }) => {
+  const openAiSearch = (e) => {
+    e.preventDefault();
+    handOverAiSearchDraft(searchQuery);
+    window.history.pushState({ view: 'ai-search' }, '', '/ki-suche');
+    window.scrollTo(0, 0);
+  };
+  return (
+    <div className="mt-3 rounded-2xl border border-primary/30 bg-white/95 shadow-sm p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" data-testid="home-ai-cta">
+      <div className="flex items-start gap-3 min-w-0">
+        <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
+          <Sparkles className="w-5 h-5" />
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold text-dark leading-snug">Lieber in eigenen Worten beschreiben?</p>
+          <p className="text-sm text-gray-600" data-testid="home-ai-cta-note">Für angemeldete Nutzer · 10 Suchen pro Monat</p>
+        </div>
+      </div>
+      <a
+        href="/ki-suche"
+        onClick={openAiSearch}
+        className="w-full sm:w-auto shrink-0 px-5 py-2.5 rounded-lg border-2 border-primary text-primary font-semibold text-base inline-flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-petrol focus-visible:ring-offset-2"
+        data-testid="home-ai-cta-link"
+      >
+        <Sparkles className="w-4 h-4" aria-hidden="true" />
+        <span>Mit KI passende Kurse finden</span>
+      </a>
+    </div>
+  );
+};
+
 export const Home = ({
   lang, t, setView, courses, // Jetzt haben wir Zugriff auf die Kurse!
   setSearchType, setSearchArea, setSearchSpecialty, setSearchFocus,
@@ -38,6 +76,11 @@ export const Home = ({
   selectedSaule, setSelectedSaule, selectedKursart, setSelectedKursart,
   isLoading = false
 }) => {
+
+  // KI-Einstieg nur auf Vorschauadressen (nie auf kursnavi.ch) – gleiche
+  // Regel wie der Navigationseintrag in Layout.jsx. Die App rendert per
+  // createRoot (keine Hydration), daher direkt beim Rendern entscheidbar.
+  const showAiSearchCta = isAiSearchEntryVisible();
 
   // --- ACTIONS ---
 
@@ -428,6 +471,10 @@ export const Home = ({
               </button>
             </div>
             </form>
+
+            {showAiSearchCta && (
+              <AiSearchHomeCta searchQuery={searchQuery} />
+            )}
           </div>
         </div>
       </section>

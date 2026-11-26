@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Shield } from 'lucide-react';
+import { Menu, X, Globe, LogOut, LayoutDashboard, ChevronDown, Mail, ArrowRight, Check, Loader2, Shield, Sparkles } from 'lucide-react';
+import { isAiSearchEntryVisible } from '../lib/aiSearch/previewGuard';
 import { SEGMENT_CONFIG } from '../lib/constants';
 import { CareerIcon, PrivateHobbyIcon, ChildrenYouthIcon } from '../lib/segmentIcons';
 import { MegaMenu, MobileMenuCategory } from './MegaMenu';
@@ -22,6 +23,8 @@ export const KursNaviLogo = ({ className }) => (
 
 export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, setShowResults, setSelectedCatPath }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // KI-Suche: auf Vorschauadressen; auf kursnavi.ch nur nach Produktionsfreischaltung.
+  const showAiSearch = isAiSearchEntryVisible();
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [activeSegment, setActiveSegment] = useState(null);
   const [activePath, setActivePath] = useState(window.location.pathname);
@@ -86,6 +89,7 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
       'landing-prof': '/professional',
       'landing-kids': '/children',
       'how-it-works': '/how-it-works',
+      'ai-search': '/ki-suche',
       'blog': '/blog',
       'teacher-hub': '/teacher-hub',
       'contact': '/contact',
@@ -199,6 +203,9 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
 
               {/* Sekundaer-Gruppe */}
               <div className="flex items-center gap-6">
+                {showAiSearch && (
+                  <button onClick={() => navTo('ai-search')} data-testid="nav-ai-search" className="flex items-center gap-1 text-primary hover:text-petrol text-sm font-semibold transition-colors font-sans whitespace-nowrap"><Sparkles className="w-4 h-4" />KI-Suche</button>
+                )}
                 <button onClick={() => navTo('how-it-works')} className="text-gray-500 hover:text-primary text-sm font-medium transition-colors font-sans whitespace-nowrap">{t.nav_howitworks}</button>
                 <button onClick={() => navTo('teacher-hub')} className={`${activePath === "/teacher-hub" ? "text-orange-600 font-bold" : "text-gray-500 font-medium hover:text-primary"} text-sm transition-colors font-sans whitespace-nowrap`}>{t.nav_for_providers}</button>
                 <button onClick={() => navTo('blog')} className="text-gray-500 hover:text-primary text-sm font-medium transition-colors font-sans whitespace-nowrap">{t.nav_news}</button>
@@ -284,6 +291,9 @@ export const Navbar = ({ t, user, lang = 'de', setLang, setView, handleLogout, s
               );
             })}
             <div className="px-2 space-y-1 mt-2">
+            {showAiSearch && (
+              <button onClick={() => navTo('ai-search')} className="flex items-center gap-2 w-full text-left px-3 py-2 rounded-md text-base font-semibold text-primary hover:bg-primaryLight font-sans"><Sparkles className="w-4 h-4" />KI-Suche</button>
+            )}
             <button onClick={() => navTo('how-it-works')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_howitworks}</button>
             <button onClick={() => navTo('blog')} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-primaryLight hover:text-primary font-sans">{t.nav_news}</button>
             {/* Anbietersuche expandable */}
@@ -456,6 +466,7 @@ export const Footer = ({ t, setView, showNewsletter = true }) => {
       'landing-prof': '/professional',
       'landing-kids': '/children',
       'how-it-works': '/how-it-works',
+      'ai-search': '/ki-suche',
       'blog': '/blog',
       'teacher-hub': '/teacher-hub',
       'contact': '/contact',

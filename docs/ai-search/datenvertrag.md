@@ -36,7 +36,18 @@ Aus `courses` (Quelle: öffentliche Kursdetailseite; nur Felder, die dort angeze
 | `canton`, `address`, `course_locations.*` (city/canton/street/location_type) | Ort |
 | Kategoriepfade (`v_course_full_categories` bzw. Zuordnungstabellen) | Thema/Segment |
 | `is_prio`, `plan_tier`-Ableitung | **nur** Paid-Stufe nach fachlicher Bewertung, nie als Modell-Evidenz |
-| `user_id` → `profiles`: `slug`, `city`, `canton`, `verification_status`, `bio_text` | zulässige öffentliche Anbieterangaben |
+| `instructor_name` | Anbietername auf der Ergebniskarte, wie auf der Kursdetailseite; ohne Wert kein Name. **Nie** `profiles.full_name` |
+| `user_id` → **`public_teacher_profiles`** (nicht `profiles`): `slug`, `city`, `canton`, `verification_status`, `bio_text` | zulässige öffentliche Anbieterangaben, nur im Index (`facts.provider`); weder Modell-Evidenz noch zulässiges Begründungsfeld |
+
+Nachtrag 22.11.2026 (E1): Massgeblich ist, was die Plattform tatsächlich öffentlich
+zeigt. Profilangaben sind öffentlich genau dann, wenn die Ansicht
+`public_teacher_profiles` (Migration `20261104120000`, Filter `role = 'teacher'`) eine
+Zeile liefert. Diese Ansicht speist die Profilseite `/profil/…`, auf die jede
+Kursdetailseite verlinkt. Liefert sie keine Zeile, übernimmt die Projektion keine
+Anbieterangaben (`facts.provider = null`). Weil die Sichtbarkeit an `role` hängt, muss
+der Profil-Trigger auch `role` beobachten (Entwurf
+`supabase/drafts/20261122170000_ai_search_profile_visibility_trigger.sql`).
+Umsetzung: `src/lib/aiSearch/providerPublic.js`.
 
 **Ausgeschlossen (nie in Projektion, Index oder Modellkontext):** `courses.contact_email`,
 sämtliche Lead-/Anfrageinhalte und -scores, `basic_lead_ranking_factor`, `booking_factor`,
@@ -78,9 +89,22 @@ bestehende Speicherzustände bleiben unverändert.
 - Zeitzone: Europe/Zurich; Datumsvergleiche auf Tagesebene in dieser Zone.
 - Vergangene und abgesagte Events erfüllen nichts und werden nie als „nächster Termin“
   ausgegeben.
-- Kurse ohne Event können eventbezogene Muss-Kriterien nicht bestätigen → Bereich
-  „Angaben unvollständig“ (laut Snapshot betrifft das die Mehrheit des Bestands;
-  endgültige Quote nach E1).
+- ~~Kurse ohne Event können eventbezogene Muss-Kriterien nicht bestätigen → Bereich
+  „Angaben unvollständig“.~~ **Nachtrag 22.11.2026 (K2, nach der Abnahme):** Ohne
+  passenden Termin entscheiden die **bekannten Kursorte** über eine Ortsvorgabe
+  (`mussCheck.js`, `checkCourseLocationMust`):
+  - Bekannt sind das Kursfeld `canton` und die Präsenz-Kursorte (`course_locations`),
+    jeweils nur mit echtem Kantonsnamen, dazu die Lernform.
+  - **Bestätigt**, wenn ein bekannter Präsenzort im gewünschten Kanton liegt oder Online
+    erlaubt und angeboten ist.
+  - **Verstoss** (Kurs ausgeschlossen), wenn alle bekannten Präsenzorte anderswo liegen oder
+    der Kurs nur online ist und Online nicht erlaubt ist.
+  - **„Angaben unvollständig“ nur, wenn der Ort tatsächlich unbekannt ist** (auch bei
+    widersprüchlichen Angaben wie Kanton „Online“ bei Präsenz).
+  - Termine ohne Ortsangabe werden gleich behandelt.
+  - Die Regel „ein und derselbe Event“ für Ort plus Zeitraum bleibt unverändert.
+  - Budget: Nennt ein Preisfreitext Frankenbeträge und liegt schon der kleinste über dem
+    Budget, ist der Verstoss belegt (`priceStatus.js`, `infoTextAmounts`).
 - „Online“ zählt nur als Ortstreffer, wenn die Suchperson Online erlaubt hat.
 
 ## 5. Datenlücken und Unbekannt-Zustände

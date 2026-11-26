@@ -1,0 +1,92 @@
+name: KI-Suche Embedding-Test
+
+# Ersteinbettung des KI-Suchindex AUSSCHLIESSLICH auf der TESTumgebung
+# KursNavi (omoapbvfligjfznzivyu), freigegeben mit Nachtrag 11 (E3).
+# Laeuft NICHT automatisch und NICHT in der allgemeinen CI. Ausloeser ist das
+# bewusste Setzen eines Labels an einem Pull Request:
+#   ki-embedding-trocken    -> Modellzugriff pruefen (kostenfrei) + Trockenlauf
+#   ki-embedding-ausfuehren -> echter Lauf, Kostenschaetzung max. USD 1,
+#                              Aktivierung nur bei vollstaendiger Einbettung
+# Schutz: Zieladresse strikt geprueft (checkTestTarget), AI_EMBED_CONFIRM,
+# --max-usd. Kein automatischer Wiederholungslauf. Schluesselwerte erscheinen
+# nicht im Log; OPENAI_API_KEY_TEST wird nur auf die Prozessvariable
+# OPENAI_API_KEY abgebildet.
+
+on:
+  pull_request:
+    types: [labeled]
+
+concurrency:
+  group: ki-embedding-test
+  cancel-in-progress: false
+
+jobs:
+  embedding:
+    if: github.event.label.name == 'ki-embedding-trocken' || github.event.label.name == 'ki-embedding-ausfuehren'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+      SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+      SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+      AI_SEARCH_EMBEDDING_MODEL: text-embedding-3-small
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Modellzugriff pruefen (kostenfrei)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+        run: node scripts/ai-search-model-check.mjs
+
+      - name: Trockenlauf (keine Modellaufrufe)
+        # Laeuft auch bei fehlgeschlagener Zugriffspruefung (kostenfrei);
+        # der echte Lauf unten nur, wenn alle vorherigen Schritte gruen sind.
+        if: ${{ !cancelled() }}
+        run: npm run embed:ai-test
+
+      - name: Echter Lauf (max. USD 1, nur TESTumgebung)
+        if: github.event.label.name == 'ki-embedding-ausfuehren'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          AI_SEARCH_MODELS_ENABLED: '1'
+          AI_EMBED_CONFIRM: omoapbvfligjfznzivyu
+        run: npm run embed:ai-test -- --execute --max-usd=1 --activate
+
+  luna-probe:
+    # Label "ki-luna-probe": 3 feste Testanfragen mit echtem Luna-Aufruf
+    # (nur TESTumgebung, kein Kontingent, keine Wiederholung).
+    if: github.event.label.name == 'ki-luna-probe'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SUPABASE_URL_TEST: ${{ secrets.SUPABASE_URL_TEST }}
+      SUPABASE_SECRET_KEY_TEST: ${{ secrets.SUPABASE_SECRET_KEY_TEST }}
+      SUPABASE_PUBLISHABLE_KEY_TEST: ${{ secrets.SUPABASE_PUBLISHABLE_KEY_TEST }}
+      AI_SEARCH_EMBEDDING_MODEL: text-embedding-3-small
+      AI_SEARCH_MODELS_ENABLED: '1'
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Luna-Probe (nur TESTumgebung)
+        run: node scripts/ai-search-luna-probe.mjs

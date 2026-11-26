@@ -116,9 +116,28 @@ export function checkBudgetMust(priceStatus, maxBudget) {
       return priceStatus.amount !== null && priceStatus.amount > maxBudget
         ? 'failed'
         : 'unknown';
-    case PRICE_STATUS.INFO_TEXT:
+    case PRICE_STATUS.INFO_TEXT: {
+      // K2 (22.11.2026): Nennt der Freitext Frankenbeträge und liegt schon
+      // der kleinste davon über dem Budget („ab CHF 315 pro Trimester“), ist
+      // der Verstoss belegt. Sonst bleibt der Endpreis offen.
+      const amounts = infoTextAmounts(priceStatus.infoText);
+      return amounts.length > 0 && Math.min(...amounts) > maxBudget ? 'failed' : 'unknown';
+    }
     case PRICE_STATUS.UNKNOWN:
     default:
       return 'unknown';
   }
+}
+
+/** Frankenbeträge in einem Preisfreitext (nur mit Währungsangabe). */
+export function infoTextAmounts(text) {
+  const source = String(text ?? '');
+  const pattern = /(?:chf|sfr\.?|fr\.)\s*(\d{1,3}(?:['’]\d{3})*(?:[.,]\d{1,2})?)|(\d{1,3}(?:['’]\d{3})*(?:[.,]\d{1,2})?)\s*(?:chf|franken|fr\.|\.-|–)/giu;
+  const amounts = [];
+  for (const match of source.matchAll(pattern)) {
+    const raw = (match[1] ?? match[2]).replace(/['’]/g, '').replace(',', '.');
+    const value = Number(raw);
+    if (Number.isFinite(value) && value > 0) amounts.push(value);
+  }
+  return amounts;
 }

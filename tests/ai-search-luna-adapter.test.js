@@ -79,7 +79,7 @@ describe('validateRerankResponse', () => {
         { courseId: '2', score: 'hoch', reasons: [] },
       ],
     }, allowed);
-    expect(accepted).toEqual([{ courseId: '1', score: 100, reasons: [] }]);
+    expect(accepted).toEqual([{ courseId: '1', score: 100, wishScore: 50, reasons: [], explanation: null }]);
     expect(rejected[0].reason).toContain('Score');
   });
 

@@ -2,8 +2,9 @@ import { supabase } from './supabase';
 
 const BUCKET_NAME = 'course-images';
 
-export const DEFAULT_COURSE_IMAGE = "https://nplxmpfasgpumpiddjfl.supabase.co/storage/v1/object/public/course-images/a0e887f57107603aaf4327ad40de2ab7.jpg";
-export const DEFAULT_COVER_IMAGE = "https://nplxmpfasgpumpiddjfl.supabase.co/storage/v1/object/public/course-images/ca3c9cbb76c1d0b4b0bf300cdbd3bf39.jpg";
+import { DEFAULT_COURSE_IMAGE, DEFAULT_COVER_IMAGE } from './courseImageDefaults.js';
+
+export { DEFAULT_COURSE_IMAGE, DEFAULT_COVER_IMAGE };
 
 /**
  * Prüft ob eine URL auf Unsplash zeigt (sichere Hostname-Prüfung)

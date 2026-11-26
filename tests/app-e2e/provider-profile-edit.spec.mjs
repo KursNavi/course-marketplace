@@ -1,45 +1,66 @@
 import { test, expect } from '@playwright/test';
 import { loginAsTeacherAndOpenTab } from './helpers/auth.mjs';
 import { mockApiRoutes } from './helpers/api-mocks.mjs';
+import { createIsolatedProvider, isolatedProviderAvailable } from './helpers/isolated-provider.mjs';
 
 test.describe('Provider Profile Edit (app-e2e)', () => {
 
-  test('teacher can edit profile settings', async ({ page }) => {
-    await mockApiRoutes(page);
+  // Nachtrag 14: Schreibender Profiltest mit EIGENEM Testkonto (ein Entwurfskurs),
+  // nie mit dem gemeinsamen E2E-Anbieter (≈ 807 Kurse in der TESTumgebung).
+  test.describe('mit eigenem Testprofil', () => {
+    let provider = null;
 
-    // Login and open Profil tab (teacher role confirmed, no page reload needed)
-    await loginAsTeacherAndOpenTab(page, 'profile');
+    test.beforeAll(async () => {
+      if (!isolatedProviderAvailable()) return;
+      provider = await createIsolatedProvider();
+    });
 
-    // Profile form should load (ProviderProfileEditor has async loading state)
-    const nameInput = page.locator('input[name="full_name"]');
-    await expect(nameInput).toBeVisible({ timeout: 20_000 });
-    await expect(page.locator('input[name="lead_email"]')).toBeVisible({ timeout: 20_000 });
+    test.afterAll(async () => {
+      if (provider) await provider.cleanup();
+    });
 
-    // Read current values
-    const originalName = await nameInput.inputValue();
+    test('teacher can edit profile settings (echte Änderung, nur eigenes Profil)', async ({ page }) => {
+      test.skip(!provider, 'TESTumgebung-Variablen für das eigene Testprofil fehlen');
+      const { service, userId, courseId } = provider;
+      const sharedId = process.env.E2E_PROVIDER_ID || null;
+      const readShared = async () => (sharedId
+        ? (await service.from('profiles').select('city, bio_text, slug, canton, verification_status').eq('id', sharedId).maybeSingle()).data
+        : null);
+      const sharedBefore = await readShared();
+      const startedAt = new Date(Date.now() - 1_000).toISOString();
 
-    // Edit the bio field
-    const bioField = page.locator('textarea[name="bio_text"]');
-    if (await bioField.isVisible({ timeout: 3_000 }).catch(() => false)) {
-      const originalBio = await bioField.inputValue();
-      await bioField.fill(`${originalBio} (E2E-Test ${Date.now()})`);
-    }
+      await mockApiRoutes(page);
+      await loginAsTeacherAndOpenTab(page, 'profile', 30_000, provider);
 
-    // Edit the city field
-    const cityInput = page.locator('input[name="city"]');
-    if (await cityInput.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      const nameInput = page.locator('input[name="full_name"]');
+      await expect(nameInput).toBeVisible({ timeout: 20_000 });
+      await expect(nameInput).toHaveValue(provider.fullName);
+
+      const marker = `Profiltest ${Date.now()}`;
+      const bioField = page.locator('textarea[name="bio_text"]');
+      await expect(bioField).toBeVisible({ timeout: 5_000 });
+      await bioField.fill(marker);
+      const cityInput = page.locator('input[name="city"]');
+      await expect(cityInput).toBeVisible({ timeout: 5_000 });
       await cityInput.fill('Zürich');
-    }
 
-    // Save changes
-    const saveBtn = page.getByRole('button', { name: /Speichern|Änderungen speichern/i });
-    await saveBtn.click();
+      await page.getByRole('button', { name: /Speichern|Änderungen speichern/i }).click();
 
-    // Wait for save to complete (button re-enables or notification appears)
-    await page.waitForTimeout(3_000);
+      // Echte Änderung im eigenen Profil gespeichert (statt nur „Seite fehlerfrei“).
+      await expect.poll(async () => {
+        const { data } = await service.from('profiles').select('bio_text, city').eq('id', userId).single();
+        return data ? `${data.bio_text}|${data.city}` : null;
+      }, { timeout: 15_000 }).toBe(`${marker}|Zürich`);
 
-    // Verify the save was processed (page didn't error)
-    await expect(nameInput).toBeVisible();
+      // Die Profiländerung reiht genau den eigenen (einzigen) Kurs ein
+      // (Profil-Trigger, Migration 20261120205856 auf der TESTumgebung).
+      const { data: ownJobs } = await service.from('ai_search_jobs')
+        .select('course_id').eq('reason', 'profile_change').eq('course_id', courseId).gte('created_at', startedAt);
+      expect((ownJobs ?? []).length).toBeGreaterThanOrEqual(1);
+
+      // Gemeinsamer Anbieter unverändert.
+      if (sharedId) expect(await readShared()).toEqual(sharedBefore);
+    });
   });
 
   test('teacher can view Stripe Connect setup section', async ({ page }) => {
