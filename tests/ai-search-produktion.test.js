@@ -239,6 +239,30 @@ describe('2. Produktionswerkzeug', () => {
     expect(prod.parseProdArgs('abort', ['--execute'], {}).ok).toBe(false);
   });
 
+  it('Bereitstellungsprüfung erkennt fehlende Tabellen (GET mit Fehlerkörper, kein HEAD)', async () => {
+    // Nachgebildet wie PostgREST: HEAD liefert bei fehlender Tabelle keinen Fehler, GET schon.
+    const existing = new Set(['ai_search_config', 'ai_search_usage']);
+    const calls = [];
+    const client = {
+      from: (table) => ({
+        select: (columns, options = {}) => {
+          calls.push({ table, head: options.head === true });
+          const respond = () => (options.head === true || existing.has(table)
+            ? { data: [], error: null }
+            : { data: null, error: { code: 'PGRST205', message: `Could not find the table 'public.${table}' in the schema cache` } });
+          return { limit: async () => respond() };
+        },
+      }),
+    };
+    const result = await prod.checkDeployment(client);
+    expect(result.ok).toBe(false);
+    expect(result.missing).toHaveLength(prod.REQUIRED_TABLES.length - existing.size);
+    expect(result.missing[0]).toMatch(/PGRST205/);
+    expect(calls.every((c) => c.head === false)).toBe(true);
+    for (const table of prod.REQUIRED_TABLES) existing.add(table);
+    expect(await prod.checkDeployment(client)).toEqual({ ok: true, missing: [] });
+  });
+
   it('TEST-Werkzeuge bleiben TEST-gebunden (unverändert)', () => {
     for (const file of ['scripts/ai-search-ops.mjs', 'scripts/ai-search-embed-test.mjs', 'scripts/ai-search-backfill-test.mjs']) {
       expect(readFileSync(path.join(ROOT, file), 'utf8')).toMatch(/checkTestTarget\(process\.env\)/);
