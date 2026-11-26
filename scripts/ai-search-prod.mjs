@@ -145,11 +145,15 @@ export function indexComplete(status) {
   return { ok: gaps.length === 0, gaps };
 }
 
-/** Bereitstellung: alle KI-Tabellen lesbar (Service-Rolle). Fehlend = Migrationen fehlen. */
+/**
+ * Bereitstellung: alle KI-Tabellen lesbar (Service-Rolle). Fehlend = Migrationen fehlen.
+ * Bewusst GET (limit 0) statt HEAD: HEAD-Antworten tragen keinen Fehlerkörper,
+ * eine fehlende Tabelle bliebe unbemerkt (Zugangstest Produktion 26.11.2026).
+ */
 export async function checkDeployment(client) {
   const missing = [];
   for (const table of REQUIRED_TABLES) {
-    const { error } = await client.from(table).select('*', { head: true, count: 'exact' }).limit(1);
+    const { error } = await client.from(table).select('*').limit(0);
     if (error) missing.push(`${table} (${error.code ?? error.message})`);
   }
   return { ok: missing.length === 0, missing };
