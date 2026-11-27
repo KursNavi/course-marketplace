@@ -18,10 +18,19 @@
  * gesperrt. Nur EIN automatischer Auslöser soll aktiv sein: beim Umschalten die
  * GitHub-Variable AI_OPS_PROD_SCHEDULE_ENABLED ausschalten.
  *
- * Benachrichtigung (Admin-Mail über den bestehenden Mailweg, best effort):
- * sofort, wenn ein Lauf neu fehlschlägt; solange ein Fehler oder kritischer Alarm
- * (z. B. Rückstand > 24 h, Löschrückstand > 2 h, offene Problemläufe) besteht,
- * höchstens einmal pro Stunde. Antwort und Logs enthalten nur Zählungen.
+ * Gemeinsames Laufzeitbudget (TOTAL_BUDGET_MS, unter maxDuration): Jede
+ * Datenbankanfrage – Arbeit, Abschluss der Sperre, Endkontrolle, Mail-Sperre –
+ * endet spätestens am Ende ihrer Phase. „ok“ meldet der Endpunkt nur mit
+ * bestätigtem Sperrabschluss UND vollständiger Endkontrolle, sonst „unverified“.
+ *
+ * Alarm-Mail (bestehender Mailweg) bei Fehlschlag, unbestätigtem Abschluss oder
+ * kritischem Alarm (z. B. Rückstand > 24 h, Löschrückstand > 2 h, offene
+ * Problemläufe). Höchstens EINE Mail je 60 Minuten, serverseitig erzwungen über
+ * die vorhandene Laufsperre (Modus „alarm-mail“ in ai_search_ops_runs, Uhr der
+ * Datenbank): parallele Aufrufe und Mehrfachzustellungen des Crons bekommen die
+ * Sperre nicht bzw. finden den protokollierten Versuch. Auch abgebrochene oder
+ * fehlgeschlagene Versuche zählen (lieber keine zweite Mail als eine doppelte).
+ * Antwort und Logs enthalten nur Zählungen.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -32,19 +41,28 @@ import { getEmailConfig, sendEmailOrThrow } from './_lib/email-config.js';
 import { generateEmailHtml } from './_lib/email-template.js';
 import { PRODUCTION_REF, supabaseRefOf } from '../src/lib/aiSearch/previewGuard.js';
 import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openaiGateway.js';
-import { parseOpsArgs, runOps, STEP_MS } from '../src/lib/aiSearch/ops.js';
+import { parseOpsArgs, runOps, acquireLease, STEP_MS, ALARM_MAIL_MODE } from '../src/lib/aiSearch/ops.js';
+import { LeaseSession } from '../src/lib/aiSearch/opsLease.js';
 
 /**
- * Grenzen je Lauf wie der GitHub-Zyklus. Laufzeit 210 s: Danach beginnt kein
- * neuer Schritt; Abschluss der Sperre und Endbericht (je ≤ 30 s Anfragegrenze)
- * bleiben unter der Funktionsgrenze von 300 s (vercel.json).
+ * Grenzen je Lauf wie der GitHub-Zyklus. Arbeitszeit 150 s: Danach beginnt kein
+ * neuer Schritt; ein laufender Schritt (≤ 50 s) und der Abschluss der Sperre
+ * (≤ 30 s) enden vor dem Ende der Arbeitsphase.
  */
 export const CRON_OPS_ARGS = Object.freeze([
   '--execute-index', '--execute-embed', '--execute-cleanup', '--purge-usage',
-  '--max-usd=0.01', '--max-runtime-sec=210', '--max-index-batches=6',
+  '--max-usd=0.01', '--max-runtime-sec=150', '--max-index-batches=6',
   '--max-enqueue=200', '--max-embed-chunks=300', '--cleanup-batch=1000',
 ]);
 export const CRON_MAX_DURATION_SEC = 300;
+/** Gesamtbudget ab Aufruf; Rest bis maxDuration für Antwort und Start. */
+export const TOTAL_BUDGET_MS = 280_000;
+/** Am Ende reserviert für Mail-Sperre, Versand und deren Abschluss. */
+export const MAIL_RESERVE_MS = 40_000;
+export const MAIL_INTERVAL_MS = 60 * 60_000;
+const MAIL_LEASE_SEC = 30;
+/** Reserve nach dem Versand für den Abschluss der Mail-Sperre. */
+const MAIL_RELEASE_RESERVE_MS = 8_000;
 
 /** @returns {{ok: true} | {ok: false, reason: string}} */
 export function checkOpsCronTarget(env) {
@@ -56,41 +74,141 @@ export function checkOpsCronTarget(env) {
 }
 
 /**
- * Benachrichtigen? Sofort, wenn ein Lauf fehlschlägt und der vorherige Lauf
- * belegt erfolgreich war ('ok') bzw. es noch keinen gab ('none'). Solange ein
- * Fehler oder kritischer Alarm besteht – auch wenn der Vorlauf unbekannt ist
- * (null, z. B. Erhebung gescheitert) –, höchstens stündlich im ersten
- * Cron-Slot jeder Stunde (zustandslos, keine Mail alle 15 Minuten).
+ * Laufzeitbudget mit Phasen. phaseEnd begrenzt jede Anfrage der laufenden Phase;
+ * endPhase verschiebt das Phasenende (nie über das Gesamtende hinaus).
  */
-export function shouldNotify({ failed, critical, previousOutcome, now = new Date() }) {
-  if (failed && (previousOutcome === 'ok' || previousOutcome === 'none')) return 'neu';
-  if ((failed || (critical ?? []).length > 0) && now.getUTCMinutes() < 15) return 'stündlich';
-  return null;
+export function createBudget(totalMs, { now = Date.now, phaseEndMs = totalMs } = {}) {
+  const start = now();
+  const hardEnd = start + totalMs;
+  let phaseEnd = Math.min(start + phaseEndMs, hardEnd);
+  return {
+    now,
+    hardEnd,
+    get phaseEnd() { return phaseEnd; },
+    setPhaseEnd(atMs) { phaseEnd = Math.min(atMs, hardEnd); },
+    remainingMs() { return phaseEnd - now(); },
+    elapsedMs() { return now() - start; },
+  };
 }
 
-const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-
-function timeoutFetch(timeoutMs, baseFetch = globalThis.fetch) {
+/** fetch mit Zeitgrenze min(Schrittgrenze, Rest der Phase); erschöpft → sofortiger Fehler. */
+export function budgetFetch(budget, stepMs, baseFetch = globalThis.fetch) {
   return (input, init = {}) => {
-    const signal = init.signal ? AbortSignal.any([init.signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs);
+    const left = budget.remainingMs();
+    if (left <= 0) return Promise.reject(new Error('Laufzeitbudget erschöpft – Anfrage nicht gestartet'));
+    const timeout = AbortSignal.timeout(Math.max(1, Math.min(stepMs, left)));
+    const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout;
     return baseFetch(input, { ...init, signal });
   };
 }
 
-async function notify(kind, report, critical) {
-  if (!process.env.RESEND_API_KEY) return false;
-  const emailConfig = getEmailConfig();
+/**
+ * Bewertung eines Laufs. „ok“ nur, wenn die Arbeit ohne Fehler endete, die
+ * Datenbank den Abschluss bestätigt hat ('released') und die Endkontrolle
+ * vollständig vorliegt. Fehlt eins davon, ist das Ergebnis „unverified“.
+ */
+export function assessReport(report) {
+  if (report?.outcome === 'locked') return { verdict: 'locked', critical: [], checks: {} };
+  const checks = {
+    work: report?.exitCode === 0 && report?.outcome === 'ok',
+    release: report?.lease?.status === 'released',
+    finalStatus: Boolean(report?.after) && !report.after.error && Array.isArray(report.after.critical),
+  };
+  const critical = checks.finalStatus ? [...report.after.critical] : [...(report?.before?.critical ?? [])];
+  if (!checks.release && report?.runId) critical.push(`Abschluss von Lauf ${report.runId} nicht bestätigt (${report?.lease?.status ?? 'keine Antwort'}).`);
+  if (!checks.finalStatus) critical.push('Endkontrolle fehlt (Zustand nach dem Lauf nicht geprüft).');
+  let verdict = 'ok';
+  if (!checks.work) verdict = 'failed';
+  else if (!checks.release || !checks.finalStatus) verdict = 'unverified';
+  return { verdict, critical, checks };
+}
+
+/** Zählt als Versuch: jeder Mail-Sperreintrag ausser ausdrücklich „nicht versucht“. */
+const countsAsAttempt = (row) => row?.summary?.attempted !== false;
+
+async function readMailRows(client) {
+  const { data, error } = await client.from('ai_search_ops_runs')
+    .select('id, started_at, finished_at, outcome, summary')
+    .contains('modes', [ALARM_MAIL_MODE])
+    .order('started_at', { ascending: false })
+    .limit(20);
+  if (error) throw new Error(`Mail-Protokoll lesen: ${error.message}`);
+  return data ?? [];
+}
+
+function withTimeout(promise, ms) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('Zeitgrenze Mailversand')), ms); }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+/**
+ * Gedrosselte Alarm-Mail. Rückgabe {attempted, sent, reason?, runId?}.
+ * Ablauf: Vorprüfung (lesend) → Mail-Sperre übernehmen → massgebliche Prüfung
+ * nach Datenbankuhr → Versand im Restbudget → Abschluss mit Protokoll.
+ */
+export async function sendThrottledAlarm(client, { budget, holder, subject, lines, send, nowMs = () => budget.now() }) {
+  if (budget.remainingMs() < MAIL_RELEASE_RESERVE_MS + 5_000) return { attempted: false, sent: false, reason: 'Laufzeitbudget reicht nicht' };
+  // Vorprüfung ohne Schreibzugriff (spart Sperreinträge, solange gedrosselt).
+  const recent = (await readMailRows(client)).find(countsAsAttempt);
+  if (recent && nowMs() - Date.parse(recent.started_at) < MAIL_INTERVAL_MS) {
+    return { attempted: false, sent: false, reason: `gedrosselt (letzter Versuch ${recent.id})` };
+  }
+  const runId = await acquireLease(client, { holder, modes: [ALARM_MAIL_MODE], leaseSeconds: MAIL_LEASE_SEC, maxSeconds: MAIL_LEASE_SEC * 2 });
+  if (runId === null) return { attempted: false, sent: false, reason: 'Sperre belegt (anderer Lauf oder Versand aktiv)' };
+  const session = new LeaseSession(client, { runId, holder, leaseSec: MAIL_LEASE_SEC });
+  let result;
+  try {
+    // Massgeblich: Datenbankuhr (eigener Eintrag) gegen den letzten Versuch.
+    const rows = await readMailRows(client);
+    const own = rows.find((r) => r.id === runId);
+    const prior = rows.find((r) => r.id !== runId && countsAsAttempt(r));
+    if (!own) throw new Error('eigener Sperreintrag nicht lesbar');
+    if (prior && Date.parse(own.started_at) - Date.parse(prior.started_at) < MAIL_INTERVAL_MS) {
+      result = { attempted: false, sent: false, reason: `gedrosselt (letzter Versuch ${prior.id})` };
+    } else {
+      const left = budget.remainingMs() - MAIL_RELEASE_RESERVE_MS;
+      if (left < 5_000) {
+        result = { attempted: false, sent: false, reason: 'Laufzeitbudget reicht nicht' };
+      } else {
+        try {
+          await withTimeout(send({ subject, lines }), left);
+          result = { attempted: true, sent: true };
+        } catch (error) {
+          result = { attempted: true, sent: false, reason: String(error?.message ?? error).slice(0, 200) };
+        }
+      }
+    }
+  } catch (error) {
+    // Unklarer Zustand: als Versuch werten (Drosselung bleibt wirksam).
+    result = { attempted: true, sent: false, reason: String(error?.message ?? error).slice(0, 200) };
+  }
+  const lease = await session.release(result.sent || !result.attempted ? 'ok' : 'failed', { attempted: result.attempted, sent: result.sent, reason: result.reason ?? null, lines: lines.length });
+  return { ...result, runId, release: lease.status };
+}
+
+function buildMail(assessment, report) {
   const lines = [
-    `Ergebnis: ${report.outcome}${report.error ? ` – ${String(report.error).slice(0, 200)}` : ''}`,
-    ...critical.map((a) => `Kritisch: ${a}`),
+    `Ergebnis: ${assessment.verdict}${report.error ? ` – ${String(report.error).slice(0, 200)}` : ''}`,
+    ...assessment.critical.map((a) => `Kritisch: ${a}`),
   ];
+  const subject = assessment.verdict === 'ok' ? 'KI-Suche Betrieb: kritischer Alarm' : `KI-Suche Betrieb: Lauf ${assessment.verdict === 'failed' ? 'fehlgeschlagen' : 'nicht bestätigt'}`;
+  return { subject, lines };
+}
+
+const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+async function sendWithResend({ subject, lines }) {
+  if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY fehlt');
+  const emailConfig = getEmailConfig();
   await sendEmailOrThrow(new Resend(process.env.RESEND_API_KEY), 'cron-ai-ops-alarm', {
     from: emailConfig.from,
     to: emailConfig.adminEmail,
-    subject: `KI-Suche Betrieb: ${kind === 'neu' ? 'Lauf fehlgeschlagen' : 'Alarm besteht weiter'}`,
+    subject,
     html: generateEmailHtml('KI-Suche: Betriebsalarm', `<ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>`, 'Vercel-Logs prüfen'),
   });
-  return true;
 }
 
 export default async function handler(req, res) {
@@ -103,13 +221,16 @@ export default async function handler(req, res) {
   const parsed = parseOpsArgs([...CRON_OPS_ARGS], { AI_OPS_CONFIRM: PRODUCTION_REF }, PRODUCTION_REF);
   if (!parsed.ok) return res.status(500).json({ error: 'Konfiguration', details: parsed.errors });
 
+  // Phase 1 (Arbeit, Abschluss, Endkontrolle) endet vor der Mail-Reserve.
+  const budget = createBudget(TOTAL_BUDGET_MS, { phaseEndMs: TOTAL_BUDGET_MS - MAIL_RESERVE_MS });
   const client = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
-    global: { fetch: timeoutFetch(STEP_MS.dbRequest) },
+    global: { fetch: budgetFetch(budget, STEP_MS.dbRequest) },
   });
   // Betriebsweg: Produktions-Zielprüfung statt des Web-Schalters (die öffentliche
-  // Freischaltung AI_SEARCH_PRODUCTION_ENABLED bleibt davon unberührt).
+  // Freischaltung bleibt davon unberührt).
   const config = readModelConfig(process.env, { checkEnvironment: () => ({ ok: true, ref: PRODUCTION_REF, mode: 'production' }) });
+  const holder = randomUUID();
 
   let report;
   try {
@@ -117,29 +238,36 @@ export default async function handler(req, res) {
       embeddingVersion: config.embeddingVersion,
       modelsEnabled: config.enabled && Boolean(process.env.OPENAI_API_KEY),
       createGateway: () => createOpenAiGateway({ apiKey: process.env.OPENAI_API_KEY, region: config.openaiRegion, embeddingModel: config.embeddingModel }),
-      holder: randomUUID(),
+      holder,
     });
   } catch (error) {
     report = { outcome: 'failed', exitCode: 1, error: String(error?.message ?? error), before: null };
   }
 
-  const failed = report.exitCode !== 0 && report.outcome !== 'locked';
-  const critical = report.after?.critical ?? report.before?.critical ?? [];
-  // Vorlauf aus der Erhebung VOR diesem Lauf; ohne Erhebung unbekannt (null).
-  const previousOutcome = report.before?.ops ? (report.before.ops.recent?.[0]?.outcome ?? 'none') : null;
-  const kind = shouldNotify({ failed, critical, previousOutcome });
-  let notified = false;
-  if (kind) {
-    try { notified = await notify(kind, report, critical); } catch (error) { console.error('cron-ai-ops Alarm-Mail fehlgeschlagen:', error?.message ?? error); }
+  const assessment = assessReport(report);
+  let mail = { attempted: false, sent: false };
+  if (assessment.verdict !== 'locked' && (assessment.verdict !== 'ok' || assessment.critical.length > 0)) {
+    budget.setPhaseEnd(budget.hardEnd);
+    try {
+      mail = await sendThrottledAlarm(client, { budget, holder, ...buildMail(assessment, report), send: sendWithResend });
+    } catch (error) {
+      mail = { attempted: false, sent: false, reason: String(error?.message ?? error).slice(0, 200) };
+    }
+    if (!mail.sent) console.error('cron-ai-ops Alarm-Mail nicht gesendet:', mail.reason ?? 'unbekannt');
   }
+
   const summary = {
-    outcome: report.outcome,
+    outcome: assessment.verdict,
+    runOutcome: report.outcome ?? null,
     runId: report.runId ?? null,
     durationMs: report.durationMs ?? null,
+    elapsedMs: budget.elapsedMs(),
+    checks: assessment.checks,
     steps: report.stepResults ?? {},
-    critical: critical.length,
-    notified,
+    critical: assessment.critical.length,
+    mail: { attempted: mail.attempted, sent: mail.sent, reason: mail.reason ?? null },
   };
   console.log('cron-ai-ops:', JSON.stringify(summary));
-  return res.status(failed ? 500 : 200).json(summary);
+  const httpStatus = assessment.verdict === 'ok' || assessment.verdict === 'locked' ? 200 : 500;
+  return res.status(httpStatus).json(summary);
 }

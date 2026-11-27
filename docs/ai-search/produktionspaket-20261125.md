@@ -116,15 +116,30 @@ GitHub-Zeitplan löste über Nacht aber nur sporadisch aus, ein 15-Minuten-Takt 
 belegt. Deshalb übernimmt der Endpunkt `api/cron-ai-ops.js` den automatischen Betrieb:
 
 - **Ablauf:** derselbe geprüfte Runner mit Laufsperre v2, Abbruchschutz und denselben Mengen- und
-  Kostengrenzen wie der GitHub-Zyklus; Laufzeit 210 s bei Funktionsgrenze 300 s; Zeitplan
-  `*/15 * * * *`.
+  Kostengrenzen wie der GitHub-Zyklus; Zeitplan `*/15 * * * *`.
+- **Laufzeitbudget:** gemeinsam 280 s bei Funktionsgrenze 300 s:
+  - Arbeitszeit 150 s. Arbeit, Sperrabschluss und Endkontrolle müssen bis 240 s fertig sein.
+  - Die letzten 40 s sind für die Alarm-Mail reserviert.
+  - Jede Datenbankanfrage bricht am Ende ihrer Phase ab.
+  - „ok“ gibt es nur mit bestätigtem Sperrabschluss und vollständiger Endkontrolle, sonst
+    `unverified` (HTTP 500, Alarm).
 - **Schutz:** Aufruf nur mit `CRON_SECRET`. Er läuft nur bei `VERCEL_ENV=production`, gesetztem
   `AI_OPS_CRON_ENABLED=nplxmpfasgpumpiddjfl` und Produktionsziel, sonst Antwort `skipped`.
 - **Abgrenzung:** Unabhängig von der öffentlichen Freischaltung (Phase F). Der alte Endpunkt
   `cron-ai-search` bleibt gesperrt.
-- **Alarm:** Admin-Mail sofort bei einem neuen Fehlschlag. Bei fortbestehendem Fehler oder
-  kritischem Alarm (Rückstand > 24 h, Löschrückstand > 2 h, offene Problemläufe) höchstens
-  stündlich.
+- **Alarm:** Admin-Mail bei Fehlschlag, unbestätigtem Lauf oder kritischem Alarm
+  (Rückstand > 24 h, Löschrückstand > 2 h, offene Problemläufe):
+  - Höchstens **eine Mail je 60 Minuten**, serverseitig erzwungen über die vorhandene
+    Laufsperre (Modus `alarm-mail` in `ai_search_ops_runs`, Datenbankuhr).
+  - Parallele Aufrufe und Mehrfachzustellungen versenden keine zweite Mail.
+  - Auch fehlgeschlagene oder abgebrochene Versuche zählen.
+  - Mail-Einträge gelten nicht als Betriebsläufe. Eine nicht zugestellte Mail erscheint im
+    Statusbericht als Hinweis.
+  - Ist die Sperre belegt, etwa weil der eigene Abschluss scheiterte (meist ist die Datenbank
+    dann ohnehin nicht erreichbar), geht keine Mail hinaus. Der Vorfall bleibt dann sichtbar:
+    - als HTTP 500 mit `unverified` in den Vercel-Logs;
+    - im Laufprotokoll als `expired`;
+    - als kritischer Alarm samt Mail, bis ein späterer erfolgreicher Lauf ihn behebt.
 
 Es darf nur **ein** automatischer Auslöser aktiv sein. Manuelle GitHub-Läufe bleiben möglich;
 die Laufsperre verhindert Überschneidungen.

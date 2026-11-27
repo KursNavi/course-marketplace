@@ -689,6 +689,24 @@ describe('Betriebsbericht: Löschrückstand, Laufprotokoll, Überwachung', () =>
     expect(old).toEqual({ open: [], resolved: [] });
   });
 
+  it('Sperreinträge der Alarm-Mail sind keine Betriebsläufe; nicht zugestellte Mail erscheint als Hinweis', async () => {
+    const run = (id, modes, at, outcome, summary) => ({ id, modes, started_at: at, finished_at: at, outcome, lease_until: at, summary });
+    const runs = [
+      run(22, ['alarm-mail'], '2026-11-21T13:30:00Z', 'failed', { attempted: true, sent: false, reason: 'resend down' }),
+      run(21, ['alarm-mail'], '2026-11-21T13:20:00Z', 'ok', { attempted: false, sent: false, reason: 'gedrosselt' }),
+      run(20, ['index'], '2026-11-21T13:00:00Z', 'ok', { stepResults: { index: 'no-work' }, index: { jobs: 0 } }),
+    ];
+    const s = await collectStatus(makeClient(fixture({ opsRuns: runs })).client, { embeddingVersion: VERSION, now: NOW });
+    expect(s.ops.recent.map((r) => r.id)).toEqual([20]);
+    expect(s.ops.problemCount).toBe(0);
+    expect(s.critical.join(' ')).not.toMatch(/nicht behoben/);
+    expect(s.ops.lastAlarmMail).toEqual({ id: 22, at: '2026-11-21T13:30:00Z', outcome: 'failed', sent: false });
+    expect(s.alarms.join(' ')).toMatch(/Letzte Alarm-Mail nicht bestätigt zugestellt \(Sperreintrag 22, failed\)/);
+    // Offener Mail-Sperreintrag belegt die Sperre sichtbar (aktiv bzw. abgelaufen → kritisch).
+    const stale = await collectStatus(makeClient(fixture({ opsRuns: [{ id: 23, modes: ['alarm-mail'], started_at: '2026-11-21T13:00:00Z', finished_at: null, outcome: null, lease_until: '2026-11-21T13:00:30Z', summary: null }] })).client, { embeddingVersion: VERSION, now: NOW });
+    expect(stale.critical.join(' ')).toMatch(/Lauf 23 \(alarm-mail\) ist abgelaufen/);
+  });
+
   it('abgelaufener, nicht abgeschlossener Lauf erscheint als kritischer Alarm', async () => {
     const runs = [{ id: 4, modes: ['index'], started_at: '2026-11-21T13:00:00Z', finished_at: null, outcome: null, lease_until: '2026-11-21T13:02:00Z', summary: null }];
     const { client } = makeClient(fixture({ opsRuns: runs }));
