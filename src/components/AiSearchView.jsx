@@ -89,6 +89,19 @@ function navigate(path) {
   window.history.pushState({}, '', path);
 }
 
+/**
+ * Datenschutzhinweis unter dem Eingabefeld (Entscheid 27.11.2026): nicht
+ * blockierend, ohne Bestätigungsdialog; Wortlaut wie in der Datenschutzerklärung.
+ */
+function PrivacyHint() {
+  return (
+    <p className="mt-1 text-xs text-gray-500" data-testid="ai-privacy-hint">
+      Dein Suchtext wird zur Auswertung an OpenAI (auch USA) übermittelt. Bitte keine Namen und keine sensiblen Angaben über dich oder andere eingeben.{' '}
+      <a href="/datenschutz" onClick={(e) => { e.preventDefault(); navigate('/datenschutz'); }} className="underline hover:text-primary">Datenschutzerklärung</a>
+    </p>
+  );
+}
+
 
 function QuotaBadge({ quota }) {
   if (!quota) return null;
@@ -324,6 +337,7 @@ export default function AiSearchView({ user, setView }) {
             Angemeldete Nutzerinnen und Nutzer haben 10 KI-Suchen pro Kalendermonat. Dein Text bleibt in diesem Browser gespeichert und wird nach der Anmeldung nicht automatisch abgeschickt.
           </p>
           <textarea value={query} onChange={(e) => setQuery(e.target.value)} rows={3} maxLength={500} className="mt-4 w-full border border-gray-300 rounded-lg p-3 text-sm" placeholder="z. B. Anfänger-Yoga in Zürich am Abend, höchstens CHF 200" />
+          <PrivacyHint />
           <button type="button" onClick={goToLogin} className="mt-3 bg-petrol text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-petrolDark">Anmelden oder Konto erstellen</button>
         </div>
       ) : (
@@ -334,7 +348,10 @@ export default function AiSearchView({ user, setView }) {
               <QuotaBadge quota={quota} />
             </div>
             <textarea id="ai-query" value={query} onChange={(e) => setQuery(e.target.value)} rows={3} maxLength={500} className="mt-2 w-full border border-gray-300 rounded-lg p-3 text-sm" placeholder="z. B. Ich möchte nach der Arbeit besser fotografieren, vorzugsweise in Bern" />
-            <p className="text-xs text-gray-500 text-right">{query.length}/500</p>
+            <div className="flex justify-between gap-3 items-start">
+              <PrivacyHint />
+              <p className="mt-1 text-xs text-gray-500 text-right shrink-0">{query.length}/500</p>
+            </div>
 
             <button type="button" onClick={() => setShowMusts(!showMusts)} className="mt-1 text-sm text-primary font-semibold inline-flex items-center gap-1">
               Zwingende Vorgaben (optional) <ChevronDown className={`w-4 h-4 transition-transform ${showMusts ? 'rotate-180' : ''}`} />
