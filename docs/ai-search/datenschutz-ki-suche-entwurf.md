@@ -158,3 +158,120 @@ Datenschutzerklärung):
 7. **Meldefrist bei Datenschutzverletzungen:** „without undue delay“ ohne Stundenfrist. Ist
    das für die eigene Meldepflicht (Art. 24 DSG, „so rasch als möglich“) ausreichend?
 8. **Stand-Datum** der Datenschutzerklärung bei der Übernahme anpassen.
+
+## 5. Fertige Fassung zur Freigabe (27.11.2026, globales Projekt)
+
+Dieser Text wird erst mit der Freischaltung (Phase F) in `src/lib/legalText.js` übernommen und
+veröffentlicht. Die Freigabe des Texts ist eine Entscheidung des PO; sie löst die in
+Abschnitt 6 genannten rechtlichen Unsicherheiten nicht.
+
+### Deutsch
+
+**2. Bearbeitung von Personendaten** – neuer Punkt in der Liste:
+
+> • Angaben bei Nutzung der KI-Suche: Ihr frei eingegebener Suchtext und optionale
+> Suchvorgaben (Kanton, Online, Budget) sowie zur Kontingentverwaltung die Kennung Ihres
+> Kontos, der Monat, eine Prüfsumme der Suche und der Zeitpunkt (ohne Suchtext)
+
+**3. Zwecke der Bearbeitung** – neuer Punkt:
+
+> • Bereitstellung der KI-Suche: Auswertung Ihres Suchtexts, um passende Kurse vorzuschlagen
+> und die Vorschläge anhand der Kursangaben zu begründen; Verwaltung des monatlichen
+> Kontingents und Schutz vor Missbrauch
+
+**4. Technische Infrastruktur & Drittanbieter** – neuer Punkt:
+
+> • KI-Suche: OpenAI (Vertragspartner: OpenAI Ireland Ltd.; Datenbearbeitung auch in den
+> USA). Wenn Sie die KI-Suche nutzen, wird Ihr Suchtext zusammen mit öffentlichen
+> Kursangaben serverseitig an OpenAI übermittelt, um passende Kurse zu ermitteln und die
+> Vorschläge zu begründen. Ihr Name, Ihre E-Mail-Adresse und Ihre Kontokennung werden dabei
+> nicht übermittelt. Gemäss Anbieter werden die Daten nicht zum Training von Modellen
+> verwendet; zur Erkennung von Missbrauch können sie beim Anbieter bis zu 30 Tage
+> gespeichert werden. Bitte geben Sie in der KI-Suche keine sensiblen Angaben über sich oder
+> Dritte ein.
+
+**7. Bekanntgabe ins Ausland** – im bestehenden Text nach dem Satz zur Gemini API:
+
+> Dies gilt auch für die KI-Suche über OpenAI; Vertragspartner ist OpenAI Ireland Ltd.
+> Übermittlungen in die USA erfolgen gemäss dem Auftragsbearbeitungsvertrag des Anbieters
+> auf Grundlage von Standardvertragsklauseln.
+
+**8. Speicherdauer** – neuer Absatz:
+
+> Bei der KI-Suche speichern wir das Ergebnis einer Suche (Kursvorschläge mit Begründungen)
+> 24 Stunden, damit Sie es erneut abrufen können; danach wird es gelöscht. Angaben zur
+> Kontingentverwaltung (ohne Suchtext) speichern wir für den laufenden und den vorherigen
+> Kalendermonat. Wird Ihr Konto gelöscht, löschen wir gespeicherte Suchergebnisse sofort.
+
+**Stand-Datum:** auf das Datum der Veröffentlichung setzen.
+
+**Hinweis in der KI-Suche** (eine Zeile unter dem Eingabefeld, mit Link auf
+`/datenschutz`):
+
+> Dein Suchtext wird zur Auswertung an OpenAI (USA) übermittelt. Bitte keine sensiblen
+> Angaben über dich oder andere eingeben.
+
+### English
+
+**2. Processing of Personal Data** – new item:
+
+> • Data when using the AI search: the search text you enter and optional search criteria
+> (canton, online, budget), and for quota management your account identifier, the month, a
+> checksum of the search and the time (without the search text)
+
+**3. Purposes of Processing** – new item:
+
+> • Providing the AI search: analysing your search text to suggest suitable courses and to
+> explain the suggestions based on the course information; managing the monthly quota and
+> preventing misuse
+
+**4. Technical Infrastructure & Third Parties** – new item:
+
+> • AI search: OpenAI (contracting party: OpenAI Ireland Ltd.; processing also in the USA).
+> When you use the AI search, your search text is transmitted server-side to OpenAI together
+> with public course information in order to find suitable courses and explain the
+> suggestions. Your name, email address and account identifier are not transmitted.
+> According to the provider, the data is not used to train models; it may be stored by the
+> provider for up to 30 days to detect abuse. Please do not enter sensitive information
+> about yourself or others in the AI search.
+
+**7. International Transfer** – addition:
+
+> This also applies to the AI search via OpenAI; the contracting party is OpenAI Ireland Ltd.
+> Transfers to the USA take place on the basis of standard contractual clauses in accordance
+> with the provider's data processing agreement.
+
+**8. Storage Duration** – new paragraph:
+
+> For the AI search, we store the result of a search (course suggestions with explanations)
+> for 24 hours so that you can retrieve it again; it is then deleted. Quota management data
+> (without the search text) is stored for the current and the previous calendar month. If
+> your account is deleted, stored search results are deleted immediately.
+
+## 6. Noch notwendige Entscheidungen und verbleibende Unsicherheiten
+
+**Notwendige Entscheidungen vor der Veröffentlichung (PO):**
+
+1. **Text freigeben**, Abschnitt 5, mit oder ohne Änderungen.
+2. **Hinweis in der KI-Suche:** eine nicht blockierende Hinweiszeile (Empfehlung) oder eine
+   Bestätigung vor der ersten Nutzung. Die Bestätigung wäre eine neue Funktion und gehört
+   nicht zum Startumfang.
+3. **Nutzung durch Minderjährige:** Das Services Agreement (3.3 c) verlangt für die Nutzung
+   durch Minderjährige die Einwilligung der Eltern. Die KI-Suche verlangt ein Konto, prüft
+   aber kein Alter.
+   - Option A: in Datenschutzerklärung bzw. AGB festhalten, dass die KI-Suche für
+     volljährige Personen bestimmt ist, ohne technische Prüfung.
+   - Option B: Start erst nach einer technischen Altersregel. Das wäre eine neue Funktion.
+
+**Verbleibende rechtliche Unsicherheiten** (eine Zustimmung des PO löst sie nicht; sie
+werden bewusst getragen oder vorher geklärt):
+
+- **Übermittlungsgrundlage für Schweizer Daten:** Das DPA nennt EU-Standardvertragsklauseln
+  bzw. EU-Angemessenheitsbeschlüsse, aber weder das Schweizer Datenschutzgesetz noch einen
+  Schweizer Zusatz. Ob das für Art. 16 DSG genügt, ist nicht geklärt. Eine Zertifizierung von
+  OpenAI unter dem Swiss-U.S. Data Privacy Framework war nicht belegbar.
+- **Gerichtsstand und Schiedsklausel:** Irisches Recht und Dublin (nicht wörtlich geprüft)
+  neben einer Schiedsklausel mit Sitz San Francisco. Das Zusammenspiel ist unklar.
+- **Meldefrist bei Verletzungen:** „without undue delay“ ohne feste Frist.
+- **Freitexte mit Angaben über Dritte:** Ein Hinweis verhindert nicht, dass Nutzer
+  sensible Angaben eingeben; eine Filterung gibt es nicht.
