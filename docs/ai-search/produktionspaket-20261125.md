@@ -9,34 +9,26 @@
 | C Migrationen M1–M7 | erledigt | Workflow mit Freigabe; Gesamtprüfung ok |
 | D Index, Embeddings, Aktivierung | erledigt | 702/702 Kurse, 2481/2481 Abschnitte mit Embedding, aktiv `text-embedding-3-small@1024`, K1–K3 ok; Kosten Ersteinbettung ca. USD 0.005 (Schätzung) |
 | E Laufender Betrieb | erledigt | Vercel Cron `/api/cron-ai-ops` alle 15 min (PR #202, `70f1f69`), GitHub-Zeitplan aus; Läufe 6–9 (09:30–10:15 UTC) ok, Abschluss und Endkontrolle bestätigt, 0 kritische Alarme. Region: Die Logs nennen `iad1`. Die Ausführungsregion `fra1` ist **aus der Konfiguration abgeleitet** (Projekt `regions: ["fra1"]`, keine eigene Regionsangabe für den Cron-Pfad). Direkt gemessen ist sie nur an `/api/sitemap`: Eingang `iad1`, Ausführung `fra1` laut `x-vercel-id`. Für den Cron-Pfad selbst ist sie nicht direkt nachgewiesen. |
-| F Freischaltung | **gesperrt** | Voraussetzungen und Freigaben siehe unten |
+| F1 Erwachsenenregel und Rechtstexte | erledigt | PR #204 gemergt (`59b28cf`): AGB Ziff. 3.5 und Datenschutzerklärung DE/EN/FR/IT live, Pflicht-Häkchen 18+, KI-Bestätigung bestehender Konten, Hinweiszeile. Migration M8 in Produktion angewendet am 27.11.2026 um 16:00 UTC (Workflow-Lauf `46029398326`, Plan-Lauf `46027896656`, Code-Stand `7820f19` aus PR #205); Gesamtprüfung ok, 0 rückwirkende Bestätigungen. Details: [volljaehrigkeit-migration-rueckweg.md](volljaehrigkeit-migration-rueckweg.md) |
+| F2–F4 Freischaltung | **gesperrt** | Voraussetzungen und Freigaben siehe unten |
 | G Beobachtung | offen | nach F |
 
 **Vor Phase F noch nötig:**
-1. **Erwachsenenregel und Datenschutz** (PR „Erwachsenenregel 18+“, enthält PR #203):
-   - AGB Ziff. 3.5 und Datenschutzerklärung in DE/EN/FR/IT;
-   - Pflicht-Häkchen „mindestens 18 Jahre“ bei der Registrierung;
-   - einmalige Bestätigung bestehender Konten vor der KI-Nutzung, serverseitig geprüft;
-   - Hinweiszeile in der KI-Suche.
-
-   Zuerst Migration `20261127120000_account_adult_confirmations` mit Freigabe anwenden: TEST,
-   dann Produktion (`volljaehrigkeit-migration-rueckweg.md`). Danach Merge und Kontrolle, dass
-   die Texte live auf `/agb` und `/datenschutz` stehen (F1).
-2. **Entscheid zum Restrisiko bei der Schweizer Übermittlungsgrundlage:**
-   - Anfrage an OpenAI versenden und Antwort abwarten, oder das Restrisiko bewusst tragen.
-   - Die Anfrage ist vorbereitet in `datenschutz-ki-suche-entwurf.md`, Abschnitt 8.
-3. **Ausdrückliche Freigabe des PO für F2–F4:**
+1. **Entscheid zum Restrisiko bei der Schweizer Übermittlungsgrundlage:**
+   - Die Anfrage an OpenAI ist am 27.11.2026 versandt (`datenschutz-ki-suche-entwurf.md`,
+     Abschnitt 8); die Antwort steht aus.
+   - Entscheid des PO: Antwort abwarten oder das benannte Restrisiko bewusst tragen. Die
+     rechtliche Frage ist damit nicht gelöst, sondern nur entschieden.
+2. **Ausdrückliche Freigabe des PO für F2–F4:**
    - Freischaltvariablen setzen;
    - neu deployen;
-   - höchstens drei Funktionsprüfungen;
+   - höchstens drei Funktionsprüfungen (Abschnitt 5.1);
    - Rückweg R0 bereit.
 
+Eine zusätzliche Test-Registrierung in Produktion ist **keine** Startbedingung.
+
 **Verbleibende Freigaben des PO:**
-- Migration der Erwachsenenregel in TEST und in Produktion; dafür den Anwendungsweg wählen
-  (Workflow-Erweiterung oder SQL-Editor);
-- Merge des PR „Erwachsenenregel 18+“ (Veröffentlichung von AGB und Datenschutzerklärung);
-- Versand der OpenAI-Anfrage;
-- Phase F;
+- Phase F (F2–F4);
 - R2 (Schemarückbau) nur bei Bedarf und mit eigener Freigabe.
 
 ---
@@ -204,7 +196,7 @@ Die beiden bestehenden Vercel-Crons sind davon nicht berührt.
 
 | Nr. | Schritt | Wer | Prüfpunkt / Stopp |
 |---|---|---|---|
-| F1 | Migration der Erwachsenenregel anwenden, dann PR „Erwachsenenregel 18+“ mergen: AGB und Erklärung DE/EN/FR/IT, Registrierungs-Häkchen, KI-Bestätigung, Hinweiszeile | PO | Texte live auf `/agb` und `/datenschutz` in allen vier Sprachen; Kontrolle der Migration ok |
+| F1 | **Erledigt 27.11.2026.** PR #204 gemergt, Migration M8 in Produktion angewendet (Lauf `46029398326`) | PO | Texte live auf `/agb` und `/datenschutz` in allen vier Sprachen; Kontrolle der Migration ok |
 | F2 | In Vercel, nur für Production: `AI_SEARCH_PRODUCTION_ENABLED=nplxmpfasgpumpiddjfl` und `VITE_AI_SEARCH_PRODUCTION=nplxmpfasgpumpiddjfl` | PO | Nur Ziel „Production“, nicht Preview |
 | F3 | Production neu deployen (Variablen wirken erst mit einem Deployment) | PO | Deployment „Ready“ |
 | F4 | Funktionsprüfungen (Abschnitt 5.1) | PO mit internem Konto und Claude | Alle bestanden, sonst sofort Rückweg R0 |
@@ -309,6 +301,11 @@ Nicht setzen: `AI_SEARCH_LEXICAL_PREFIX` (entfernt), `AI_OPS_SCHEDULE_ENABLED` (
 ## 5. Begrenzte Funktionsprüfungen und Kontrollen
 
 ### 5.1 Nach der Freischaltung (F4), höchstens 3 Suchen, ein internes Konto, geschätzt ≤ USD 0.01
+
+Die drei Suchen sind die Prüfungen 3–5; die übrigen Zeilen verursachen keinen Modellaufruf.
+Das interne Konto besteht vor der Erwachsenenregel. Es sieht deshalb beim ersten Aufruf die
+einmalige Abfrage „mindestens 18 Jahre“. Die Bestätigung erzeugt genau einen Eintrag
+`ai_search` und zählt nicht als Suche.
 
 | # | Prüfung | Soll | Abbruch |
 |---|---|---|---|
