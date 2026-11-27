@@ -308,11 +308,14 @@ no confirmation dialog):
 ### 6.1 Entscheide des PO (27.11.2026), erledigt
 
 1. Hinweiszeile ohne Bestätigungsdialog (eingearbeitet).
-2. Erwachsene als **vorgesehene** Nutzer; Eltern dürfen Kurse für ihre Kinder suchen.
-   - Das ist eine Beschreibung der Ausrichtung, kein technisch durchgesetzter Ausschluss
-     Minderjähriger.
-   - Eine technische Altersprüfung gibt es nicht; ohne gesonderte Begründung wird keine
-     eingeführt (eingearbeitet).
+2. **Erwachsenenregel (Entscheid 27.11.2026, umgesetzt in PR #204):**
+   - Eigene KursNavi-Konten nur ab 18 Jahren; Erwachsene können Kurse für Kinder suchen und
+     buchen.
+   - Pflicht-Häkchen bei der Registrierung, gespeichert atomar mit dem Konto.
+   - Bestehende Konten bestätigen einmal vor der ersten KI-Nutzung; ohne gespeicherte
+     Bestätigung bleibt die KI-Suche serverseitig gesperrt.
+   - Es ist eine **Selbstauskunft**, keine überprüfte Altersfeststellung: kein Geburtsdatum,
+     kein Ausweis, kein Elternverfahren.
 3. Offen bleibt die **Freigabe des Wortlauts** in Abschnitt 5 und dessen Übernahme in die
    veröffentlichte Erklärung (alle vier Sprachen, Abschnitt 7) vor Phase F.
 
@@ -329,11 +332,11 @@ Gelesen wurden das DPA und das Services Agreement, beide „Updated: December 1,
 | Vertragspartner | DPA-Präambel: „unless Customer is based within a European Economic Area country or Switzerland“ … „in which case it is entered into with OpenAI Ireland Ltd.“ | KursNavi (Schweiz) hat OpenAI Ireland Ltd. als Vertragspartner. |
 | Übermittlung EWR/Schweiz | DPA 4.1: „Customer hereby instructs OpenAI Ireland Limited to process any EEA and Swiss Data in compliance with this DPA.“ Weitergabe ausserhalb von EWR/Schweiz: „on the basis of agreements containing SCCs that ensure appropriate safeguards“ bzw. „an adequacy decision issued by the European Commission under Article 45 GDPR.“ | Die Kette: KursNavi → OpenAI Ireland Ltd. → verbundene Unternehmen oder Unterauftragsbearbeiter in den USA. |
 | Definition SCC | „adopted by the EU Commission on June 4, 2021 (as may be amended, updated or replaced from time to time)“ | Es sind die EU-SCC 2021. |
-| Schweizer Anpassungen | DSG/FADP, EDÖB/FDPIC und ein Swiss Addendum: **nicht vorhanden**. Für das Vereinigte Königreich gibt es ein eigenes Addendum (DPA 4.2, Schedule 1 Ziff. 8). Welches SCC-Modul für EWR/Schweiz gilt, ist **nicht angegeben**. | Siehe 6.3. |
+| Schweizer Anpassungen | DSG/FADP, EDÖB/FDPIC und ein Swiss Addendum: im **öffentlichen** DPA-Text nicht enthalten. Für das Vereinigte Königreich gibt es dort ein eigenes Addendum (DPA 4.2, Schedule 1 Ziff. 8). Welches SCC-Modul für EWR/Schweiz gilt, ist im öffentlichen Text nicht angegeben. | Öffentlich **nicht belegt**. Damit ist nicht nachgewiesen, dass die Anpassungen fehlen; sie könnten anderweitig vereinbart sein, etwa in einer unterzeichneten Fassung. Siehe 6.3. |
 | Data Privacy Framework | Im DPA **nicht erwähnt**. Auch die EU-Datenschutzerklärung von OpenAI (Stand 24.08.2026) nennt es nicht; sie stützt sich auf Angemessenheitsbeschlüsse und SCC. | Eine Zertifizierung unter dem Swiss-U.S. DPF ist nicht belegt; das ist kein Beleg für das Gegenteil. Die offizielle Liste ist nur im Browser lesbar. |
 | Meldung von Verletzungen | DPA 2.7: „OpenAI will notify Customer without undue delay after becoming aware of any Personal Data Breach.“ | Ohne Stundenfrist. Das DSG verlangt für die eigene Meldung „so rasch als möglich“ (Art. 24) und kennt ebenfalls keine feste Frist. Vertraglich passt das zusammen. *Vorläufige Einschätzung, rechtlich nicht geprüft.* |
 | Recht und Streitbeilegung | Definition „Governing Laws“: „(a) for Customers in the EEA, Switzerland, or UK, the Laws of Ireland“. Ziff. 16.3: Klagen im „Venue“, aber „Without prejudice to Section 15“. Ziff. 15: Schiedsverfahren (NAM), Sitz „San Francisco, California“; eine Ausnahme für EWR/Schweiz ist in 15.1–15.8 nicht vorhanden. | Irisches Recht. Streitigkeiten gehen vorrangig ins Schiedsverfahren in San Francisco; das Gericht am Venue nur für die Ausnahmen in 15.5. Der Wortlaut der Venue-Definition wurde nicht wörtlich gelesen. Das ist ein **Geschäftsrisiko** (Kosten und Ort eines Streits), kein Mangel der Übermittlungsgrundlage. Der Wortlaut ist gelesen; ob das Risiko akzeptabel ist, entscheidet der PO. *Rechtlich nicht geprüft.* |
-| Minderjährige | Services Agreement 3.3 c: Der Kunde darf nicht „allow minors to use OpenAI Services without consent from their parent or guardian“. | **Vorgesehene** Nutzung durch Erwachsene, Eltern suchen für Kinder (Produktentscheid). Es gibt **keine technische Durchsetzung**: Eine minderjährige Person mit Konto kann die KI-Suche nutzen. Die AGB verlangen Volljährigkeit nur für Buchungen (Ziff. 3.5), nicht für Konto oder Suche. Ob die beschriebene Ausrichtung ohne Durchsetzung der Klausel 3.3 c genügt, ist **rechtlich offen**. Der Produktentscheid klärt das nicht. |
+| Minderjährige | Services Agreement 3.3 c: Der Kunde darf nicht „allow minors to use OpenAI Services without consent from their parent or guardian“. | **Neu seit 27.11.2026 (PR #204):** Eigene Konten nur ab 18 (AGB 3.5 a).<br>- Bestätigung per Selbstauskunft bei der Registrierung bzw. bei bestehenden Konten vor der ersten KI-Nutzung.<br>- Gespeichert mit Zeitpunkt und Regelversion.<br>- Ohne Bestätigung sperrt der Server die KI-Suche.<br>- **Keine Altersprüfung:** Wer falsche Angaben macht, wird nicht erkannt.<br>Ob diese Massnahmen der Klausel 3.3 c genügen, ist **rechtlich offen**. OpenAI hat das **nicht bestätigt** (Frage 5 der Anfrage), und der Produktentscheid klärt es nicht. |
 | Separater DPA-Abschluss | Services Agreement 5.3: DPA „incorporated by this reference“. | Laut Wortlaut ist kein separater Abschluss nötig. Eine unterzeichnete Fassung über „Execute Data Processing Agreement“ kann trotzdem als Nachweis dienen (siehe 6.3, Massnahme 1). |
 
 ### 6.3 Schweizer Übermittlungsgrundlage (der verbleibende Kernpunkt)
@@ -359,9 +362,9 @@ Grundlagen:
      - das DSG als massgebliches Recht für Schweizer Daten;
      - der EDÖB als Aufsichtsbehörde;
      - Klagemöglichkeit betroffener Personen am gewöhnlichen Aufenthaltsort in der Schweiz.
-   - Das DPA enthält diese Anpassungen **nicht** und nennt das Modul nicht.
-   - Damit ist der Schweizer Bezug der SCC **nicht belegt**. Vertraglich ist das die
-     konkrete Lücke.
+   - Der öffentliche DPA-Text nennt diese Anpassungen nicht, ebenso wenig das Modul.
+   - Sie sind damit **öffentlich nicht belegt**. Dass sie fehlen, ist damit nicht nachgewiesen.
+     Das ist die konkrete offene Stelle.
 2. **„Adequacy decision … under Article 45 GDPR“.**
    - Das ist der EU-Beschluss zum EU-U.S. DPF. Er gilt für EU-Daten.
    - Für Schweizer Daten ist massgeblich, ob der US-Empfänger unter dem **Swiss-U.S. DPF**
@@ -395,10 +398,10 @@ Grundlagen:
    Zero Data Retention bei OpenAI würde die 30-Tage-Protokolle entfallen lassen, braucht aber
    eine Genehmigung des Anbieters. Das ist eine Option, kein Startbedarf.
 
-**Bewertung:** Mit Massnahmen 1 und 2 lässt sich die Lücke schliessen oder bestätigen. Ohne
+**Bewertung:** Mit Massnahmen 1 und 2 lässt sich die offene Stelle klären: Die Anpassungen werden belegt, oder es zeigt sich, dass sie fehlen. Ohne
 sie trägt KursNavi das Restrisiko, dass die US-Weitergabe aus Schweizer Sicht nicht
 ausreichend vertraglich abgesichert ist. Diese Abwägung kann eine rechtliche Beratung
-bestätigen; eine Zustimmung des PO löst die Lücke nicht.
+bestätigen; eine Zustimmung des PO klärt die offene Stelle nicht.
 
 ### 6.4 Verbleibende, nicht durch Vertragsstellen auflösbare Punkte
 
@@ -409,7 +412,16 @@ bestätigen; eine Zustimmung des PO löst die Lücke nicht.
   - Gemildert wird das durch den Hinweis, die fehlende Kontozuordnung bei OpenAI und die
     kurze Speicherung bei KursNavi.
 
-## 7. Veröffentlichung in allen vier Sprachen (umgesetzt in PR #203, noch nicht gemergt)
+## 7. Veröffentlichung in allen vier Sprachen (umgesetzt in PR #203, erweitert in PR #204, noch nicht gemergt)
+
+**Nachtrag 27.11.2026:** PR #204 enthält #203 und passt die Texte an die Erwachsenenregel an:
+- AGB Ziff. 3.5 a/b;
+- Datenschutz Abschnitt 2: Konten ab 18, Bestätigung als Datenkategorie, der alte Satz zur
+  Zustimmung der Eltern ist ersetzt;
+- Datenschutz Abschnitt 8: Speicherdauer der Bestätigung.
+
+Der dort veröffentlichte Wortlaut ist massgeblich; die Fassungen unten sind der Stand vor der
+Anpassung.
 
 **Umgesetzt am 27.11.2026 in PR #203:**
 - `legalText.js` DE/EN/FR/IT;
@@ -542,7 +554,7 @@ gegenlesen.
 ## 8. Anfrage an OpenAI (versandfertig, NICHT gesendet)
 
 **Zweck:**
-- Lücke aus 6.3 schliessen oder bestätigen (Fragen 1–4).
+- Offene Stelle aus 6.3 klären (Fragen 1–4): Schweizer Anpassungen der SCC, Modul, DPF.
 - Offene Minderjährigenfrage aus 6.2 klären (Frage 5).
 **Absender:** KursNavi als API-Kunde.
 **Kanal:** Datenschutzkontakt von OpenAI bzw. die Supportanfrage im Plattformkonto.
@@ -573,13 +585,19 @@ Projektkennung trägt der PO beim Versand selbst ein.
 >    non-HR data?
 > 4. If an executed version of the DPA (via "Execute Data Processing Agreement") includes a
 >    Swiss addendum, please let us know so that we can execute it.
-> 5. Use by minors (Services Agreement, section 3.3(c)): our course search feature is intended
->    for adults. Parents may use it to search for courses for their children. Users must
->    have an account, but we do not verify age, so a minor who holds an account could
->    technically still use the feature. We state the adult orientation in our privacy
->    policy. Is this orientation sufficient for compliance with section 3.3(c)? Or does
->    OpenAI expect additional measures, such as an age confirmation, an age gate, or a
->    parental-consent mechanism, before minors can technically access the feature?
+> 5. Use by minors (Services Agreement, section 3.3(c)): under our terms, accounts on our
+>    platform may only be held by persons aged 18 or over. Parents may use their own account
+>    to search for courses for their children.
+>    - Users confirm that they are 18 or over by self-declaration: at registration, or for
+>      existing accounts before first using the AI feature.
+>    - We store the confirmation with a timestamp and rule version. Our server blocks the
+>      feature for accounts without it.
+>    - We do not verify age (no date of birth, no ID check), so a minor who gives a false
+>      self-declaration would not be detected.
+>
+>    Is this self-declaration, enforced server-side, sufficient for compliance with section
+>    3.3(c)? Or does OpenAI expect additional measures, such as age verification or a
+>    parental-consent mechanism?
 >
 > Thank you for your help.
 >
