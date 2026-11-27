@@ -17,8 +17,13 @@
 1. **Entscheid zum Restrisiko bei der Schweizer Übermittlungsgrundlage:**
    - Die Anfrage an OpenAI ist am 27.11.2026 versandt (`datenschutz-ki-suche-entwurf.md`,
      Abschnitt 8); die Antwort steht aus.
-   - Entscheid des PO: Antwort abwarten oder das benannte Restrisiko bewusst tragen. Die
-     rechtliche Frage ist damit nicht gelöst, sondern nur entschieden.
+   - Entscheid des PO: Antwort abwarten oder das benannte Restrisiko bewusst tragen.
+   - **Die Vertragsfragen bleiben offen**, unter anderem:
+     - die Schweizer Übermittlungsgrundlage (Anpassungen der SCC öffentlich nicht belegt);
+     - die Selbstauskunft „18+“ im Verhältnis zu den OpenAI-Bedingungen (Ziff. 3.3(c)).
+
+     Eine Freigabe des PO ist eine unternehmerische Entscheidung über das Restrisiko,
+     **keine rechtliche Klärung**. Sie wird nicht als solche dargestellt.
 2. **Ausdrückliche Freigabe des PO für F2–F4:**
    - Freischaltvariablen setzen;
    - neu deployen;
@@ -302,10 +307,28 @@ Nicht setzen: `AI_SEARCH_LEXICAL_PREFIX` (entfernt), `AI_OPS_SCHEDULE_ENABLED` (
 
 ### 5.1 Nach der Freischaltung (F4), höchstens 3 Suchen, ein internes Konto, geschätzt ≤ USD 0.01
 
-Die drei Suchen sind die Prüfungen 3–5; die übrigen Zeilen verursachen keinen Modellaufruf.
-Das interne Konto besteht vor der Erwachsenenregel. Es sieht deshalb beim ersten Aufruf die
-einmalige Abfrage „mindestens 18 Jahre“. Die Bestätigung erzeugt genau einen Eintrag
-`ai_search` und zählt nicht als Suche.
+**Ablauf F4 (festgelegt 27.11.2026):**
+
+1. **Angemeldeter GET-Aufruf** `GET /api/ai-search`, bevor etwas bestätigt wird:
+   - `models.enabled: true`;
+   - `adult.confirmed: false`, denn das interne Konto besteht vor der Erwachsenenregel;
+   - `quota.remaining` notieren, Soll 10.
+2. **Erwachsenenbestätigung** über die einmalige Abfrage in der KI-Suche. Das entspricht
+   `POST { action: 'confirm_adult', confirmed: true, ruleVersion: '2026-11-27' }`.
+   - Antwort 200 mit `adult.confirmed: true`. Der Server meldet Erfolg erst nach dem
+     Zurücklesen des gespeicherten Eintrags.
+3. **Erneuter GET-Aufruf:**
+   - `adult.confirmed: true`;
+   - `quota.remaining` unverändert, denn die Bestätigung verbraucht keine Suche.
+4. **Höchstens die drei vereinbarten Suchen**, das sind die Prüfungen 3–5 unten.
+   - Jede weitere Zeile der Tabelle kommt ohne Modellaufruf aus.
+   - Keine zusätzlichen Suchen, keine Wiederholung zur Optimierung.
+
+Abbruch und Rückweg R0, wenn einer dieser Fälle eintritt:
+- `models.enabled` ist nicht `true`;
+- `adult.confirmed` ist vor der Bestätigung nicht `false` oder danach nicht `true`;
+- die Antwort enthält `unavailable: true`;
+- die Bestätigung verändert `quota.remaining`.
 
 | # | Prüfung | Soll | Abbruch |
 |---|---|---|---|
