@@ -336,7 +336,7 @@ Gelesen wurden das DPA und das Services Agreement, beide „Updated: December 1,
 | Data Privacy Framework | Im DPA **nicht erwähnt**. Auch die EU-Datenschutzerklärung von OpenAI (Stand 24.08.2026) nennt es nicht; sie stützt sich auf Angemessenheitsbeschlüsse und SCC. | Eine Zertifizierung unter dem Swiss-U.S. DPF ist nicht belegt; das ist kein Beleg für das Gegenteil. Die offizielle Liste ist nur im Browser lesbar. |
 | Meldung von Verletzungen | DPA 2.7: „OpenAI will notify Customer without undue delay after becoming aware of any Personal Data Breach.“ | Ohne Stundenfrist. Das DSG verlangt für die eigene Meldung „so rasch als möglich“ (Art. 24) und kennt ebenfalls keine feste Frist. Vertraglich passt das zusammen. *Vorläufige Einschätzung, rechtlich nicht geprüft.* |
 | Recht und Streitbeilegung | Definition „Governing Laws“: „(a) for Customers in the EEA, Switzerland, or UK, the Laws of Ireland“. Ziff. 16.3: Klagen im „Venue“, aber „Without prejudice to Section 15“. Ziff. 15: Schiedsverfahren (NAM), Sitz „San Francisco, California“; eine Ausnahme für EWR/Schweiz ist in 15.1–15.8 nicht vorhanden. | Irisches Recht. Streitigkeiten gehen vorrangig ins Schiedsverfahren in San Francisco; das Gericht am Venue nur für die Ausnahmen in 15.5. Der Wortlaut der Venue-Definition wurde nicht wörtlich gelesen. Das ist ein **Geschäftsrisiko** (Kosten und Ort eines Streits), kein Mangel der Übermittlungsgrundlage. Der Wortlaut ist gelesen; ob das Risiko akzeptabel ist, entscheidet der PO. *Rechtlich nicht geprüft.* |
-| Minderjährige | Services Agreement 3.3 c: Der Kunde darf nicht „allow minors to use OpenAI Services without consent from their parent or guardian“. | **Neu seit 27.11.2026 (PR #204):** Eigene Konten nur ab 18 (AGB 3.5 a).<br>- Bestätigung per Selbstauskunft bei der Registrierung bzw. bei bestehenden Konten vor der ersten KI-Nutzung.<br>- Gespeichert mit Zeitpunkt und Regelversion.<br>- Ohne Bestätigung sperrt der Server die KI-Suche.<br>- **Keine Altersprüfung:** Wer falsche Angaben macht, wird nicht erkannt.<br>Ob diese Massnahmen der Klausel 3.3 c genügen, ist **rechtlich offen**. OpenAI hat das **nicht bestätigt** (Frage 5 der Anfrage), und der Produktentscheid klärt es nicht. |
+| Minderjährige | Services Agreement 3.3 c: Der Kunde darf nicht „allow minors to use OpenAI Services without consent from their parent or guardian“. | **Neu seit 27.11.2026 (PR #204):** Eigene Konten nur ab 18 (AGB 3.5 a).<br>- Bestätigung per Selbstauskunft bei der Registrierung bzw. bei bestehenden Konten vor der ersten KI-Nutzung.<br>- Gespeichert mit Zeitpunkt und Regelversion.<br>- Ohne Bestätigung sperrt der Server die KI-Suche.<br>- **Keine Altersprüfung:** Wer falsche Angaben macht, wird nicht erkannt.<br>Ob diese Massnahmen der Klausel 3.3 c genügen, ist **rechtlich offen**. OpenAI hat das **nicht bestätigt** (Frage 5 der am 27.11.2026 versandten Anfrage, Antwort ausstehend), und der Produktentscheid klärt es nicht. |
 | Separater DPA-Abschluss | Services Agreement 5.3: DPA „incorporated by this reference“. | Laut Wortlaut ist kein separater Abschluss nötig. Eine unterzeichnete Fassung über „Execute Data Processing Agreement“ kann trotzdem als Nachweis dienen (siehe 6.3, Massnahme 1). |
 
 ### 6.3 Schweizer Übermittlungsgrundlage (der verbleibende Kernpunkt)
@@ -382,7 +382,7 @@ Grundlagen:
    - welches Modul gilt;
    - ob die US-Empfänger unter dem Swiss-U.S. DPF zertifiziert sind.
 
-   Das ist eine ausgehende Anfrage und braucht die Freigabe des PO.
+   **Versandt am 27.11.2026 (Abschnitt 8), Antwort ausstehend.**
 2. **DPF-Liste im Browser prüfen**, für „OpenAI OpCo, LLC“: Teilnahme am Swiss-U.S. DPF und
    abgedeckte Datenarten (nicht HR).
 3. **Text vorsichtig halten**, wie in Abschnitt 5 umgesetzt:
@@ -551,15 +551,20 @@ altre persone. »
 juristische Fachprüfung. Vor der Veröffentlichung sollte eine sprachkundige Person sie
 gegenlesen.
 
-## 8. Anfrage an OpenAI (versandfertig, NICHT gesendet)
+## 8. Anfrage an OpenAI (VERSANDT am 27.11.2026, Antwort ausstehend)
+
+**Status:**
+- Am 27.11.2026 vom PO an den Datenschutzkontakt von OpenAI versandt, in der Fassung unten
+  (Fragen 1–5).
+- **Die Antwort steht aus.** Bis dahin gelten 6.3 (Schweizer Grundlage der US-Weitergabe)
+  und 6.2 (Klausel 3.3 c) als offen.
+- Keine weitere Nachricht ohne neuen Entscheid des PO.
+- Organisation und Name hat der PO beim Versand eingesetzt; sie stehen nicht in diesem
+  öffentlichen Dokument.
 
 **Zweck:**
 - Offene Stelle aus 6.3 klären (Fragen 1–4): Schweizer Anpassungen der SCC, Modul, DPF.
 - Offene Minderjährigenfrage aus 6.2 klären (Frage 5).
-**Absender:** KursNavi als API-Kunde.
-**Kanal:** Datenschutzkontakt von OpenAI bzw. die Supportanfrage im Plattformkonto.
-**Freigabe:** Versand nur durch den PO oder nach dessen Freigabe. Organisation und
-Projektkennung trägt der PO beim Versand selbst ein.
 
 > **Subject:** Swiss personal data – transfer mechanism under the OpenAI DPA (API customer,
 > Switzerland)
