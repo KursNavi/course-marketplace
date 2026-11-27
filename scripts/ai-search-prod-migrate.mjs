@@ -1,11 +1,13 @@
 /**
- * Produktionsmigrationen der KI-Suche (M1–M7) – Ausführungsweg des
- * Produktionspakets 25.11.2026. Läuft im GitHub-Workflow
- * „KI-Suche Produktionsmigrationen“ (manuell, nur main, Umgebung mit
- * Pflichtfreigabe) mit dem psql des Runners.
+ * Produktionsmigrationen der KI-Suche (M1–M7, 25.11.2026) und der
+ * Erwachsenenregel (M8, 27.11.2026) – Ausführungsweg des Produktionspakets.
+ * Läuft im GitHub-Workflow „KI-Suche Produktionsmigrationen“ (manuell, nur
+ * main, Umgebung mit Pflichtfreigabe) mit dem psql des Runners.
  *
- * STANDARD = PLAN (lesend): prüft Ziel, Prüfsummen der 7 Dateien, Ausgangslage
- * (V0) und welche Dateien noch fehlen. Keine Schreibzugriffe.
+ * STANDARD = PLAN (lesend): prüft Ziel, Prüfsummen aller Dateien, Ausgangslage
+ * (V0), welche Dateien noch fehlen und ob deren Objekte schon (unverbucht)
+ * existieren. Keine Schreibzugriffe. Verbuchte Migrationen werden nie erneut
+ * ausgeführt; mit M1–M7 verbucht ist der Plan genau „M8“.
  *
  *   node scripts/ai-search-prod-migrate.mjs            Plan
  *   node scripts/ai-search-prod-migrate.mjs --execute  Ausführung (AI_MIGRATE_CONFIRM=nplxmpfasgpumpiddjfl)
@@ -40,6 +42,8 @@ export const MIGRATIONS = Object.freeze([
   { version: '20261120205856', name: 'ai_search_keep_embeddings_skip_noop_jobs', ownTransaction: false, marker: "select exists (select 1 from pg_trigger where tgname='ai_search_profiles_outbox')" },
   { version: '20261121122101', name: 'ai_search_result_store_and_guard', ownTransaction: false, marker: "select to_regclass('public.ai_search_results') is not null" },
   { version: '20261121225750', name: 'ai_search_ops_lease_v2', ownTransaction: false, marker: "select to_regclass('public.ai_search_ops_runs') is not null" },
+  // M8 (27.11.2026): Erwachsenenregel – Selbstauskunft 18+ je Konto, Trigger auf auth.users.
+  { version: '20261127120000', name: 'account_adult_confirmations', ownTransaction: false, marker: "select to_regclass('public.account_adult_confirmations') is not null and exists (select 1 from pg_trigger where tgname='on_auth_user_adult_confirmation' and not tgisinternal)" },
 ]);
 
 export const fileOf = (m) => path.join(ROOT, 'supabase', 'migrations', `${m.version}_${m.name}.sql`);
@@ -54,6 +58,7 @@ export const EXPECTED_MD5 = Object.freeze({
   '20261120205856': '10e563be',
   '20261121122101': 'c8061652',
   '20261121225750': 'aa555cb0',
+  '20261127120000': 'ad4d9e9a',
 });
 
 /**
@@ -108,17 +113,45 @@ const V0_SQL = `select json_build_object(
  'null_status', (select count(*) from courses where status is null),
  'courses', (select count(*) from courses))`;
 
-const FINAL_SQL = `select json_build_object(
+const ADULT = "'public.account_adult_confirmations'";
+/**
+ * Gesamtprüfung nach allen Migrationen. startIso = Zeitpunkt der Ausgangslage:
+ * Einträge der Erwachsenenregel für Konten, die VOR dem Lauf bestanden, müssen
+ * 0 sein (kein Rückfüllen, keine automatische Einstufung bestehender Konten).
+ */
+export function finalSql(startIso) {
+  return `select json_build_object(
  'tabellen', (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname like 'ai\\_search%' and c.relkind='r'),
  'funktionen', (select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'ai\\_search%'),
  'trigger', (select count(*) from pg_trigger where tgname like 'ai\\_search%' and not tgisinternal),
  'policies', (select count(*) from pg_policies where schemaname='public' and tablename like 'ai\\_search%'),
  'lesbar_anon_auth', (select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname like 'ai\\_search%' and c.relkind='r' and (has_table_privilege('anon',c.oid,'SELECT') or has_table_privilege('authenticated',c.oid,'SELECT'))),
  'historie', (select count(*) from supabase_migrations.schema_migrations where version in (${MIGRATIONS.map((m) => `'${m.version}'`).join(',')})),
+ 'adult_tabelle', (select count(*) from pg_class where oid = to_regclass(${ADULT})),
+ 'adult_rls', (select count(*) from pg_class where oid = to_regclass(${ADULT}) and relrowsecurity),
+ 'adult_trigger', (select count(*) from pg_trigger where tgname='on_auth_user_adult_confirmation' and tgrelid='auth.users'::regclass and not tgisinternal),
+ 'adult_policies', (select count(*) from pg_policies where schemaname='public' and tablename='account_adult_confirmations'),
+ 'adult_rechte_anon_auth', (select count(*) from (values ('anon'),('authenticated')) r(rolle), (values ('SELECT'),('INSERT'),('UPDATE'),('DELETE')) p(recht) where has_table_privilege(r.rolle, ${ADULT}, p.recht)),
+ 'adult_funktion_anon_auth', (select count(*) from (values ('anon'),('authenticated')) r(rolle) where has_function_privilege(r.rolle, 'public.record_signup_adult_confirmation()', 'EXECUTE')),
+ 'adult_bestehende_konten', (select count(*) from public.account_adult_confirmations a join auth.users u on u.id = a.user_id where u.created_at < '${startIso}'::timestamptz),
  'courses', (select count(*) from courses))`;
+}
 
-/** Sollwerte nach M7 (TEST-Stand 25.11.2026). */
-export const FINAL_EXPECTED = Object.freeze({ tabellen: 8, funktionen: 30, trigger: 4, policies: 0, lesbar_anon_auth: 0, historie: 7 });
+/** Sollwerte nach M8 (M1–M7 wie TEST-Stand 25.11.2026; M8 laut Migration 27.11.2026). */
+export const FINAL_EXPECTED = Object.freeze({
+  tabellen: 8, funktionen: 30, trigger: 4, policies: 0, lesbar_anon_auth: 0, historie: 8,
+  adult_tabelle: 1, adult_rls: 1, adult_trigger: 1, adult_policies: 0, adult_rechte_anon_auth: 0, adult_funktion_anon_auth: 0, adult_bestehende_konten: 0,
+});
+
+/**
+ * Vor dem Anwenden: Objekte einer noch nicht verbuchten Migration dürfen nicht
+ * schon existieren (z. B. manuell ausgeführt) – sonst Stopp statt Doppelausführung.
+ */
+export function checkNotAlreadyPresent(markerResult, migration) {
+  return markerResult === 't'
+    ? { ok: false, reason: `Objekte von ${migration.version} ${migration.name} existieren bereits, die Migration ist aber nicht verbucht – keine erneute Ausführung; Lage prüfen.` }
+    : { ok: true };
+}
 
 async function main() {
   const execute = process.argv.includes('--execute');
@@ -134,12 +167,13 @@ async function main() {
     const md5 = md5Of(fileOf(m));
     if (!md5.startsWith(EXPECTED_MD5[m.version])) { console.error(`Abbruch: Prüfsumme ${m.version} weicht ab (${md5.slice(0, 8)} statt ${EXPECTED_MD5[m.version]}).`); process.exit(2); }
   }
-  console.log('Prüfsummen der 7 Dateien: ok');
+  console.log(`Prüfsummen der ${MIGRATIONS.length} Dateien: ok`);
 
   // 2. Ausgangslage
+  const startIso = query(dbUrl, 'select now()::text');
   const v0 = JSON.parse(query(dbUrl, V0_SQL));
   const plan = planMigrations(v0.ai_versions ?? []);
-  console.log(`Ausgangslage: letzte Version ${v0.last_version}, KI-Objekte ${v0.ai_rel}, verbuchte KI-Versionen ${(v0.ai_versions ?? []).length}/7, Kurse ${v0.courses}, ohne Status ${v0.null_status}`);
+  console.log(`Ausgangslage: letzte Version ${v0.last_version}, KI-Objekte ${v0.ai_rel}, verbuchte Versionen ${(v0.ai_versions ?? []).length}/${MIGRATIONS.length}, Kurse ${v0.courses}, ohne Status ${v0.null_status}`);
   if (plan.gap) { console.error('Abbruch: Lücke in der Reihenfolge der verbuchten KI-Migrationen.'); process.exit(2); }
   if (Number(v0.null_status) > 0) { console.error('Abbruch: Kurse ohne Status vorhanden (Datenvertrag §1).'); process.exit(2); }
   if ((v0.ai_versions ?? []).length === 0 && (Number(v0.ai_rel) > 0 || v0.last_version !== BASELINE_VERSION)) {
@@ -147,9 +181,15 @@ async function main() {
     process.exit(2);
   }
   console.log(`Plan: ${plan.pending.length ? plan.pending.map((m) => `${m.version} ${m.ownTransaction ? '(eigene Transaktion)' : '(--single-transaction)'}`).join(', ') : 'nichts zu tun'}`);
+  // Nicht verbuchte, aber schon vorhandene Objekte → Stopp (keine Doppelausführung), auch im Plan sichtbar.
+  for (const m of plan.pending) {
+    const present = checkNotAlreadyPresent(query(dbUrl, m.marker), m);
+    if (!present.ok) { console.error(`Abbruch: ${present.reason}`); process.exit(2); }
+  }
   if (!execute) { console.log('PLAN: keine Schreibzugriffe.'); return; }
+  if (plan.pending.length === 0) { console.log('Nichts zu tun: alle Migrationen sind verbucht.'); return; }
 
-  // 3. Ausführung
+  // 3. Ausführung (nur fehlende; verbuchte werden nie erneut ausgeführt)
   for (const m of plan.pending) {
     const applied = psql(dbUrl, psqlApplyArgs(m));
     if (!applied.ok) { console.error(`STOPP bei ${m.version}: ${applied.stderr || applied.error?.message}`); process.exit(1); }
@@ -161,7 +201,7 @@ async function main() {
   }
 
   // 4. Gesamtprüfung
-  const final = JSON.parse(query(dbUrl, FINAL_SQL));
+  const final = JSON.parse(query(dbUrl, finalSql(startIso)));
   const deviations = Object.entries(FINAL_EXPECTED).filter(([key, value]) => Number(final[key]) !== value);
   console.log(`Gesamtprüfung: ${JSON.stringify(final)}`);
   if (Number(final.courses) !== Number(v0.courses)) deviations.push(['courses', v0.courses]);
