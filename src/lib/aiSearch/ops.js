@@ -91,6 +91,8 @@ export const PROBLEM_WINDOW_HOURS = 24 * 7;
 
 const PAGE = 1000;
 const MODES = ['index', 'embed', 'cleanup'];
+/** Modus der Sperreinträge für die gedrosselte Alarm-Mail (api/cron-ai-ops.js). */
+export const ALARM_MAIL_MODE = 'alarm-mail';
 const KNOWN_FLAGS = new Set([
   'execute-index', 'execute-embed', 'execute-cleanup', 'max-usd', 'max-runtime-sec',
   'max-index-batches', 'max-enqueue', 'max-embed-chunks', 'cleanup-batch', 'json', 'alarm-exit', 'purge-usage',
@@ -313,6 +315,30 @@ const runUsd = (run) => {
 };
 
 /**
+ * Problemläufe der letzten 24 h: offen (kein späterer erfolgreicher Lauf derselben
+ * Art → kritisch) oder behoben (Hinweis mit Verweis; Historie bleibt erhalten).
+ */
+export function classifyProblemRuns(problemRuns, now = new Date()) {
+  const recent = (problemRuns ?? []).filter((r) => new Date(r.startedAt) >= new Date(now.getTime() - 24 * 3_600_000));
+  return { open: recent.filter((r) => !r.resolvedBy), resolved: recent.filter((r) => r.resolvedBy) };
+}
+
+/**
+ * Behebender Lauf eines Problemlaufs: der früheste SPÄTERE Lauf mit Ergebnis „ok“,
+ * der jeden Modus des Problemlaufs tatsächlich geprüft hat (verarbeitet oder
+ * kein Bedarf; übersprungen zählt nicht). Sonst null = offen.
+ */
+export function resolvingRun(runs, problem) {
+  const modes = (problem?.modes ?? []).filter((m) => m !== 'cleanup-scheduled');
+  if (modes.length === 0) return null;
+  const checked = [STEP_RESULTS.processed, STEP_RESULTS.noWork];
+  return (runs ?? [])
+    .filter((r) => r.outcome === 'ok' && r.id !== problem.id && new Date(r.started_at) > new Date(problem.started_at)
+      && modes.every((m) => checked.includes(stepResultOf(r, m))))
+    .sort((a, b) => new Date(a.started_at) - new Date(b.started_at))[0] ?? null;
+}
+
+/**
  * Laufprotokoll (Laufsperre v2). Liefert {applied:false}, wenn die Tabelle
  * fehlt; andere Fehler (Rechte/Transport) werden NICHT verschluckt.
  */
@@ -334,12 +360,18 @@ export async function readOpsState(client, now = new Date()) {
     if (isMissingTable(error)) return { applied: false };
     throw new Error(`ai_search_ops_runs lesen: ${error.message}`);
   }
-  const runs = data ?? [];
-  const open = runs.filter((r) => !r.finished_at);
+  const allRuns = data ?? [];
+  // Sperreinträge der Alarm-Mail (Vercel-Cron) sind keine Betriebsläufe: Sie
+  // zählen nicht als Vorlauf, Problemlauf oder Verarbeitung, belegen aber die
+  // Sperre (aktiv/abgelaufen) und erscheinen als „letzte Alarm-Mail“.
+  const isAlarmMail = (r) => (r.modes ?? []).includes(ALARM_MAIL_MODE);
+  const runs = allRuns.filter((r) => !isAlarmMail(r));
+  const open = allRuns.filter((r) => !r.finished_at);
   const active = open.filter((r) => new Date(r.lease_until) > now);
   const stale = open.filter((r) => new Date(r.lease_until) <= now);
   const problemRuns = runs.filter((r) => r.finished_at && ['failed', 'expired', 'lost', 'aborted'].includes(r.outcome)
     && new Date(r.started_at) >= problemFloor);
+  const mail = allRuns.find((r) => isAlarmMail(r) && r.finished_at && r.summary?.attempted !== false) ?? null;
   // Nur erfolgreiche Läufe; je Modus getrennt: zuletzt tatsächlich Daten
   // verarbeitet vs. zuletzt erfolgreich geprüft ohne Arbeitsbedarf.
   // Nicht ausgewählte oder übersprungene Schritte zählen für keines von beiden.
@@ -359,12 +391,15 @@ export async function readOpsState(client, now = new Date()) {
     stale: stale.map((r) => ({ id: r.id, modes: r.modes, leaseUntil: r.lease_until })),
     recent: runs.filter((r) => !(r.modes ?? []).includes('cleanup-scheduled')).slice(0, 5)
       .map((r) => ({ id: r.id, modes: r.modes, startedAt: r.started_at, outcome: r.outcome ?? (r.finished_at ? null : 'läuft'), error: r.summary?.error ?? null })),
-    problemRuns: problemRuns.slice(0, 10).map((r) => ({ id: r.id, modes: r.modes, startedAt: r.started_at, outcome: r.outcome, error: r.summary?.error ?? null })),
+    // Behoben = ein SPÄTERER Lauf mit Ergebnis „ok“ deckt alle Modi des Problemlaufs ab
+    // (Überwachung 27.11.2026). Der Problemlauf bleibt in der Historie sichtbar.
+    problemRuns: problemRuns.slice(0, 10).map((r) => ({ id: r.id, modes: r.modes, startedAt: r.started_at, outcome: r.outcome, error: r.summary?.error ?? null, resolvedBy: resolvingRun(runs, r)?.id ?? null })),
     problemCount: problemRuns.length,
     lastProcessed,
     lastNoWork,
     lastCleanupTick: lastTick ? { at: lastTick.finished_at, deleted: lastTick.summary?.deleted ?? null, expiredLeft: lastTick.summary?.expired_left ?? null } : null,
     embedUsdMonth,
+    lastAlarmMail: mail ? { id: mail.id, at: mail.started_at, outcome: mail.outcome, sent: mail.summary?.sent ?? null } : null,
   };
 }
 
@@ -438,8 +473,12 @@ export async function collectStatus(client, { embeddingVersion, now = new Date()
   }
   if (ops.applied) {
     for (const run of ops.stale) critical.push(`Lauf ${run.id} (${run.modes.join('+')}) ist abgelaufen, aber nicht abgeschlossen (Absturz?); wird beim nächsten Lauf als 'expired' protokolliert.`);
-    const recentProblems = ops.problemRuns.filter((r) => new Date(r.startedAt) >= new Date(now.getTime() - 24 * 3_600_000));
-    if (recentProblems.length > 0) critical.push(`${recentProblems.length} Betriebslauf/-läufe in den letzten 24 h nicht erfolgreich (${recentProblems.map((r) => `${r.id}:${r.outcome}`).join(', ')}).`);
+    const { open: openProblems, resolved: resolvedProblems } = classifyProblemRuns(ops.problemRuns, now);
+    if (openProblems.length > 0) critical.push(`${openProblems.length} Betriebslauf/-läufe in den letzten 24 h nicht erfolgreich und nicht behoben (${openProblems.map((r) => `${r.id}:${r.outcome}`).join(', ')}).`);
+    if (resolvedProblems.length > 0) notes.push(`Behoben (Historie): ${resolvedProblems.map((r) => `Lauf ${r.id} (${(r.modes ?? []).join('+')}, ${r.outcome}${r.error ? `: ${String(r.error).slice(0, 80)}` : ''}) – danach Lauf ${r.resolvedBy} erfolgreich`).join('; ')}.`);
+    if (ops.lastAlarmMail && ops.lastAlarmMail.sent !== true) {
+      notes.push(`Letzte Alarm-Mail nicht bestätigt zugestellt (Sperreintrag ${ops.lastAlarmMail.id}, ${ops.lastAlarmMail.outcome}) – Vercel-Logs prüfen.`);
+    }
     if (ops.embedUsdMonth > OPS_LIMITS.maxEmbedUsdPerMonth * 0.8) {
       notes.push(`Erfasste Runner-Embedding-Teilkosten diesen Monat ca. USD ${ops.embedUsdMonth.toFixed(4)} – über 80 % der Monats-Stoppschwelle USD ${OPS_LIMITS.maxEmbedUsdPerMonth} (Schätzung, keine Abrechnung).`);
     }

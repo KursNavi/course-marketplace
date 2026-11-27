@@ -117,7 +117,7 @@ export function formatReport(report) {
     lines.push(`  Aktiv: ${ops.active.length ? ops.active.map((r) => `Lauf ${r.id} (${r.modes.join('+')}, Frist bis ${when(r.leaseUntil)}, ${r.renewals}× verlängert${r.abortRequested ? ', Abbruch angefordert' : ''})`).join('; ') : 'keiner'}`);
     if (ops.stale.length) lines.push(`  Abgelaufen, nicht abgeschlossen: ${ops.stale.map((r) => `Lauf ${r.id}`).join(', ')}`);
     lines.push(`  Nicht erfolgreich (7 Tage): ${ops.problemCount}`);
-    for (const run of ops.problemRuns) lines.push(`    Lauf ${run.id} ${when(run.startedAt)} ${run.modes.join('+')}: ${run.outcome}${run.error ? ` – ${run.error}` : ''}`);
+    for (const run of ops.problemRuns) lines.push(`    Lauf ${run.id} ${when(run.startedAt)} ${run.modes.join('+')}: ${run.outcome}${run.error ? ` – ${run.error}` : ''}${run.resolvedBy ? ` (behoben durch Lauf ${run.resolvedBy})` : ' (offen)'}`);
     for (const run of ops.recent) lines.push(`  Zuletzt: Lauf ${run.id} ${when(run.startedAt)} ${run.modes.join('+')} → ${run.outcome ?? '—'}`);
   }
   lines.push(`7. Kosten ${b.usage.monthKey} – BEGRENZTE SCHÄTZUNG`);

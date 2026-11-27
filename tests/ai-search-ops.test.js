@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   parseOpsArgs, runOps, collectStatus, runEmbedStep, estimateEmbeddingUsd,
-  OPS_LIMITS, OpsError, classifyStep, stepResultOf,
+  OPS_LIMITS, OpsError, classifyStep, stepResultOf, resolvingRun, classifyProblemRuns,
 } from '../src/lib/aiSearch/ops.js';
 import { drainOutbox } from '../src/lib/aiSearch/worker.js';
 import { LeaseSession } from '../src/lib/aiSearch/opsLease.js';
@@ -658,6 +658,55 @@ describe('Betriebsbericht: Löschrückstand, Laufprotokoll, Überwachung', () =>
     expect(text).toMatch(/Letzte zeitgesteuerte Löschung: 2026-11-21 13:07:01 UTC, 3 gelöscht/);
   });
 
+  it('Überwachung 27.11.2026: behobener historischer Fehler ist Hinweis, offener bleibt kritisch; Historie bleibt', async () => {
+    const run = (id, modes, at, outcome, summary) => ({ id, modes, started_at: at, finished_at: at, outcome, lease_until: at, summary });
+    // Form der Produktionsläufe 3–5: Ersteinbettung mit 403, danach Index ok, danach Einbettung ok.
+    const failed403 = run(3, ['embed'], '2026-11-21T08:00:00Z', 'failed', { initial: true, error: 'OpenAI HTTP 403' });
+    const indexOk = run(4, ['index'], '2026-11-21T09:00:00Z', 'ok', { stepResults: { index: 'processed' }, index: { jobs: 4 } });
+    const embedOk = run(5, ['embed'], '2026-11-21T10:00:00Z', 'ok', { initial: true, embed: { embedded: 2481, actualUsd: 0.0047 } });
+
+    const resolved = await collectStatus(makeClient(fixture({ opsRuns: [embedOk, indexOk, failed403] })).client, { embeddingVersion: VERSION, now: NOW });
+    expect(resolved.ops.problemCount).toBe(1);
+    expect(resolved.ops.problemRuns).toEqual([expect.objectContaining({ id: 3, outcome: 'failed', error: 'OpenAI HTTP 403', resolvedBy: 5 })]);
+    expect(resolved.critical.join(' ')).not.toMatch(/nicht behoben|3:failed/);
+    expect(resolved.alarms.join(' ')).toMatch(/Behoben \(Historie\): Lauf 3 \(embed, failed: OpenAI HTTP 403\) – danach Lauf 5 erfolgreich/);
+    const { plan } = await runOps(makeClient(fixture({ opsRuns: [embedOk, indexOk, failed403] })).client, parse([]).options, { embeddingVersion: VERSION, holder: 'h', clock: () => NOW });
+    const text = formatReport({ mode: 'dry-run', outcome: 'ok', before: resolved, plan });
+    expect(text).toMatch(/Nicht erfolgreich \(7 Tage\): 1/);
+    expect(text).toMatch(/Lauf 3 .*embed: failed – OpenAI HTTP 403 \(behoben durch Lauf 5\)/);
+
+    // Nur ein Lauf anderer Art (Index) oder ein übersprungener Schritt behebt nichts → kritisch.
+    const skipped = run(6, ['index', 'embed', 'cleanup'], '2026-11-21T11:00:00Z', 'ok', { stepResults: { index: 'no-work', embed: 'skipped', cleanup: 'no-work' } });
+    const open = await collectStatus(makeClient(fixture({ opsRuns: [skipped, indexOk, failed403] })).client, { embeddingVersion: VERSION, now: NOW });
+    expect(open.ops.problemRuns[0].resolvedBy).toBeNull();
+    expect(open.critical.join(' ')).toMatch(/1 Betriebslauf\/-läufe in den letzten 24 h nicht erfolgreich und nicht behoben \(3:failed\)/);
+    expect(formatReport({ mode: 'dry-run', outcome: 'ok', before: open, plan })).toMatch(/OpenAI HTTP 403 \(offen\)/);
+
+    // Ein früherer erfolgreicher Lauf behebt keinen späteren Fehler.
+    expect(resolvingRun([embedOk, failed403], { ...failed403, started_at: '2026-11-21T12:00:00Z' })).toBeNull();
+    // Ausserhalb von 24 h: weder kritisch noch Hinweis, bleibt aber im 7-Tage-Protokoll.
+    const old = classifyProblemRuns([{ id: 1, startedAt: '2026-11-19T10:00:00Z', resolvedBy: null }], NOW);
+    expect(old).toEqual({ open: [], resolved: [] });
+  });
+
+  it('Sperreinträge der Alarm-Mail sind keine Betriebsläufe; nicht zugestellte Mail erscheint als Hinweis', async () => {
+    const run = (id, modes, at, outcome, summary) => ({ id, modes, started_at: at, finished_at: at, outcome, lease_until: at, summary });
+    const runs = [
+      run(22, ['alarm-mail'], '2026-11-21T13:30:00Z', 'failed', { attempted: true, sent: false, reason: 'resend down' }),
+      run(21, ['alarm-mail'], '2026-11-21T13:20:00Z', 'ok', { attempted: false, sent: false, reason: 'gedrosselt' }),
+      run(20, ['index'], '2026-11-21T13:00:00Z', 'ok', { stepResults: { index: 'no-work' }, index: { jobs: 0 } }),
+    ];
+    const s = await collectStatus(makeClient(fixture({ opsRuns: runs })).client, { embeddingVersion: VERSION, now: NOW });
+    expect(s.ops.recent.map((r) => r.id)).toEqual([20]);
+    expect(s.ops.problemCount).toBe(0);
+    expect(s.critical.join(' ')).not.toMatch(/nicht behoben/);
+    expect(s.ops.lastAlarmMail).toEqual({ id: 22, at: '2026-11-21T13:30:00Z', outcome: 'failed', sent: false });
+    expect(s.alarms.join(' ')).toMatch(/Letzte Alarm-Mail nicht bestätigt zugestellt \(Sperreintrag 22, failed\)/);
+    // Offener Mail-Sperreintrag belegt die Sperre sichtbar (aktiv bzw. abgelaufen → kritisch).
+    const stale = await collectStatus(makeClient(fixture({ opsRuns: [{ id: 23, modes: ['alarm-mail'], started_at: '2026-11-21T13:00:00Z', finished_at: null, outcome: null, lease_until: '2026-11-21T13:00:30Z', summary: null }] })).client, { embeddingVersion: VERSION, now: NOW });
+    expect(stale.critical.join(' ')).toMatch(/Lauf 23 \(alarm-mail\) ist abgelaufen/);
+  });
+
   it('abgelaufener, nicht abgeschlossener Lauf erscheint als kritischer Alarm', async () => {
     const runs = [{ id: 4, modes: ['index'], started_at: '2026-11-21T13:00:00Z', finished_at: null, outcome: null, lease_until: '2026-11-21T13:02:00Z', summary: null }];
     const { client } = makeClient(fixture({ opsRuns: runs }));
@@ -947,9 +996,15 @@ describe('Statisch: keine Nebenwirkungen des Cron-Endpunkts, keine Kosten in der
     expect(wf).not.toMatch(/resend|RESEND|ai_search_quota_cleanup|cron-ai-search/);
   });
 
-  it('Vercel-Crons unverändert: kein dritter Cron für die KI-Suche', () => {
+  it('Vercel-Crons: die zwei bestehenden unverändert, einziger Zusatz ist der Betriebs-Cron mit Laufsperre', () => {
     const vercel = JSON.parse(readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
-    expect((vercel.crons ?? []).length).toBe(2);
+    expect(vercel.crons).toEqual([
+      { path: '/api/cron', schedule: '0 12 * * *' },
+      { path: '/api/cron-lead-scoring', schedule: '0 2 1 * *' },
+      { path: '/api/cron-ai-ops', schedule: '*/15 * * * *' },
+    ]);
+    // Der alte Endpunkt ohne Laufsperre bekommt keinen Zeitplan.
+    expect(JSON.stringify(vercel.crons)).not.toMatch(/cron-ai-search/);
   });
 
   it('Runner nur gegen die TESTumgebung (strikter URL-Parser der DB-Tests)', () => {
