@@ -54,6 +54,8 @@ const ERROR_TEXT = {
   not_released: 'Das Ergebnis konnte nicht freigegeben werden, weil dein Monatskontingent inzwischen aufgebraucht ist.',
   wrong_environment: 'Die KI-Suche ist in dieser Umgebung gesperrt (falsche Datenbank).',
   not_available: 'Die KI-Suche ist hier noch nicht freigeschaltet.',
+  adult_confirmation_required: 'Bitte bestätige zuerst, dass du mindestens 18 Jahre alt bist. Es wurde nichts verbraucht.',
+  adult_check_unavailable: 'Deine Bestätigung der Volljährigkeit kann gerade nicht geprüft werden. Die KI-Suche bleibt bis dahin gesperrt. Es wurde nichts verbraucht.',
   server_error: 'Unerwarteter Serverfehler. Bitte versuche es später erneut.',
   network: 'Keine Verbindung zum Server. Du kannst es mit derselben Anfrage erneut versuchen – sie wird höchstens einmal gezählt.',
 };
@@ -93,6 +95,58 @@ function navigate(path) {
  * Datenschutzhinweis unter dem Eingabefeld (Entscheid 27.11.2026): nicht
  * blockierend, ohne Bestätigungsdialog; Wortlaut wie in der Datenschutzerklärung.
  */
+/**
+ * Einmalige Bestätigung bestehender Konten vor der ersten KI-Nutzung (AGB 3.5 a,
+ * 27.11.2026). Selbstauskunft, keine Altersprüfung. Freigabe erst, wenn der
+ * Server die Speicherung bestätigt; die Prüfung erfolgt serverseitig.
+ */
+function AdultGate({ ruleVersion, onConfirmed }) {
+  const [checked, setChecked] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const confirm = async () => {
+    if (!checked || saving) return;
+    setSaving(true);
+    setFailed(false);
+    try {
+      const headers = await authHeader();
+      if (!headers) { setFailed(true); return; }
+      const response = await fetch('/api/ai-search', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm_adult', confirmed: true, ruleVersion }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (response.ok && body.adult?.confirmed === true) onConfirmed(body.adult);
+      else setFailed(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-6" data-testid="ai-adult-gate">
+      <p className="flex items-center gap-2 font-semibold text-dark"><Lock className="w-5 h-5" /> Bitte einmal bestätigen, bevor du die KI-Suche nutzt</p>
+      <p className="mt-2 text-sm text-gray-600">
+        Eigene KursNavi-Konten dürfen nur von Personen ab 18 Jahren geführt werden (<a href="/agb" onClick={(e) => { e.preventDefault(); navigate('/agb'); }} className="underline hover:text-primary">AGB Ziff. 3.5</a>). Als erwachsene Person kannst du weiterhin Kurse für Kinder suchen und buchen. Deine Angabe ist eine Selbstauskunft; wir speichern sie mit Zeitpunkt und Regelversion bei deinem Konto.
+      </p>
+      <label className="mt-4 flex items-start gap-3 text-sm text-dark cursor-pointer">
+        <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} className="mt-1 w-4 h-4" data-testid="ai-adult-checkbox" />
+        <span>Ich bin mindestens 18 Jahre alt und bestätige die Regel, dass eigene KursNavi-Konten erst ab 18 Jahren geführt werden dürfen.</span>
+      </label>
+      <button type="button" onClick={confirm} disabled={!checked || saving} className="mt-4 bg-petrol text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-petrolDark disabled:bg-gray-300 disabled:cursor-not-allowed" data-testid="ai-adult-confirm">
+        {saving ? 'Wird gespeichert …' : 'Bestätigen'}
+      </button>
+      {failed && (
+        <p className="mt-3 bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 text-sm" role="alert" data-testid="ai-adult-error">
+          Die Bestätigung konnte nicht gespeichert werden. Die KI-Suche bleibt gesperrt, bis sie gespeichert ist. Bitte versuche es erneut.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function PrivacyHint() {
   return (
     <p className="mt-1 text-xs text-gray-500" data-testid="ai-privacy-hint">
@@ -163,6 +217,8 @@ export default function AiSearchView({ user, setView }) {
   const [mustBudget, setMustBudget] = useState('');
   const [showMusts, setShowMusts] = useState(false);
   const [quota, setQuota] = useState(null);
+  // Volljährigkeit laut Server ({ confirmed, ruleVersion }); null = unbekannt.
+  const [adult, setAdult] = useState(null);
   const [statusError, setStatusError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -228,7 +284,7 @@ export default function AiSearchView({ user, setView }) {
     try {
       const response = await fetch('/api/ai-search', { headers });
       const body = await response.json().catch(() => ({}));
-      if (response.ok) { setQuota(body.quota); setStatusError(null); }
+      if (response.ok) { setQuota(body.quota); setAdult(body.adult ?? null); setStatusError(null); }
       else setStatusError(body.error || 'server_error');
     } catch {
       setStatusError('network');
@@ -287,6 +343,8 @@ export default function AiSearchView({ user, setView }) {
           pendingRef.current = null;
           removeSession(PENDING_KEY);
         }
+        // Server verlangt die Bestätigung (z. B. Status veraltet): Abfrage zeigen.
+        if (body.error === 'adult_confirmation_required') setAdult({ confirmed: false, ruleVersion: body.ruleVersion });
         // Modellfehler eigens benennen (kein stiller Simulationsersatz).
         setError(body.error === 'search_failed' && body.modelsEnabled ? 'model_failed' : (body.error || 'server_error'));
       }
@@ -342,6 +400,9 @@ export default function AiSearchView({ user, setView }) {
         </div>
       ) : (
         <div className="mt-8">
+          {adult?.confirmed === false ? (
+            <AdultGate ruleVersion={adult.ruleVersion} onConfirmed={(next) => { setAdult(next); setError(null); }} />
+          ) : (
           <form onSubmit={(e) => { e.preventDefault(); if (!loading) submit(false); }} className="bg-white border border-gray-200 rounded-xl p-6">
             <div className="flex flex-wrap justify-between gap-2 items-center">
               <label htmlFor="ai-query" className="font-semibold text-dark">Deine Beschreibung</label>
@@ -392,6 +453,7 @@ export default function AiSearchView({ user, setView }) {
               {loading ? <><Loader className="w-4 h-4 animate-spin text-primary" aria-hidden="true" />Passende Kurse werden gesucht …</> : ''}
             </p>
           </form>
+          )}
 
           {interrupted && !loading && (
             <div className="mt-4 bg-blue-50 border border-blue-200 text-blue-900 rounded-lg px-4 py-3 text-sm" role="status" data-testid="ai-interrupted">

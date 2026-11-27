@@ -775,7 +775,7 @@ export const TRANSLATIONS = {
 
     // AUTH NEW
     lbl_name_company: "Full Name / Company",
-    err_accept_terms: "Please accept the Terms and Privacy Policy.",
+    err_accept_terms: "Please accept the Terms and Privacy Policy.", legal_age_confirm: "I am at least 18 years old.", err_confirm_age: "Please confirm that you are at least 18 years old. Own KursNavi accounts are only available from age 18.",
     
     // AUTH LABELS
     auth_create_account: "Create Account", auth_welcome_back: "Welcome Back",
@@ -947,7 +947,7 @@ export const TRANSLATIONS = {
 
     // AUTH NEW
     lbl_name_company: "Vollständiger Name / Firma",
-    err_accept_terms: "Bitte akzeptieren Sie die AGB und die Datenschutzerklärung.",
+    err_accept_terms: "Bitte akzeptieren Sie die AGB und die Datenschutzerklärung.", legal_age_confirm: "Ich bin mindestens 18 Jahre alt.", err_confirm_age: "Bitte bestätigen Sie, dass Sie mindestens 18 Jahre alt sind. Eigene KursNavi-Konten sind erst ab 18 Jahren möglich.",
 
     // AUTH LABELS
     auth_create_account: "Konto erstellen", auth_welcome_back: "Willkommen zurück",
@@ -1119,7 +1119,7 @@ export const TRANSLATIONS = {
 
     // AUTH NEW
     lbl_name_company: "Nom complet / Entreprise",
-    err_accept_terms: "Veuillez accepter les conditions et la politique de confidentialité.",
+    err_accept_terms: "Veuillez accepter les conditions et la politique de confidentialité.", legal_age_confirm: "J'ai au moins 18 ans.", err_confirm_age: "Veuillez confirmer que vous avez au moins 18 ans. Un compte KursNavi personnel n'est possible qu'à partir de 18 ans.",
 
     // AUTH LABELS
     auth_create_account: "Créer un compte", auth_welcome_back: "Bon retour",
@@ -1291,7 +1291,7 @@ export const TRANSLATIONS = {
 
     // AUTH NEW
     lbl_name_company: "Nome completo / Azienda",
-    err_accept_terms: "Si prega di accettare i termini e la politica sulla privacy.",
+    err_accept_terms: "Si prega di accettare i termini e la politica sulla privacy.", legal_age_confirm: "Ho almeno 18 anni.", err_confirm_age: "Vi preghiamo di confermare di avere almeno 18 anni. Un account KursNavi personale è possibile solo a partire dai 18 anni.",
 
     // AUTH LABELS
     auth_create_account: "Crea account", auth_welcome_back: "Bentornato",

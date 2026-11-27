@@ -10,6 +10,11 @@
  *     TESTumgebung KursNavi (previewGuard.js) — sonst Ablehnung ohne Datenzugriff.
  *  2. Konto: verifizierte Supabase-Sitzung; fehlend/ungültig/abgelaufen/
  *     anonym → 401/403. Nutzerkennung nur aus der verifizierten Sitzung.
+ *  2b. Volljährigkeit (AGB 3.5 a, 27.11.2026): Selbstauskunft der aktuellen
+ *     Regelversion muss beim Konto gespeichert sein (adultConfirmation.js),
+ *     sonst 403 adult_confirmation_required; nicht prüfbar → 503. Bestehende
+ *     Konten bestätigen einmal per POST { action: 'confirm_adult',
+ *     confirmed: true, ruleVersion }. Geprüft VOR Bremse, Kontingent und Modell.
  *  3. Eingabe validieren (verbraucht nichts).
  *  3b. Missbrauchs-/Parallelitätsbremse (abuseGuard.js) vor jeder
  *     Reservierung und damit vor jedem kostenpflichtigen Aufruf.
@@ -37,6 +42,7 @@ import { QUOTA_LIMIT, quotaResetDate } from '../src/lib/aiSearch/quota.js';
 import { readModelConfig, createOpenAiGateway } from '../src/lib/aiSearch/openaiGateway.js';
 import { GUARD_LIMITS, evaluateGuard, storablePayload, isMissingFunction, isDefinitiveDbError } from '../src/lib/aiSearch/abuseGuard.js';
 import { isPubliclySearchable } from '../src/lib/aiSearch/publication.js';
+import { ADULT_RULE_VERSION, readAdultConfirmation, recordAdultConfirmation, validateAdultConfirmRequest } from '../src/lib/aiSearch/adultConfirmation.js';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -201,17 +207,42 @@ export default async function handler(req, res) {
   if (user.is_anonymous === true) return res.status(403).json({ error: 'real_account_required' });
 
   try {
+    // 2b. Volljährigkeit (Selbstauskunft der aktuellen Regelversion).
+    const adult = await readAdultConfirmation(service, user.id);
+    if (!adult.ok) console.error('ai-search: Volljährigkeit nicht prüfbar:', adult.error);
+
     if (req.method === 'GET') {
       const modelConfig = readModelConfig(process.env);
       return res.status(200).json({
         environment: environment.mode,
         models: { enabled: modelConfig.enabled, reason: modelConfig.reason, region: modelConfig.openaiRegion },
+        adult: { confirmed: adult.ok && adult.confirmed, ruleVersion: ADULT_RULE_VERSION, ...(adult.ok ? {} : { unavailable: true }) },
         quota: await quotaStatus(service, user.id),
       });
     }
 
-    // 3. Eingabe
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body ?? {});
+
+    // 2c. Einmalige Bestätigung bestehender Konten. Erfolg nur mit gespeichertem
+    // und zurückgelesenem Eintrag; sonst bleibt die KI-Suche gesperrt.
+    if (body.action === 'confirm_adult') {
+      const invalid = validateAdultConfirmRequest(body);
+      if (invalid) return res.status(400).json({ error: invalid, ruleVersion: ADULT_RULE_VERSION });
+      const saved = await recordAdultConfirmation(service, user.id);
+      if (!saved.ok) {
+        console.error('ai-search: Bestätigung der Volljährigkeit nicht gespeichert:', saved.error);
+        return res.status(503).json({ error: 'adult_confirmation_not_saved' });
+      }
+      return res.status(200).json({ adult: { confirmed: true, ruleVersion: saved.ruleVersion } });
+    }
+    if (body.action !== undefined) return res.status(400).json({ error: 'unknown_action' });
+
+    // Ohne gespeicherte Bestätigung keine Suche (auch nicht bei direktem
+    // API-Aufruf): nichts reserviert, nichts gezählt, kein Modellaufruf.
+    if (!adult.ok) return res.status(503).json({ error: 'adult_check_unavailable' });
+    if (!adult.confirmed) return res.status(403).json({ error: 'adult_confirmation_required', ruleVersion: ADULT_RULE_VERSION });
+
+    // 3. Eingabe
     const queryError = validateQuery(body.query);
     if (queryError) return res.status(400).json({ error: queryError, quota: await quotaStatus(service, user.id) });
     if (typeof body.requestId !== 'string' || !UUID_RE.test(body.requestId)) {

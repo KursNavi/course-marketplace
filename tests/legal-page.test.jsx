@@ -61,9 +61,9 @@ describe('LegalPage – AGB', () => {
     expect(screen.getAllByText(/Kurserstellungsservice/i).length).toBeGreaterThan(0);
   });
 
-  it('zeigt Stand: 21. Juni 2026 (im Intro und/oder Footer)', () => {
+  it('zeigt Stand: 27. November 2026 (im Intro und/oder Footer)', () => {
     render(<LegalPage {...defaultProps} />);
-    expect(screen.getAllByText(/Stand: 21\. Juni 2026/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Stand: 27\. November 2026/i).length).toBeGreaterThan(0);
   });
 
   it('enthält Überschrift zur Stornierung ohne Stornogebühr', () => {

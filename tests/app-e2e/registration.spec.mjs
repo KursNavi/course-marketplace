@@ -19,6 +19,7 @@ test.describe('Student Registration (app-e2e)', () => {
     await expect(page.locator('#auth-password')).toBeVisible();
     await expect(page.locator('#auth-confirm-password')).toBeVisible();
     await expect(page.locator('#agb')).toBeVisible();
+    await expect(page.locator('#adult-confirm')).toBeVisible();
 
     // Fill the form
     const testEmail = `e2e-register-${Date.now()}@test-noreply.ch`;
@@ -31,9 +32,12 @@ test.describe('Student Registration (app-e2e)', () => {
     await page.locator('#auth-password').fill('TestPasswort123!');
     await page.locator('#auth-confirm-password').fill('TestPasswort123!');
     await page.locator('#agb').check();
+    await page.locator('#adult-confirm').check();
 
     // Intercept the Supabase auth signup request to prevent real user creation
+    let signupBody = null;
     await page.route('**/auth/v1/signup**', async (route) => {
+      signupBody = route.request().postDataJSON();
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -53,6 +57,10 @@ test.describe('Student Registration (app-e2e)', () => {
 
     // Submit
     await page.locator('#main-content').getByRole('button', { name: 'Registrieren' }).click();
+
+    // Selbstauskunft 18+ geht als Metadatum mit der Registrierung mit.
+    await expect.poll(() => signupBody?.data?.adult_confirmed).toBe(true);
+    expect(signupBody.data.adult_rule_version).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
     // Success screen should appear
     await expect(page.getByText('Vielen Dank für deine Anmeldung!')).toBeVisible({ timeout: 10_000 });
@@ -79,6 +87,7 @@ test.describe('Student Registration (app-e2e)', () => {
     await page.locator('#auth-password').fill('Passwort123!');
     await page.locator('#auth-confirm-password').fill('AnderePasswort!');
     await page.locator('#agb').check();
+    await page.locator('#adult-confirm').check();
 
     // Submit — should show password mismatch error (via notification)
     await page.locator('#main-content').getByRole('button', { name: 'Registrieren' }).click();

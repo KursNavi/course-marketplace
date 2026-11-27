@@ -13,12 +13,12 @@ const section = (lang, nr) => LEGAL_CONTENT[lang].datenschutz.sections.find((s) 
 
 /** Je Sprache die Kernaussagen als Muster; jede Aussage muss in jeder Sprache vorkommen. */
 const FACTS = {
-  // Abschnitt 2: Datenkategorien, Ergebnis, vorgesehene Nutzung durch Erwachsene, Eltern
+  // Abschnitt 2: Konten ab 18 (Selbstauskunft), Datenkategorien, Ergebnis, Eltern, Bestätigung als Datenkategorie
   s2: {
-    de: [/KI-Suche/, /Suchvorgaben \(Kanton, Online, Budget\)/, /abgeleitete Suchbegriffe und Wünsche/, /Prüfsumme/, /für die Nutzung durch Erwachsene vorgesehen/, /Eltern und Erziehungsberechtigte/],
-    en: [/AI search/, /search criteria \(canton, online, budget\)/, /search terms and preferences derived/, /checksum/, /intended for use by adults/, /Parents and guardians/],
-    fr: [/recherche IA/, /critères de recherche facultatifs \(canton, en ligne, budget\)/, /termes de recherche et souhaits déduits/, /somme de contrôle/, /prévue pour être utilisée par des adultes/, /parents et représentants légaux/],
-    it: [/ricerca IA/, /criteri di ricerca facoltativi \(cantone, online, budget\)/, /termini di ricerca e i desideri ricavati/, /somma di controllo/, /prevista per l'utilizzo da parte di adulti/, /Genitori e rappresentanti legali/],
+    de: [/Eigene Konten dürfen nur Personen ab 18 Jahren führen \(Selbstauskunft, AGB Ziff\. 3\.5\)/, /Suchvorgaben \(Kanton, Online, Budget\)/, /abgeleitete Suchbegriffe und Wünsche/, /Prüfsumme/, /Eltern und Erziehungsberechtigte/, /Bestätigung der Volljährigkeit: Ihre Selbstauskunft, mindestens 18 Jahre alt zu sein, mit Zeitpunkt und Regelversion/, /Wir überprüfen das Alter nicht und erheben dafür kein Geburtsdatum/],
+    en: [/Own accounts may only be held by persons aged 18 or over \(self-declaration, T&Cs section 3\.5\)/, /search criteria \(canton, online, budget\)/, /search terms and preferences derived/, /checksum/, /Parents and guardians/, /Confirmation of age: your self-declaration that you are at least 18 years old, with time and rule version/, /We do not verify age and do not collect a date of birth/],
+    fr: [/Un compte personnel ne peut être tenu que par des personnes âgées de 18 ans ou plus \(déclaration personnelle, CG ch\. 3\.5\)/, /critères de recherche facultatifs \(canton, en ligne, budget\)/, /termes de recherche et souhaits déduits/, /somme de contrôle/, /parents et représentants légaux/, /Confirmation de la majorité : votre déclaration personnelle d'avoir au moins 18 ans, avec l'heure et la version de la règle/, /Nous ne vérifions pas l'âge et ne collectons pas de date de naissance/],
+    it: [/Un account personale può essere gestito solo da persone di almeno 18 anni \(autodichiarazione, TCG cifra 3\.5\)/, /criteri di ricerca facoltativi \(cantone, online, budget\)/, /termini di ricerca e i desideri ricavati/, /somma di controllo/, /Genitori e rappresentanti legali/, /Conferma della maggiore età: la vostra autodichiarazione di avere almeno 18 anni, con orario e versione della regola/, /Non verifichiamo l'età e non raccogliamo a tal fine una data di nascita/],
   },
   s4: {
     de: [/OpenAI Ireland Ltd\., Irland/, /USA/, /nicht automatisch/, /selbst in den Suchtext schreiben/, /nicht zum Training/, /bis zu 30 Tage/, /keine Namen und keine sensiblen Angaben/],
@@ -33,10 +33,10 @@ const FACTS = {
     it: [/OpenAI Ireland Ltd\. \(Irlanda\)/, /secondo il Consiglio federale, l'Irlanda garantisce un livello adeguato/, /clausole contrattuali standard della Commissione europea/],
   },
   s8: {
-    de: [/Teile Ihres Suchtexts/, /vollständigen Suchtext speichern wir nicht/, /Nach 24 Stunden ist das Ergebnis nicht mehr abrufbar/, /nächsten regelmässigen Bereinigungslauf gelöscht/, /laufenden und den vorherigen Kalendermonat/, /Konto gelöscht, löschen wir gespeicherte Suchergebnisse sofort/],
-    en: [/parts of your search text/, /do not store the full search text/, /After 24 hours the result can no longer be retrieved/, /next regular clean-up run/, /current and the previous calendar month/, /account is deleted, stored search results are deleted immediately/],
-    fr: [/des parties de votre texte de recherche/, /ne conservons pas le texte de recherche complet/, /Après 24 heures, le résultat ne peut plus être consulté/, /prochain nettoyage régulier/, /mois civil en cours et le mois précédent/, /compte est supprimé, les résultats de recherche enregistrés sont supprimés immédiatement/],
-    it: [/parti del vostro testo di ricerca/, /non conserviamo il testo di ricerca completo/, /Dopo 24 ore il risultato non è più consultabile/, /successiva pulizia periodica/, /mese civile in corso e quello precedente/, /account viene cancellato, i risultati di ricerca salvati vengono cancellati immediatamente/],
+    de: [/Teile Ihres Suchtexts/, /vollständigen Suchtext speichern wir nicht/, /Nach 24 Stunden ist das Ergebnis nicht mehr abrufbar/, /nächsten regelmässigen Bereinigungslauf gelöscht/, /laufenden und den vorherigen Kalendermonat/, /Konto gelöscht, löschen wir gespeicherte Suchergebnisse sofort/, /Bestätigung der Volljährigkeit speichern wir, solange Ihr Konto besteht/],
+    en: [/parts of your search text/, /do not store the full search text/, /After 24 hours the result can no longer be retrieved/, /next regular clean-up run/, /current and the previous calendar month/, /account is deleted, stored search results are deleted immediately/, /confirmation of age is stored for as long as your account exists/],
+    fr: [/des parties de votre texte de recherche/, /ne conservons pas le texte de recherche complet/, /Après 24 heures, le résultat ne peut plus être consulté/, /prochain nettoyage régulier/, /mois civil en cours et le mois précédent/, /compte est supprimé, les résultats de recherche enregistrés sont supprimés immédiatement/, /confirmation de la majorité est conservée tant que votre compte existe/],
+    it: [/parti del vostro testo di ricerca/, /non conserviamo il testo di ricerca completo/, /Dopo 24 ore il risultato non è più consultabile/, /successiva pulizia periodica/, /mese civile in corso e quello precedente/, /account viene cancellato, i risultati di ricerca salvati vengono cancellati immediatamente/, /conferma della maggiore età viene conservata finché esiste il vostro account/],
   },
 };
 
@@ -72,8 +72,32 @@ describe('Datenschutzerklärung: KI-Suche in allen vier Sprachen übereinstimmen
       expect(ai).not.toMatch(/Data Privacy Framework|DPF/);
       expect(ai).not.toMatch(/Swiss addendum|Schweizer Zusatz|FDPIC|EDÖB|PFPDT|IFPDT/i);
       expect(ai).not.toMatch(/eu\.api|EU-Datenzentrum|data residency|Datenresidenz/i);
+      // Selbstauskunft, keine behauptete Altersprüfung; keine Aussage, OpenAI habe die Regel bestätigt.
       expect(section(lang, 2)).not.toMatch(/Altersprüfung|age verification|vérification de l'âge|verifica dell'età/i);
+      expect([2, 4, 7].map((nr) => section(lang, nr)).join(' ')).not.toMatch(/OpenAI[^.]*(bestätigt|confirmed|confirmé|confermato)/i);
     }
+  });
+
+  it('AGB 3.5 a/b: Konten ab 18 als Selbstauskunft, Erwachsene buchen für Kinder – in allen vier Sprachen', () => {
+    const agb = (lang) => LEGAL_CONTENT[lang].agb.sections.find((s) => s.heading.startsWith('3.')).text;
+    const RULE = {
+      de: [/a\) Ein eigenes Nutzerkonto auf KursNavi dürfen nur Personen ab 18 Jahren eröffnen und führen/, /bei der Registrierung ausdrücklich bestätigt, bei bestehenden Konten vor der ersten Nutzung der KI-Suche/, /Selbstauskunft; KursNavi überprüft das Alter nicht/, /b\) Erwachsene können über ihr Konto auch Kurse für Kinder und Jugendliche suchen, anfragen und buchen/, /c\) Direktbuchungen/, /f\) Anbieter sind für Jugendschutz/],
+      en: [/a\) A personal KursNavi user account may only be opened and held by persons aged 18 or over/, /explicitly when registering; holders of existing accounts confirm it before using the AI search for the first time/, /self-declaration; KursNavi does not verify age/, /b\) Adults may also use their account to search for, enquire about and book courses for children and young people/, /c\) Bookings/, /e\) Providers are responsible/],
+      fr: [/a\) Un compte utilisateur KursNavi personnel ne peut être ouvert et tenu que par des personnes âgées de 18 ans ou plus/, /expressément lors de l'inscription et, pour les comptes existants, avant la première utilisation de la recherche IA/, /déclaration personnelle ; KursNavi ne vérifie pas l'âge/, /b\) Les adultes peuvent également, via leur compte, rechercher, demander et réserver des cours pour des enfants et des jeunes/, /c\) Les réservations/, /e\) Les Fournisseurs/],
+      it: [/a\) Un account utente KursNavi personale può essere aperto e gestito solo da persone di almeno 18 anni/, /espressamente al momento della registrazione e, per gli account esistenti, prima del primo utilizzo della ricerca IA/, /autodichiarazione; KursNavi non verifica l'età/, /b\) Gli adulti possono anche cercare, richiedere e prenotare tramite il proprio account corsi per bambini e ragazzi/, /c\) Le prenotazioni/, /e\) I Fornitori/],
+    };
+    for (const lang of LANGS) for (const pattern of RULE[lang]) expect(agb(lang), `${lang} ${pattern}`).toMatch(pattern);
+    expect(LEGAL_CONTENT.de.updated_at).toBe('Stand: 27. November 2026');
+    expect(LEGAL_CONTENT.en.updated_at).toBe('Last updated: 27 November 2026');
+    expect(LEGAL_CONTENT.fr.updated_at).toBe('Dernière mise à jour : 27 novembre 2026');
+    expect(LEGAL_CONTENT.it.updated_at).toBe('Stato: 27 novembre 2026');
+    // Alte Regel „Minderjährige nur mit Zustimmung“ ist ersetzt (kein Widerspruch zur 18-Regel).
+    for (const lang of ['en', 'fr', 'it']) expect(section(lang, 2)).not.toMatch(/consent of their legal guardians|consentement de leurs tuteurs|consenso dei tutori/);
+  });
+
+  it('Versionen: AGB, Datenschutz und Erwachsenenregel auf 27.11.2026', async () => {
+    const versions = await import('../src/lib/legalVersions.js');
+    expect(versions).toMatchObject({ TERMS_VERSION: '2026-11-27', PRIVACY_VERSION: '2026-11-27', ADULT_RULE_VERSION: '2026-11-27' });
   });
 
   it('bestehende Inhalte bleiben erhalten (z. B. Gemini, Lead-Freitext 60 Tage, DPF-Satz DE)', () => {
