@@ -1,11 +1,34 @@
-# Erwachsenenregel: Migration, Anwendung und Rückweg (zur Prüfung, nicht angewendet)
+# Erwachsenenregel: Migration, Anwendung und Rückweg
 
 Stand 27.11.2026. Betrifft `supabase/migrations/20261127120000_account_adult_confirmations.sql`.
 
-**Status:** In keiner Umgebung angewendet, weder TEST noch Produktion.
-- Eine Prüfung in TEST innerhalb einer zurückgerollten Transaktion wurde vorbereitet; die
-  Ausführung wurde am 27.11.2026 abgelehnt und nicht wiederholt.
-- Die Migration ist deshalb bisher nur statisch geprüft (`tests/ai-search-adult-gate.test.jsx`).
+**Status:** In TEST angewendet und geprüft. In Produktion **nicht** angewendet.
+
+- **Datenbanktest in TEST** (27.11.2026): vom PO im SQL-Editor ausgeführt, als einzelner
+  `DO`-Block mit absichtlichem Abbruch, vollständig zurückgerollt. Alle Prüfungen bestanden:
+  - Registrierung mit Bestätigung speichert den Nachweis (Quelle `signup`, Version
+    `2026-11-27`, Zeitpunkt der Datenbank).
+  - Registrierungen ohne neue Metadaten funktionieren weiter, ohne Nachweis.
+  - Ein simulierter Schreibfehler verhindert die Kontoerstellung.
+  - 0 Einträge für die 6 bestehenden Konten.
+  - RLS an, keine Policy, keine Rechte für `anon`/`authenticated`; der Server darf schreiben.
+  - Bestätigung über den Serverweg (`ai_search`); Löschung mit dem Konto.
+
+  Lesende Nachkontrolle danach: keine Objekte und keine Testkonten zurückgeblieben.
+- **Anwendung in TEST** (27.11.2026): vom PO im SQL-Editor; Migration und Verbuchung unter
+  `20261127120000` in einer Transaktion.
+  - Lesende Nachkontrolle: Tabelle, Funktion und Trigger vorhanden; RLS an; 0 Policies; 0 Rechte
+    für `anon`/`authenticated`; 0 Einträge für die bestehenden Konten.
+  - Die verbuchte Prüfsumme lautet `0f3daf97`, weil beim Kopieren aus dem Chat
+    Windows-Zeilenumbrüche entstanden sind. Ohne sie ist sie exakt `ad4d9e9a`; der Inhalt ist
+    identisch und funktional ohne Unterschied.
+- **Vorschau von PR #204** (`79f0aac`), ohne Modellaufrufe, denn für diesen Branch ist kein
+  OpenAI-Zugang gesetzt:
+  - Eine Registrierung ohne 18+-Häkchen ist blockiert. Mit Häkchen: ein neues Konto mit genau
+    einem Nachweis `signup`.
+  - Ein bestehendes Konto sieht in der KI-Suche die Abfrage statt des Formulars. Nach der
+    Bestätigung entsteht genau ein Nachweis `ai_search`, und das Formular erscheint.
+  - Keine Suche und kein Kontingentverbrauch; lesend in TEST bestätigt.
 - Supabase ist nicht mit GitHub verbunden. Ein Merge wendet die Datei **nicht** automatisch an.
 
 ## Was die Migration tut
