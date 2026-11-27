@@ -1,7 +1,9 @@
 name: KI-Suche Produktionsmigrationen
 
-# Ausführungsweg der 7 KI-Migrationen in PRODUKTION (nplxmpfasgpumpiddjfl),
-# Produktionspaket 25.11.2026, Phase C. Nur manuell, nur vom Branch main.
+# Ausführungsweg der 7 KI-Migrationen (Produktionspaket 25.11.2026, Phase C,
+# angewendet) und der Erwachsenenregel M8 (27.11.2026) in PRODUKTION
+# (nplxmpfasgpumpiddjfl). Verbuchte Migrationen werden übersprungen, nie erneut
+# ausgeführt. Nur manuell, nur vom Branch main.
 # Die Umgebung "ki-produktion-migration" verlangt eine Freigabe durch den PO,
 # bevor der Job startet, und enthält das einzige Secret SUPABASE_DB_URL_PROD
 # (Session Pooler). Die Adresse wird nie ausgegeben.

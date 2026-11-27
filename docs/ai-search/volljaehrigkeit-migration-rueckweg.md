@@ -46,15 +46,30 @@ unberührt. So wird jede Registrierung ab dem Merge gespeichert.
 1. **TEST**, für die Vorschau der KI-Suche:
    - Anwendung über `apply_migration` mit derselben Datei.
    - Prüfungen: Abschnitt „Kontrolle“ unten, dazu eine Test-Registrierung über die Vorschau.
-2. **Produktion:**
-   - Der geprüfte Workflow „KI-Suche Produktionsmigrationen“ kennt nur M1–M7, mit Prüfsummen
-     und Sollwerten.
-   - Für diese Datei gibt es zwei Wege:
-     - **(a)** Den Workflow in einem kleinen eigenen PR um M8 erweitern: Prüfsumme, Marker,
-       Sollwerte. Das ist die Empfehlung.
-     - **(b)** Der PO führt die Datei einmal im SQL-Editor aus und verbucht sie wie die übrigen
-       Migrationen.
-   - In beiden Fällen ist eine Freigabe nötig.
+2. **Produktion** über den geprüften Workflow „KI-Suche Produktionsmigrationen“, erweitert um
+   M8 (PR „Produktions-Migrationsweg M8“, gestapelt auf #204):
+   - **Feste Prüfsumme** der Datei: md5 beginnt mit `ad4d9e9a`. Jede Abweichung stoppt vor
+     jedem Datenbankzugriff.
+   - **Plan (lesend, Standard):** Ziel nur Produktion, Ausgangslage, fehlende Versionen. Mit
+     verbuchten M1–M7 ist der Plan genau `20261127120000 (--single-transaction)`.
+     - Verbuchte Migrationen werden nie erneut ausgeführt.
+     - Eine Lücke in der Reihenfolge stoppt.
+     - Existieren die Objekte von M8 bereits, ohne verbucht zu sein, stoppt der Plan statt
+       doppelt auszuführen.
+   - **Ausführung** nur mit `modus=ausfuehren` und Freigabe der Umgebung
+     `ki-produktion-migration`:
+     - Anwendung mit `--single-transaction` und `ON_ERROR_STOP`;
+     - Verbuchung in `supabase_migrations.schema_migrations` (Version, Name, Dateiinhalt);
+     - Prüfung des Markers: Tabelle und Trigger vorhanden.
+   - **Nachkontrolle** (Gesamtprüfung, Sollwerte):
+     - M1–M7 unverändert, Historie 8;
+     - Tabelle 1, RLS an, Trigger 1, keine Policy;
+     - 0 Rechte für `anon`/`authenticated` auf Tabelle und Triggerfunktion;
+     - **0 Einträge für Konten, die vor dem Lauf bestanden** (kein Rückfüllen);
+     - Kurszahl unverändert.
+
+     Eine Abweichung stoppt; dann gilt der Rückweg.
+   - Danach der Merge von #204 (Code und Texte).
 
 ## Kontrolle (lesend, nach der Anwendung)
 
@@ -71,7 +86,7 @@ select to_regclass('public.account_adult_confirmations') is not null as tabelle,
 | Stufe | Wirkung | SQL |
 |---|---|---|
 | **RV1** Trigger aus | Neue Registrierungen speichern keine Bestätigung mehr; neue Konten werden vor der KI-Suche gefragt. Vorhandene Einträge bleiben. | `DROP TRIGGER IF EXISTS on_auth_user_adult_confirmation ON auth.users;` |
-| **RV2** vollständig entfernen | Alle gespeicherten Bestätigungen gehen verloren; die KI-Suche antwortet danach mit 503 (fail closed), bis Code oder Migration zurück sind. Nur mit eigener Freigabe. | `DROP TRIGGER IF EXISTS on_auth_user_adult_confirmation ON auth.users;`<br>`DROP FUNCTION IF EXISTS public.record_signup_adult_confirmation();`<br>`DROP TABLE IF EXISTS public.account_adult_confirmations;` |
+| **RV2** vollständig entfernen | Alle gespeicherten Bestätigungen gehen verloren; die KI-Suche antwortet danach mit 503 (fail closed), bis Code oder Migration zurück sind. Nur mit eigener Freigabe. | `DROP TRIGGER IF EXISTS on_auth_user_adult_confirmation ON auth.users;`<br>`DROP FUNCTION IF EXISTS public.record_signup_adult_confirmation();`<br>`DROP TABLE IF EXISTS public.account_adult_confirmations;`<br>In Produktion zusätzlich die Verbuchung entfernen, damit der Workflow M8 später wieder planen kann: `DELETE FROM supabase_migrations.schema_migrations WHERE version = '20261127120000';` |
 
 - **Code-Rückweg:** Revert des PR. Die Registrierung ohne Häkchen funktioniert dann wieder,
   vorhandene Einträge stören nicht.
