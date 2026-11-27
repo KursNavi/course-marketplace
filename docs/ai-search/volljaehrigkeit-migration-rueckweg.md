@@ -2,7 +2,29 @@
 
 Stand 27.11.2026. Betrifft `supabase/migrations/20261127120000_account_adult_confirmations.sql`.
 
-**Status:** In TEST angewendet und geprüft. In Produktion **nicht** angewendet.
+**Status:** In TEST und in **Produktion** angewendet und geprüft (Produktion: 27.11.2026,
+16:00 UTC, Workflow-Lauf `46029398326`).
+
+- **Produktion** (27.11.2026), in dieser Reihenfolge:
+  1. Merge von PR #204 (`59b28cf`): Code und Rechtstexte live. Bis zur Migration ist kein
+     neues Konto entstanden, also kein Konto ohne Nachweis trotz Häkchen.
+  2. Merge von PR #205 (`7820f19`): M8 im Workflow „KI-Suche Produktionsmigrationen“.
+  3. Plan-Lauf `46027896656`, nur lesend: Prüfsummen der 8 Dateien ok; M1–M7 verbucht (7/8);
+     Plan genau `20261127120000 (--single-transaction)`; keine unverbuchten M8-Objekte;
+     keine Schreibzugriffe.
+  4. Ausführungslauf `46029398326`: Vorprüfungen erneut bestanden, Plan erneut nur M8.
+     M1–M7 wurden nicht erneut angewendet. Migration, Verbuchung, Markerprüfung und
+     Gesamtprüfung liefen als getrennte Schritte; alle bestanden.
+     - Gesamtprüfung: Historie 8, Tabelle 1, RLS an, Trigger 1, 0 Policies, 0 Rechte für
+       `anon`/`authenticated` auf Tabelle und Funktion.
+     - 0 Einträge für Konten, die vor dem Lauf bestanden; Kurse unverändert 908.
+  5. Lesende Nachkontrolle:
+     - Verbuchte Prüfsumme genau `ad4d9e9a`, M1–M7 unverändert.
+     - Trigger auf `auth.users` aktiv, Funktion `SECURITY DEFINER`, Serverrolle darf
+       schreiben.
+     - 0 Einträge insgesamt; kein Rückfüllen bestehender Konten.
+     - Website erreichbar; `/api/ai-search` weiterhin 404 `not_available` (Phase F gesperrt).
+     - Cron-Betrieb danach ok, ohne Problemläufe.
 
 - **Datenbanktest in TEST** (27.11.2026): vom PO im SQL-Editor ausgeführt, als einzelner
   `DO`-Block mit absichtlichem Abbruch, vollständig zurückgerollt. Alle Prüfungen bestanden:
@@ -70,7 +92,7 @@ unberührt. So wird jede Registrierung ab dem Merge gespeichert.
    - Anwendung über `apply_migration` mit derselben Datei.
    - Prüfungen: Abschnitt „Kontrolle“ unten, dazu eine Test-Registrierung über die Vorschau.
 2. **Produktion** über den geprüften Workflow „KI-Suche Produktionsmigrationen“, erweitert um
-   M8 (PR „Produktions-Migrationsweg M8“, gestapelt auf #204):
+   M8 (PR #205). Tatsächlich ausgeführt nach dem Merge von #204, siehe Status oben:
    - **Feste Prüfsumme** der Datei: md5 beginnt mit `ad4d9e9a`. Jede Abweichung stoppt vor
      jedem Datenbankzugriff.
    - **Plan (lesend, Standard):** Ziel nur Produktion, Ausgangslage, fehlende Versionen. Mit
@@ -91,8 +113,8 @@ unberührt. So wird jede Registrierung ab dem Merge gespeichert.
      - **0 Einträge für Konten, die vor dem Lauf bestanden** (kein Rückfüllen);
      - Kurszahl unverändert.
 
-     Eine Abweichung stoppt; dann gilt der Rückweg.
-   - Danach der Merge von #204 (Code und Texte).
+     Eine Abweichung stoppt. Dann wird der verbliebene Stand lesend festgestellt; ein
+     Rückweg nur mit eigener Freigabe.
 
 ## Kontrolle (lesend, nach der Anwendung)
 
