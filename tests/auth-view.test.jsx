@@ -38,6 +38,8 @@ vi.mock('../src/lib/constants', () => ({
       btn_go_to_login: 'Zum Login',
       err_passwords_mismatch: 'Passwörter stimmen nicht überein',
       err_accept_terms: 'Bitte AGB akzeptieren',
+      legal_age_confirm: 'Ich bin mindestens 18 Jahre alt.',
+      err_confirm_age: 'Bitte bestätigen Sie, dass Sie mindestens 18 Jahre alt sind.',
       msg_welcome_back_toast: 'Willkommen zurück',
     },
   },
@@ -59,6 +61,7 @@ vi.mock('../src/lib/supabase', () => ({
 vi.mock('../src/lib/legalVersions', () => ({
   TERMS_VERSION: '2026-06-21',
   PRIVACY_VERSION: '2026-06-21',
+  ADULT_RULE_VERSION: '2026-11-27',
 }));
 
 import AuthView from '../src/components/AuthView';
@@ -102,6 +105,7 @@ describe('AuthView', () => {
     fireEvent.change(screen.getByLabelText('Passwort'), { target: { value: 'secret123' } });
     fireEvent.change(screen.getByLabelText('Passwort bestätigen'), { target: { value: 'secret123' } });
     fireEvent.click(screen.getByLabelText(/Ich akzeptiere/i));
+    fireEvent.click(screen.getByLabelText('Ich bin mindestens 18 Jahre alt.'));
     fireEvent.click(screen.getByRole('button', { name: 'Registrieren' }));
 
     await waitFor(() => expect(signUpMock).toHaveBeenCalledTimes(1));
@@ -113,6 +117,9 @@ describe('AuthView', () => {
         data: expect.objectContaining({
           role: 'student',
           package_tier: 'basic',
+          // Selbstauskunft 18+ mit Regelversion (Trigger speichert sie atomar mit dem Konto).
+          adult_confirmed: true,
+          adult_rule_version: '2026-11-27',
         }),
       }),
     }));
@@ -138,6 +145,26 @@ describe('AuthView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Registrieren' }));
 
     await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Bitte AGB akzeptieren'));
+    expect(signUpMock).not.toHaveBeenCalled();
+  });
+
+  it('Erwachsenenregel: ohne Häkchen „mindestens 18 Jahre“ keine Registrierung; Häkchen sichtbar und nicht vorangekreuzt', async () => {
+    const showNotification = vi.fn();
+    render(<AuthView setView={vi.fn()} setUser={vi.fn()} showNotification={showNotification} lang="de" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Registrieren' }));
+    const adult = screen.getByLabelText('Ich bin mindestens 18 Jahre alt.');
+    expect(adult).toBeVisible();
+    expect(adult.checked).toBe(false);
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Max Muster' } });
+    fireEvent.change(screen.getByLabelText('E-Mail'), { target: { value: 'max@example.com' } });
+    fireEvent.change(screen.getByLabelText('Passwort'), { target: { value: 'secret123' } });
+    fireEvent.change(screen.getByLabelText('Passwort bestätigen'), { target: { value: 'secret123' } });
+    fireEvent.click(screen.getByLabelText(/Ich akzeptiere/i));
+    // 18+-Häkchen NICHT setzen
+    fireEvent.click(screen.getByRole('button', { name: 'Registrieren' }));
+
+    await waitFor(() => expect(showNotification).toHaveBeenCalledWith('Bitte bestätigen Sie, dass Sie mindestens 18 Jahre alt sind.'));
     expect(signUpMock).not.toHaveBeenCalled();
   });
 

@@ -4,7 +4,7 @@ import { Loader, Mail, Eye, EyeOff } from 'lucide-react';
 import { TRANSLATIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import { trackSignup, trackLogin } from '../lib/analytics';
-import { TERMS_VERSION, PRIVACY_VERSION } from '../lib/legalVersions';
+import { TERMS_VERSION, PRIVACY_VERSION, ADULT_RULE_VERSION } from '../lib/legalVersions';
 import { readStored, removeStored } from '../lib/safeStorage';
 import { getSignupEmailRedirect } from '../lib/authRedirect';
 
@@ -20,7 +20,9 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
     const [fullName, setFullName] = useState(''); 
     const [role, setRole] = useState('student');
     const [agbAccepted, setAgbAccepted] = useState(false);
-    
+    // Erwachsenenregel (AGB 3.5 a): ausdrückliche Selbstauskunft, Pflicht.
+    const [adultConfirmed, setAdultConfirmed] = useState(false);
+
     const t = TRANSLATIONS[lang] || TRANSLATIONS['de']; 
 
     const restorePendingBookingFlow = () => {
@@ -42,6 +44,7 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
             if (isSignUp) {
                 if (password !== confirmPassword) { throw new Error(t.err_passwords_mismatch); }
                 if (!agbAccepted) { throw new Error(t.err_accept_terms); }
+                if (!adultConfirmed) { throw new Error(t.err_confirm_age); }
                 
                 // LOGIC: Retrieve selected package from previous step (TeacherHub)
             const selectedPackage = role === 'teacher'
@@ -57,7 +60,11 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                     data: {
                         full_name: fullName,
                         role: role,
-                        package_tier: selectedPackage
+                        package_tier: selectedPackage,
+                        // Selbstauskunft 18+: ein Datenbank-Trigger speichert sie
+                        // atomar mit dem Konto (Zeitpunkt der Datenbank, Regelversion).
+                        adult_confirmed: true,
+                        adult_rule_version: ADULT_RULE_VERSION
                     }
                 }
             });
@@ -217,6 +224,18 @@ const AuthView = ({ setView, setUser, showNotification, lang }) => {
                             <label htmlFor="agb" className="text-sm text-gray-600 cursor-pointer">
                                 <span>{t.legal_agree} <a href="/agb" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">{t.legal_agb}</a> {role === 'teacher' ? t.legal_provider_suffix : ''} {t.legal_and} <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">{t.legal_privacy}</a> {t.legal_read ? t.legal_read : '.'}</span>
                             </label>
+                        </div>
+                    )}
+                    {isSignUp && (
+                        <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <input
+                                id="adult-confirm"
+                                type="checkbox"
+                                checked={adultConfirmed}
+                                onChange={(e) => setAdultConfirmed(e.target.checked)}
+                                className="mt-1 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary cursor-pointer"
+                            />
+                            <label htmlFor="adult-confirm" className="text-sm text-gray-600 cursor-pointer">{t.legal_age_confirm}</label>
                         </div>
                     )}
 

@@ -285,6 +285,15 @@ function apiScenario(overrides = {}) {
       if (overrides.guardError) return { data: null, error: { message: 'down' } };
       return { data: overrides.guardRows ?? [], error: null };
     }
+    if (call.table === 'account_adult_confirmations') {
+      // Erwachsenenregel (27.11.2026): Standard = bestätigt (bisherige Szenarien).
+      if (call.op === 'upsert') return overrides.adultWriteError ? { data: null, error: { message: 'write failed' } } : { data: null, error: null };
+      if (overrides.adultReadError) return { data: null, error: { message: 'down' } };
+      const written = calls.some((c) => c.table === 'account_adult_confirmations' && c.op === 'upsert');
+      if (written && overrides.adultAfterWrite !== undefined) return { data: overrides.adultAfterWrite, error: null };
+      if (overrides.adult === false && !written) return { data: [], error: null };
+      return { data: [{ confirmed_at: '2026-11-27T10:00:00Z', source: overrides.adult === false ? 'ai_search' : 'signup' }], error: null };
+    }
     if (call.table === 'courses' && call.columns === 'id, status') {
       // Statusabgleich beim Wiederabruf (Produktionspaket 25.11.2026).
       if (overrides.statusError) return { data: null, error: { message: 'down' } };
@@ -376,6 +385,114 @@ describe('Such-API /api/ai-search', () => {
     expect(res.body.quota).toMatchObject({ limit: 10, remaining: 7 });
     expect(res.body.quota.resetDate).toMatch(/^\d{4}-\d{2}-01$/);
     expect(calls.some((c) => c.table === 'ai_search_quota_reserve')).toBe(false);
+  });
+
+  describe('Erwachsenenregel (Selbstauskunft 18+, serverseitig geprüft)', () => {
+    const touchedQuotaOrModel = (calls) => calls.some((c) => c.table === 'ai_search_usage' || /ai_search_quota_(reserve|finalize)/.test(c.table) || c.table === 'ai_search_lexical');
+
+    it('GET meldet den Bestätigungsstand der aktuellen Regelversion', async () => {
+      apiScenario({ adult: false });
+      let res = mockRes();
+      await handler({ method: 'GET', headers: { authorization: 'Bearer t' } }, res);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.adult).toEqual({ confirmed: false, ruleVersion: '2026-11-27' });
+
+      apiScenario();
+      res = mockRes();
+      await handler({ method: 'GET', headers: { authorization: 'Bearer t' } }, res);
+      expect(res.body.adult).toEqual({ confirmed: true, ruleVersion: '2026-11-27' });
+
+      apiScenario({ adultReadError: true });
+      res = mockRes();
+      await handler({ method: 'GET', headers: { authorization: 'Bearer t' } }, res);
+      expect(res.body.adult).toEqual({ confirmed: false, ruleVersion: '2026-11-27', unavailable: true });
+    });
+
+    it('bestehendes Konto ohne Bestätigung, direkter API-Aufruf: 403, nichts reserviert, keine Suche', async () => {
+      const calls = apiScenario({ adult: false });
+      const res = mockRes();
+      await handler(post({ query: 'Yoga für Anfänger', requestId: REQUEST_ID }), res);
+      expect(res.statusCode).toBe(403);
+      expect(res.body).toEqual({ error: 'adult_confirmation_required', ruleVersion: '2026-11-27' });
+      expect(touchedQuotaOrModel(calls)).toBe(false);
+      // Abfrage genau nach Konto und aktueller Regelversion (keine Ableitung aus Registrierung oder AGB).
+      const lookup = calls.find((c) => c.table === 'account_adult_confirmations' && c.op === 'select');
+      expect(lookup.filters).toEqual(expect.arrayContaining([['eq', 'user_id', USER.id], ['eq', 'rule_version', '2026-11-27']]));
+      expect(calls.some((c) => c.table === 'legal_acceptances' || c.table === 'profiles')).toBe(false);
+    });
+
+    it('Prüfung nicht möglich: 503, fail closed, nichts reserviert', async () => {
+      const calls = apiScenario({ adultReadError: true });
+      const res = mockRes();
+      await handler(post({ query: 'Yoga für Anfänger', requestId: REQUEST_ID }), res);
+      expect(res.statusCode).toBe(503);
+      expect(res.body.error).toBe('adult_check_unavailable');
+      expect(touchedQuotaOrModel(calls)).toBe(false);
+    });
+
+    it('neues Konto mit Bestätigung bei der Registrierung: Suche läuft normal', async () => {
+      const calls = apiScenario();
+      const res = mockRes();
+      await handler(post({ query: 'Yoga für Anfänger', requestId: REQUEST_ID }), res);
+      expect(res.statusCode).toBe(200);
+      expect(calls.some((c) => c.table === 'ai_search_quota_reserve')).toBe(true);
+    });
+
+    it('einmalige Bestätigung: gespeichert und zurückgelesen → 200; danach freigegeben', async () => {
+      const calls = apiScenario({ adult: false });
+      const res = mockRes();
+      await handler(post({ action: 'confirm_adult', confirmed: true, ruleVersion: '2026-11-27' }), res);
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ adult: { confirmed: true, ruleVersion: '2026-11-27' } });
+      const write = calls.find((c) => c.table === 'account_adult_confirmations' && c.op === 'upsert');
+      // Zeitpunkt setzt die Datenbank (kein Zeitstempel vom Client); Konto nur aus der Sitzung.
+      expect(write.payload).toEqual({ user_id: USER.id, rule_version: '2026-11-27', source: 'ai_search' });
+      // Rückleseprüfung nach dem Schreiben.
+      const reads = calls.filter((c) => c.table === 'account_adult_confirmations' && c.op === 'select');
+      expect(calls.indexOf(reads[reads.length - 1])).toBeGreaterThan(calls.indexOf(write));
+      expect(touchedQuotaOrModel(calls)).toBe(false);
+    });
+
+    it('fehlgeschlagene Speicherung oder fehlender Eintrag beim Zurücklesen: 503, bleibt gesperrt', async () => {
+      for (const overrides of [{ adult: false, adultWriteError: true }, { adult: false, adultAfterWrite: [] }]) {
+        apiScenario(overrides);
+        const res = mockRes();
+        await handler(post({ action: 'confirm_adult', confirmed: true, ruleVersion: '2026-11-27' }), res);
+        expect(res.statusCode).toBe(503);
+        expect(res.body.error).toBe('adult_confirmation_not_saved');
+      }
+    });
+
+    it('abgelehnte oder fehlende Bestätigung, veraltete Regelversion, fremde Aktion: 400 ohne Schreibzugriff', async () => {
+      const cases = [
+        [{ action: 'confirm_adult', confirmed: false, ruleVersion: '2026-11-27' }, 'adult_confirmation_missing'],
+        [{ action: 'confirm_adult', ruleVersion: '2026-11-27' }, 'adult_confirmation_missing'],
+        [{ action: 'confirm_adult', confirmed: 'true', ruleVersion: '2026-11-27' }, 'adult_confirmation_missing'],
+        [{ action: 'confirm_adult', confirmed: true, ruleVersion: '2026-01-01' }, 'adult_rule_outdated'],
+        [{ action: 'something_else' }, 'unknown_action'],
+      ];
+      for (const [body, code] of cases) {
+        const calls = apiScenario({ adult: false });
+        const res = mockRes();
+        await handler(post(body), res);
+        expect(res.statusCode).toBe(400);
+        expect(res.body.error).toBe(code);
+        expect(calls.some((c) => c.table === 'account_adult_confirmations' && c.op === 'upsert')).toBe(false);
+      }
+    });
+
+    it('Bestätigung nur mit gültiger Sitzung (kein Schreiben für fremde oder anonyme Konten)', async () => {
+      let calls = apiScenario({ user: null });
+      let res = mockRes();
+      await handler(post({ action: 'confirm_adult', confirmed: true, ruleVersion: '2026-11-27' }), res);
+      expect(res.statusCode).toBe(401);
+      expect(calls.some((c) => c.table === 'account_adult_confirmations')).toBe(false);
+      calls = apiScenario({ user: { id: USER.id, is_anonymous: true } });
+      res = mockRes();
+      await handler(post({ action: 'confirm_adult', confirmed: true, ruleVersion: '2026-11-27' }), res);
+      expect(res.statusCode).toBe(403);
+      expect(calls.some((c) => c.table === 'account_adult_confirmations')).toBe(false);
+    });
   });
 
   it('ungültige Eingabe verbraucht nichts', async () => {
