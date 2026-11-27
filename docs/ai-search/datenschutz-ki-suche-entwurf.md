@@ -409,9 +409,18 @@ bestätigen; eine Zustimmung des PO löst die Lücke nicht.
   - Gemildert wird das durch den Hinweis, die fehlende Kontozuordnung bei OpenAI und die
     kurze Speicherung bei KursNavi.
 
-## 7. Vorbereitete Veröffentlichung in allen vier Sprachen (nicht ausgeführt)
+## 7. Veröffentlichung in allen vier Sprachen (umgesetzt in PR #203, noch nicht gemergt)
 
-Die Veröffentlichung erfolgt vor Phase F, als eigener PR und mit eigener Freigabe. Sie betrifft
+**Umgesetzt am 27.11.2026 in PR #203:**
+- `legalText.js` DE/EN/FR/IT;
+- Hinweiszeile in `AiSearchView.jsx`, nur Deutsch, weil die KI-Suche nur auf Deutsch
+  verfügbar ist.
+
+Gegenüber der Vorbereitung unten ist die Ergänzung zu Abschnitt 7 in **allen** Sprachen als
+eigener Absatz am Ende eingefügt, auch auf Deutsch. Die Hinweiszeilen auf Französisch,
+Italienisch und Englisch werden derzeit nicht verwendet.
+
+Die Veröffentlichung erfolgt vor Phase F mit eigener Freigabe (Merge von PR #203). Sie betrifft
 die Datenschutzerklärung in `src/lib/legalText.js` (`de`, `en`, `fr`, `it`) und die
 Hinweiszeile in der KI-Suche.
 
@@ -530,9 +539,11 @@ altre persone. »
 juristische Fachprüfung. Vor der Veröffentlichung sollte eine sprachkundige Person sie
 gegenlesen.
 
-## 8. Anfrage an OpenAI zur Übermittlungsgrundlage (Entwurf, NICHT gesendet)
+## 8. Anfrage an OpenAI (versandfertig, NICHT gesendet)
 
-**Zweck:** Lücke aus 6.3 schliessen oder bestätigen.
+**Zweck:**
+- Lücke aus 6.3 schliessen oder bestätigen (Fragen 1–4).
+- Offene Minderjährigenfrage aus 6.2 klären (Frage 5).
 **Absender:** KursNavi als API-Kunde.
 **Kanal:** Datenschutzkontakt von OpenAI bzw. die Supportanfrage im Plattformkonto.
 **Freigabe:** Versand nur durch den PO oder nach dessen Freigabe. Organisation und
@@ -562,6 +573,13 @@ Projektkennung trägt der PO beim Versand selbst ein.
 >    non-HR data?
 > 4. If an executed version of the DPA (via "Execute Data Processing Agreement") includes a
 >    Swiss addendum, please let us know so that we can execute it.
+> 5. Use by minors (Services Agreement, section 3.3(c)): our course search feature is intended
+>    for adults. Parents may use it to search for courses for their children. Users must
+>    have an account, but we do not verify age, so a minor who holds an account could
+>    technically still use the feature. We state the adult orientation in our privacy
+>    policy. Is this orientation sufficient for compliance with section 3.3(c)? Or does
+>    OpenAI expect additional measures, such as an age confirmation, an age gate, or a
+>    parental-consent mechanism, before minors can technically access the feature?
 >
 > Thank you for your help.
 >
