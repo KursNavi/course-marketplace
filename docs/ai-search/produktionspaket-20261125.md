@@ -111,6 +111,39 @@ Jeder Schritt hat einen Prüfpunkt. Schlägt er fehl: **Stopp**, siehe Abschnitt
 | E1 | Repository-Variable `AI_OPS_PROD_SCHEDULE_ENABLED=true` setzen | PO | – |
 | E2 | Zwei aufeinanderfolgende geplante Läufe beobachten | PO / Claude | Beide grün; Bericht ohne kritischen Alarm |
 
+**Umstellung auf Vercel Cron (Nachtrag 27.11.2026, eigene Freigabe).** E1 ist gesetzt. Der
+GitHub-Zeitplan löste über Nacht aber nur sporadisch aus, ein 15-Minuten-Takt ist damit nicht
+belegt. Deshalb übernimmt der Endpunkt `api/cron-ai-ops.js` den automatischen Betrieb:
+
+- **Ablauf:** derselbe geprüfte Runner mit Laufsperre v2, Abbruchschutz und denselben Mengen- und
+  Kostengrenzen wie der GitHub-Zyklus; Laufzeit 210 s bei Funktionsgrenze 300 s; Zeitplan
+  `*/15 * * * *`.
+- **Schutz:** Aufruf nur mit `CRON_SECRET`. Er läuft nur bei `VERCEL_ENV=production`, gesetztem
+  `AI_OPS_CRON_ENABLED=nplxmpfasgpumpiddjfl` und Produktionsziel, sonst Antwort `skipped`.
+- **Abgrenzung:** Unabhängig von der öffentlichen Freischaltung (Phase F). Der alte Endpunkt
+  `cron-ai-search` bleibt gesperrt.
+- **Alarm:** Admin-Mail sofort bei einem neuen Fehlschlag. Bei fortbestehendem Fehler oder
+  kritischem Alarm (Rückstand > 24 h, Löschrückstand > 2 h, offene Problemläufe) höchstens
+  stündlich.
+
+Es darf nur **ein** automatischer Auslöser aktiv sein. Manuelle GitHub-Läufe bleiben möglich;
+die Laufsperre verhindert Überschneidungen.
+
+| Nr. | Schritt | Wer | Prüfpunkt / Stopp |
+|---|---|---|---|
+| E3 | PR mergen. Ohne Umschalter antwortet der Endpunkt nur `skipped` | PO | Produktions-Deployment READY, Website unverändert |
+| E4 | `AI_OPS_PROD_SCHEDULE_ENABLED=false` setzen (GitHub-Zeitplan aus) | PO | – |
+| E5 | Vercel, nur Production: `AI_OPS_CRON_ENABLED=nplxmpfasgpumpiddjfl` anlegen, dann das aktuelle Production-Deployment neu deployen (Variablen wirken erst danach) | PO | Deployment READY |
+| E6 | Zwei aufeinanderfolgende Cron-Läufe in den Vercel-Logs (`cron-ai-ops:`) und im Laufprotokoll beobachten | Claude (lesend) | `outcome: ok`, im Abstand von etwa 15 min; `status` ohne kritischen Alarm |
+
+**Rückweg der Umstellung:**
+1. `AI_OPS_CRON_ENABLED` in Vercel löschen und neu deployen. Der Endpunkt antwortet danach
+   `skipped`.
+2. Einen noch laufenden Lauf mit dem Workflow-Befehl `abbrechen-trocken`, dann `abbrechen` beenden.
+3. Falls gewünscht, `AI_OPS_PROD_SCHEDULE_ENABLED=true` setzen; dann übernimmt wieder GitHub.
+
+Die beiden bestehenden Vercel-Crons sind davon nicht berührt.
+
 ### Phase F – Freischaltung
 
 | Nr. | Schritt | Wer | Prüfpunkt / Stopp |
@@ -283,7 +316,7 @@ from ai_search_usage group by 1 order by 1 desc limit 7;
 | Rückweg | Wirkung | Vorgehen | Prüfung |
 |---|---|---|---|
 | **R0 Sofortabschaltung der Website-Funktion** | KI-Suche weg, klassische Suche unverändert | Vercel: **Instant Rollback** auf das Production-Deployment vor F3 (schnellster Weg). Alternativ `AI_SEARCH_PRODUCTION_ENABLED` und `VITE_AI_SEARCH_PRODUCTION` löschen und neu deployen. `AI_SEARCH_MODELS_ENABLED=0` allein reicht **nicht**, die Suche liefe dann mit Textpassung weiter. | `/api/ai-search` → 404 `not_available`; kein Einstieg |
-| **R1 Betrieb anhalten, auch laufende Läufe** | keine neuen und keine laufenden Index-, Einbettungs- oder Löschläufe | 1. `AI_OPS_PROD_SCHEDULE_ENABLED` auf `false` (keine neuen geplanten Läufe). 2. Wartende oder laufende Läufe des Workflows „KI-Suche Produktionsbetrieb“ in GitHub Actions abbrechen („Cancel workflow“). Der Runner erhält ein Abbruchsignal und endet vor dem nächsten Schritt; der Lauf wird als `aborted` protokolliert. 3. Workflow-Befehl `abbrechen-trocken`, dann `abbrechen`: fordert für noch offene Läufe den Abbruch in der Datenbank an, etwa nach einem hart beendeten Runner. Geschützte Schreibzugriffe schlagen ab sofort fehl. | `status`: „Aktiv: keiner“, kein abgelaufener offener Lauf; K2 ohne neue `done`. Ein bereits gestarteter Embedding-Aufruf kann noch Kosten verursachen (höchstens ein Paket à 100 Abschnitte, Bruchteile eines Cents). Spätestens nach Ablauf der Sperrfrist (≤ 300 s, höchstens 1800 s) ist kein Lauf mehr aktiv. |
+| **R1 Betrieb anhalten, auch laufende Läufe** | keine neuen und keine laufenden Index-, Einbettungs- oder Löschläufe | 1. `AI_OPS_PROD_SCHEDULE_ENABLED` auf `false` und, nach der Umstellung auf Vercel Cron, `AI_OPS_CRON_ENABLED` in Vercel löschen und neu deployen (keine neuen geplanten Läufe). 2. Wartende oder laufende Läufe des Workflows „KI-Suche Produktionsbetrieb“ in GitHub Actions abbrechen („Cancel workflow“). Der Runner erhält ein Abbruchsignal und endet vor dem nächsten Schritt; der Lauf wird als `aborted` protokolliert. 3. Workflow-Befehl `abbrechen-trocken`, dann `abbrechen`: fordert für noch offene Läufe den Abbruch in der Datenbank an, etwa nach einem hart beendeten Runner. Geschützte Schreibzugriffe schlagen ab sofort fehl. | `status`: „Aktiv: keiner“, kein abgelaufener offener Lauf; K2 ohne neue `done`. Ein bereits gestarteter Embedding-Aufruf kann noch Kosten verursachen (höchstens ein Paket à 100 Abschnitte, Bruchteile eines Cents). Spätestens nach Ablauf der Sperrfrist (≤ 300 s, höchstens 1800 s) ist kein Lauf mehr aktiv. |
 | **R1b Modellversion deaktivieren** | Bedeutungssuche aus, lexikalischer Abruf; Embeddings bleiben | Workflow `deaktivieren` | `status`: aktive Version „—“ |
 | **R2 Schemarückbau** (nur mit eigener Freigabe) | entfernt alle KI-Objekte; Kontingent- und Ergebnisdaten gehen verloren | Reihenfolge 7.4 | V0: 0/0/0, Historie ohne KI-Einträge, Kurszahlen unverändert |
 

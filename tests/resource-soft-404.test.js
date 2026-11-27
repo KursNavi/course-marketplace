@@ -105,7 +105,8 @@ describe('vercel.json — 404-Fallback der Ressourcenfamilien', () => {
       '/:path*',
       '/bereich/privat_hobby/:path*',
     ]);
-    expect(vercelConfig.crons).toEqual([
+    // Bestehende Crons unverändert; der KI-Betriebs-Cron (27.11.2026) kommt dahinter.
+    expect(vercelConfig.crons.slice(0, 2)).toEqual([
       { path: '/api/cron', schedule: '0 12 * * *' },
       { path: '/api/cron-lead-scoring', schedule: '0 2 1 * *' },
     ]);
