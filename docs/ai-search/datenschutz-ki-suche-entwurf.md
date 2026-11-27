@@ -1,8 +1,8 @@
 # Datenschutz KI-Suche – Datenfluss, Vertragslage und Entwurf der Ergänzung (25.11.2026)
 
-**Status: Entwurf.**
-- Der Text ist noch nicht in `src/lib/legalText.js` übernommen. Er wird zusammen mit der
-  Produktionsfreischaltung veröffentlicht.
+**Status: fertige Fassung zur Freigabe (nachgeführt 27.11.2026); nur Dokumentation.**
+- Der Text ist noch nicht in die veröffentlichte Datenschutzerklärung (`src/lib/legalText.js`,
+  DE/EN/FR/IT) übernommen. Das muss **vor** Phase F geschehen (Abschnitt 5).
 - Die Angaben unten geben wieder, was die gelesenen Quellen sagen. Rechtliche Sicherheit
   wird damit nicht behauptet.
 - Wo eine Quelle schweigt oder mehrdeutig ist, steht das ausdrücklich da (Abschnitt 4).
@@ -15,8 +15,8 @@
 | Kontingent und Bremse | Konto-Kennung, Monat, Anfragekennung, Prüfsumme aus Suchtext und Vorgaben (kein Suchtext), Zustand, Zeitpunkte | Supabase (`ai_search_usage`) | laufender und vorheriger Kalendermonat (entschieden 25.11.2026), danach Löschung im Betriebszyklus | `ops.js` `runCleanupStep` |
 | Bedeutungssuche | Suchtext → Vektor | OpenAI `/v1/embeddings` | bei OpenAI laut Anbieter Missbrauchsprotokoll bis 30 Tage | `openaiGateway.js` |
 | Fachliche Bewertung | Suchtext bzw. fachliches Anliegen, optionale Wünsche, **öffentliche** Kursdaten der Kandidaten | OpenAI `/v1/responses`, `store: false` | bei OpenAI laut Anbieter Missbrauchsprotokoll bis 30 Tage; kein gespeicherter Antwortzustand | `openaiGateway.js` |
-| **Nicht** an OpenAI | Konto-Kennung, Name, E-Mail, IP-Adresse der Nutzer; Paket- und Kontaktdaten der Anbieter | – | – | Datenvertrag §2 |
-| Ergebnis | Kursvorschläge mit Begründungen, Suchbegriffe und Wunschbezeichnungen (Teile des Suchtexts) | Supabase (`ai_search_results`) | 24 h abrufbar, danach Löschung im Betriebszyklus; bei Kontolöschung sofort (Kaskade). Beim Wiederabruf werden inzwischen zurückgezogene Kurse entfernt. | `20261121122101…sql`, `api/ai-search.js` |
+| **Nicht automatisch** an OpenAI | Konto-Kennung, Kontoname, Konto-E-Mail, IP-Adresse der Nutzer; Paket- und Kontaktdaten der Anbieter. **Aber:** Was Nutzer selbst in den Suchtext schreiben (z. B. Namen, Alter, Wohnort), geht mit dem Suchtext an OpenAI. | – | – | Datenvertrag §2 |
+| Ergebnis | Kursvorschläge mit Begründungen und `criteria` (Suchbegriffe, Wünsche, Formularvorgaben). Suchbegriffe und Wünsche sind Teile des Suchtexts. Der vollständige Suchtext wird nicht gespeichert. | Supabase (`ai_search_results`) | Abrufbar bis `expires_at` (24 h; `ai_search_result_fetch` prüft `expires_at > now()`). Danach gesperrt und im nächsten Bereinigungslauf gelöscht (Betriebs-Cron, Alarm bei Rückstand > 2 h). Bei Kontolöschung sofort (Kaskade). Beim Wiederabruf werden inzwischen zurückgezogene Kurse entfernt. | `20261121122101…sql`, `searchService.js` (`criteria`), `api/ai-search.js` |
 | Server-Logs | nur Zahlen und die OpenAI-Region, kein Suchtext | Vercel | gemäss Vercel | `api/ai-search.js` |
 | Browser | Suchtext-Entwurf, letztes Ergebnis | `sessionStorage`, beim Abmelden verworfen | Sitzung | `AiSearchView.jsx` |
 
@@ -126,6 +126,9 @@ Datenschutzerklärung):
 
 ## 4. Konkrete offene Fragen (Entscheid PO, bei Bedarf mit Rechtsberatung)
 
+> Stand 25.11.2026. Entscheide und Prüfergebnisse vom 27.11.2026 stehen in Abschnitt 6. Offen
+> ist danach nur noch die Schweizer Grundlage der US-Weitergabe (6.3).
+
 1. **Grundlage der Übermittlung Schweizer Daten in die USA** (mit dem globalen Projekt zentral):
    - Das DPA stützt Übermittlungen ausserhalb von EWR und Schweiz auf die EU-SCC bzw. auf
      EU-Angemessenheitsbeschlüsse. Das DSG und einen Schweizer Zusatz nennt es nicht.
@@ -161,17 +164,41 @@ Datenschutzerklärung):
 
 ## 5. Fertige Fassung zur Freigabe (27.11.2026, globales Projekt)
 
-Dieser Text wird erst mit der Freischaltung (Phase F) in `src/lib/legalText.js` übernommen und
-veröffentlicht. Die Freigabe des Texts ist eine Entscheidung des PO; sie löst die in
-Abschnitt 6 genannten rechtlichen Unsicherheiten nicht.
+**Produktentscheide des PO (27.11.2026)**, eingearbeitet:
+- Hinweiszeile in der KI-Suche, ohne zusätzlichen Bestätigungsdialog.
+- Vorgesehene Nutzer sind Erwachsene. Eltern dürfen damit Kurse für ihre Kinder suchen. Eine
+  technische Altersprüfung gibt es nicht und wird ohne gesonderte Begründung nicht eingeführt.
+- Kontoname, Konto-E-Mail und Kontokennung werden nicht automatisch übermittelt; was im
+  Suchtext steht, wird übermittelt.
+- Ergebnisabruf nach 24 Stunden gesperrt, Löschung im anschliessenden Bereinigungslauf.
+- Gespeicherte Suchtextbestandteile (Suchbegriffe, Wünsche) werden genannt.
+
+Diese Entscheide ersetzen keine rechtliche Klärung (Abschnitt 6).
+
+**Übernahme vor Phase F (Pflicht):**
+- Der Text muss in die veröffentlichte Datenschutzerklärung (`src/lib/legalText.js`) übernommen
+  werden, bevor Phase F beginnt.
+- Die veröffentlichte Erklärung gibt es auf Deutsch, Englisch, Französisch und Italienisch.
+  Unten stehen Deutsch und Englisch; Französisch und Italienisch müssen sinngleich ergänzt
+  werden.
+- Abschnitt 7 von Englisch, Französisch und Italienisch nennt den Swiss-U.S. Data Privacy
+  Framework heute nicht (anders als Deutsch). Die Ergänzung für die KI-Suche steht deshalb in
+  allen Sprachen als eigener Satz.
+
+Die Freigabe des Texts ist eine Entscheidung des PO; sie löst die in Abschnitt 6 genannten
+rechtlichen Unsicherheiten nicht.
 
 ### Deutsch
 
 **2. Bearbeitung von Personendaten** – neuer Punkt in der Liste:
 
 > • Angaben bei Nutzung der KI-Suche: Ihr frei eingegebener Suchtext und optionale
-> Suchvorgaben (Kanton, Online, Budget) sowie zur Kontingentverwaltung die Kennung Ihres
-> Kontos, der Monat, eine Prüfsumme der Suche und der Zeitpunkt (ohne Suchtext)
+> Suchvorgaben (Kanton, Online, Budget); das Suchergebnis (Kursvorschläge mit Begründungen
+> sowie aus Ihrem Suchtext abgeleitete Suchbegriffe und Wünsche); zur Kontingentverwaltung
+> die Kennung Ihres Kontos, der Monat, eine Prüfsumme der Suche und der Zeitpunkt (ohne
+> Suchtext). Die KI-Suche richtet sich an Erwachsene. Eltern und Erziehungsberechtigte können
+> damit auch Kurse für ihre Kinder suchen; Angaben wie das Alter des Kindes genügen, Namen
+> sind dafür nicht nötig.
 
 **3. Zwecke der Bearbeitung** – neuer Punkt:
 
@@ -181,43 +208,56 @@ Abschnitt 6 genannten rechtlichen Unsicherheiten nicht.
 
 **4. Technische Infrastruktur & Drittanbieter** – neuer Punkt:
 
-> • KI-Suche: OpenAI (Vertragspartner: OpenAI Ireland Ltd.; Datenbearbeitung auch in den
-> USA). Wenn Sie die KI-Suche nutzen, wird Ihr Suchtext zusammen mit öffentlichen
-> Kursangaben serverseitig an OpenAI übermittelt, um passende Kurse zu ermitteln und die
-> Vorschläge zu begründen. Ihr Name, Ihre E-Mail-Adresse und Ihre Kontokennung werden dabei
-> nicht übermittelt. Gemäss Anbieter werden die Daten nicht zum Training von Modellen
+> • KI-Suche: OpenAI (Vertragspartner: OpenAI Ireland Ltd., Irland; Datenbearbeitung auch
+> durch verbundene Unternehmen und Unterauftragsbearbeiter in den USA). Wenn Sie die
+> KI-Suche nutzen, übermitteln wir Ihren Suchtext bzw. daraus abgeleitete Suchanliegen und
+> Wünsche zusammen mit öffentlichen Kursangaben serverseitig an OpenAI, um passende Kurse zu
+> ermitteln und die Vorschläge zu begründen. Name, E-Mail-Adresse und Kennung Ihres Kontos
+> übermitteln wir dabei nicht automatisch. Angaben, die Sie selbst in den Suchtext schreiben
+> (zum Beispiel Namen, Alter, Wohnort oder Angaben zur Gesundheit), werden jedoch mit dem
+> Suchtext übermittelt. Gemäss Anbieter werden die Daten nicht zum Training von Modellen
 > verwendet; zur Erkennung von Missbrauch können sie beim Anbieter bis zu 30 Tage
-> gespeichert werden. Bitte geben Sie in der KI-Suche keine sensiblen Angaben über sich oder
-> Dritte ein.
+> gespeichert werden. Bitte geben Sie in der KI-Suche keine Namen und keine sensiblen
+> Angaben über sich oder andere ein.
 
 **7. Bekanntgabe ins Ausland** – im bestehenden Text nach dem Satz zur Gemini API:
 
-> Dies gilt auch für die KI-Suche über OpenAI; Vertragspartner ist OpenAI Ireland Ltd.
-> Übermittlungen in die USA erfolgen gemäss dem Auftragsbearbeitungsvertrag des Anbieters
-> auf Grundlage von Standardvertragsklauseln.
+> Für die KI-Suche ist OpenAI Ireland Ltd. (Irland) unser Vertragspartner; für Irland besteht
+> gemäss Bundesrat ein angemessenes Datenschutzniveau. Gibt OpenAI Ireland Ltd. Daten an
+> verbundene Unternehmen oder Unterauftragsbearbeiter ausserhalb des EWR und der Schweiz
+> weiter, insbesondere in die USA, geschieht dies gemäss dem Auftragsbearbeitungsvertrag des
+> Anbieters auf Grundlage der Standardvertragsklauseln der EU-Kommission.
 
 **8. Speicherdauer** – neuer Absatz:
 
-> Bei der KI-Suche speichern wir das Ergebnis einer Suche (Kursvorschläge mit Begründungen)
-> 24 Stunden, damit Sie es erneut abrufen können; danach wird es gelöscht. Angaben zur
-> Kontingentverwaltung (ohne Suchtext) speichern wir für den laufenden und den vorherigen
-> Kalendermonat. Wird Ihr Konto gelöscht, löschen wir gespeicherte Suchergebnisse sofort.
+> Bei der KI-Suche speichern wir das Ergebnis einer Suche, damit Sie es erneut abrufen
+> können. Es enthält die Kursvorschläge mit Begründungen sowie die aus Ihrem Suchtext
+> abgeleiteten Suchbegriffe und Wünsche, also Teile Ihres Suchtexts; den vollständigen
+> Suchtext speichern wir nicht. Nach 24 Stunden ist das Ergebnis nicht mehr abrufbar; es wird
+> anschliessend im nächsten regelmässigen Bereinigungslauf gelöscht, in der Regel innerhalb
+> weniger Stunden. Angaben zur Kontingentverwaltung (ohne Suchtext) speichern wir für den
+> laufenden und den vorherigen Kalendermonat. Wird Ihr Konto gelöscht, löschen wir
+> gespeicherte Suchergebnisse sofort.
 
 **Stand-Datum:** auf das Datum der Veröffentlichung setzen.
 
-**Hinweis in der KI-Suche** (eine Zeile unter dem Eingabefeld, mit Link auf
-`/datenschutz`):
+**Hinweis in der KI-Suche** (eine Zeile unter dem Eingabefeld, mit Link auf `/datenschutz`,
+ohne Bestätigungsdialog):
 
-> Dein Suchtext wird zur Auswertung an OpenAI (USA) übermittelt. Bitte keine sensiblen
-> Angaben über dich oder andere eingeben.
+> Dein Suchtext wird zur Auswertung an OpenAI (auch USA) übermittelt. Bitte keine Namen und
+> keine sensiblen Angaben über dich oder andere eingeben.
 
 ### English
 
 **2. Processing of Personal Data** – new item:
 
 > • Data when using the AI search: the search text you enter and optional search criteria
-> (canton, online, budget), and for quota management your account identifier, the month, a
-> checksum of the search and the time (without the search text)
+> (canton, online, budget); the search result (course suggestions with explanations and the
+> search terms and preferences derived from your search text); and for quota management your
+> account identifier, the month, a checksum of the search and the time (without the search
+> text). The AI search is intended for adults. Parents and guardians may also use it to find
+> courses for their children; details such as the child's age are sufficient, names are not
+> needed.
 
 **3. Purposes of Processing** – new item:
 
@@ -227,51 +267,137 @@ Abschnitt 6 genannten rechtlichen Unsicherheiten nicht.
 
 **4. Technical Infrastructure & Third Parties** – new item:
 
-> • AI search: OpenAI (contracting party: OpenAI Ireland Ltd.; processing also in the USA).
-> When you use the AI search, your search text is transmitted server-side to OpenAI together
-> with public course information in order to find suitable courses and explain the
-> suggestions. Your name, email address and account identifier are not transmitted.
+> • AI search: OpenAI (contracting party: OpenAI Ireland Ltd., Ireland; processing also by
+> affiliates and sub-processors in the USA). When you use the AI search, we transmit your
+> search text or the search request and preferences derived from it server-side to OpenAI,
+> together with public course information, in order to find suitable courses and explain the
+> suggestions. We do not automatically transmit your account name, email address or account
+> identifier. However, any information you write into the search text yourself (for example
+> names, age, place of residence or health information) is transmitted with the search text.
 > According to the provider, the data is not used to train models; it may be stored by the
-> provider for up to 30 days to detect abuse. Please do not enter sensitive information
-> about yourself or others in the AI search.
+> provider for up to 30 days to detect abuse. Please do not enter names or sensitive
+> information about yourself or others in the AI search.
 
 **7. International Transfer** – addition:
 
-> This also applies to the AI search via OpenAI; the contracting party is OpenAI Ireland Ltd.
-> Transfers to the USA take place on the basis of standard contractual clauses in accordance
-> with the provider's data processing agreement.
+> For the AI search, our contracting party is OpenAI Ireland Ltd. (Ireland); according to the
+> Swiss Federal Council, Ireland provides an adequate level of data protection. Where OpenAI
+> Ireland Ltd. passes data on to affiliates or sub-processors outside the EEA and
+> Switzerland, in particular in the USA, this takes place on the basis of the European
+> Commission's standard contractual clauses in accordance with the provider's data
+> processing agreement.
 
 **8. Storage Duration** – new paragraph:
 
-> For the AI search, we store the result of a search (course suggestions with explanations)
-> for 24 hours so that you can retrieve it again; it is then deleted. Quota management data
-> (without the search text) is stored for the current and the previous calendar month. If
-> your account is deleted, stored search results are deleted immediately.
+> For the AI search, we store the result of a search so that you can retrieve it again. It
+> contains the course suggestions with explanations and the search terms and preferences
+> derived from your search text, i.e. parts of your search text; we do not store the full
+> search text. After 24 hours the result can no longer be retrieved; it is then deleted in
+> the next regular clean-up run, usually within a few hours. Quota management data (without
+> the search text) is stored for the current and the previous calendar month. If your
+> account is deleted, stored search results are deleted immediately.
 
-## 6. Noch notwendige Entscheidungen und verbleibende Unsicherheiten
+**Notice in the AI search** (one line below the input field, linking to the privacy policy,
+no confirmation dialog):
 
-**Notwendige Entscheidungen vor der Veröffentlichung (PO):**
+> Your search text is sent to OpenAI (including the USA) for analysis. Please do not enter
+> names or sensitive information about yourself or others.
 
-1. **Text freigeben**, Abschnitt 5, mit oder ohne Änderungen.
-2. **Hinweis in der KI-Suche:** eine nicht blockierende Hinweiszeile (Empfehlung) oder eine
-   Bestätigung vor der ersten Nutzung. Die Bestätigung wäre eine neue Funktion und gehört
-   nicht zum Startumfang.
-3. **Nutzung durch Minderjährige:** Das Services Agreement (3.3 c) verlangt für die Nutzung
-   durch Minderjährige die Einwilligung der Eltern. Die KI-Suche verlangt ein Konto, prüft
-   aber kein Alter.
-   - Option A: in Datenschutzerklärung bzw. AGB festhalten, dass die KI-Suche für
-     volljährige Personen bestimmt ist, ohne technische Prüfung.
-   - Option B: Start erst nach einer technischen Altersregel. Das wäre eine neue Funktion.
+## 6. Entscheide, Prüfung der Vertragsstellen und verbleibende Unsicherheiten
 
-**Verbleibende rechtliche Unsicherheiten** (eine Zustimmung des PO löst sie nicht; sie
-werden bewusst getragen oder vorher geklärt):
+### 6.1 Entscheide des PO (27.11.2026), erledigt
 
-- **Übermittlungsgrundlage für Schweizer Daten:** Das DPA nennt EU-Standardvertragsklauseln
-  bzw. EU-Angemessenheitsbeschlüsse, aber weder das Schweizer Datenschutzgesetz noch einen
-  Schweizer Zusatz. Ob das für Art. 16 DSG genügt, ist nicht geklärt. Eine Zertifizierung von
-  OpenAI unter dem Swiss-U.S. Data Privacy Framework war nicht belegbar.
-- **Gerichtsstand und Schiedsklausel:** Irisches Recht und Dublin (nicht wörtlich geprüft)
-  neben einer Schiedsklausel mit Sitz San Francisco. Das Zusammenspiel ist unklar.
-- **Meldefrist bei Verletzungen:** „without undue delay“ ohne feste Frist.
-- **Freitexte mit Angaben über Dritte:** Ein Hinweis verhindert nicht, dass Nutzer
-  sensible Angaben eingeben; eine Filterung gibt es nicht.
+1. Hinweiszeile ohne Bestätigungsdialog (eingearbeitet).
+2. Erwachsene als vorgesehene Nutzer; Eltern dürfen Kurse für ihre Kinder suchen; keine
+   technische Altersprüfung ohne gesonderte Begründung (eingearbeitet).
+3. Offen bleibt nur die **Freigabe des Wortlauts** in Abschnitt 5 und dessen Übernahme in die
+   veröffentlichte Erklärung (alle vier Sprachen) vor Phase F.
+
+### 6.2 Geprüfte Vertragsstellen (gelesen am 27.11.2026)
+
+Gelesen wurden das DPA und das Services Agreement, beide „Updated: December 1, 2025“,
+„Effective: January 1, 2026“. Die Zitate unten sind wörtlich.
+
+| Punkt | Wortlaut | Folgerung |
+|---|---|---|
+| Vertragspartner | DPA-Präambel: „unless Customer is based within a European Economic Area country or Switzerland“ … „in which case it is entered into with OpenAI Ireland Ltd.“ | KursNavi (Schweiz) hat OpenAI Ireland Ltd. als Vertragspartner. |
+| Übermittlung EWR/Schweiz | DPA 4.1: „Customer hereby instructs OpenAI Ireland Limited to process any EEA and Swiss Data in compliance with this DPA.“ Weitergabe ausserhalb von EWR/Schweiz: „on the basis of agreements containing SCCs that ensure appropriate safeguards“ bzw. „an adequacy decision issued by the European Commission under Article 45 GDPR.“ | Die Kette: KursNavi → OpenAI Ireland Ltd. → verbundene Unternehmen oder Unterauftragsbearbeiter in den USA. |
+| Definition SCC | „adopted by the EU Commission on June 4, 2021 (as may be amended, updated or replaced from time to time)“ | Es sind die EU-SCC 2021. |
+| Schweizer Anpassungen | DSG/FADP, EDÖB/FDPIC und ein Swiss Addendum: **nicht vorhanden**. Für das Vereinigte Königreich gibt es ein eigenes Addendum (DPA 4.2, Schedule 1 Ziff. 8). Welches SCC-Modul für EWR/Schweiz gilt, ist **nicht angegeben**. | Siehe 6.3. |
+| Data Privacy Framework | Im DPA **nicht erwähnt**. Auch die EU-Datenschutzerklärung von OpenAI (Stand 24.08.2026) nennt es nicht; sie stützt sich auf Angemessenheitsbeschlüsse und SCC. | Eine Zertifizierung unter dem Swiss-U.S. DPF ist nicht belegt; das ist kein Beleg für das Gegenteil. Die offizielle Liste ist nur im Browser lesbar. |
+| Meldung von Verletzungen | DPA 2.7: „OpenAI will notify Customer without undue delay after becoming aware of any Personal Data Breach.“ | Ohne Stundenfrist. Für die eigene Meldepflicht nach Art. 24 DSG („so rasch als möglich“) genügt das. Das DSG kennt selbst keine feste Frist. **Erledigt.** |
+| Recht und Streitbeilegung | Definition „Governing Laws“: „(a) for Customers in the EEA, Switzerland, or UK, the Laws of Ireland“. Ziff. 16.3: Klagen im „Venue“, aber „Without prejudice to Section 15“. Ziff. 15: Schiedsverfahren (NAM), Sitz „San Francisco, California“; eine Ausnahme für EWR/Schweiz ist in 15.1–15.8 nicht vorhanden. | Irisches Recht. Streitigkeiten gehen vorrangig ins Schiedsverfahren in San Francisco; das Gericht am Venue nur für die Ausnahmen in 15.5. Der Wortlaut der Venue-Definition wurde nicht wörtlich gelesen. Das ist ein **Geschäftsrisiko** (Kosten und Ort eines Streits), kein Mangel der Übermittlungsgrundlage. **Geklärt.** |
+| Minderjährige | Services Agreement 3.3 c: Der Kunde darf nicht „allow minors to use OpenAI Services without consent from their parent or guardian“. | Mit dem Entscheid „Erwachsene, Eltern suchen für Kinder“ nutzen Minderjährige die Dienste nicht selbst. Die AGB verlangen schon heute Volljährigkeit für Buchungen (Ziff. 3.5). **Geklärt**, sofern der Text in Abschnitt 5 veröffentlicht wird. |
+| Separater DPA-Abschluss | Services Agreement 5.3: DPA „incorporated by this reference“. | Kein separater Abschluss nötig. **Geklärt.** |
+
+### 6.3 Schweizer Übermittlungsgrundlage (der verbleibende Kernpunkt)
+
+**Erste Stufe, Schweiz → Irland: tragfähig.**
+- Die Empfängerin ist OpenAI Ireland Ltd.
+- Irland steht als EU-Staat auf der Liste des Bundesrats mit angemessenem Datenschutzniveau
+  (DSV Anhang 1).
+- Damit ist die Bekanntgabe nach Art. 16 Abs. 1 DSG ohne zusätzliche Garantien zulässig.
+- Mit Art. 9 DSG (Auftragsbearbeitung) ist die Ernennung durch das DPA abgedeckt:
+  - Bearbeitung nur auf Weisung (DPA 1.1, 1.2);
+  - Datensicherheit;
+  - Unterauftragsbearbeiter mit allgemeiner Genehmigung und Widerspruchsrecht (DPA 2.9).
+
+**Zweite Stufe, Irland → USA: offen.** Schweizer Daten gelangen durch Weitergabe von OpenAI
+Ireland Ltd. in die USA. Als Verantwortliche bleibt KursNavi dafür verantwortlich, dass auch
+diese Weitergabe Art. 16 DSG entspricht. Laut DPA 4.1 stützt OpenAI sie auf eine von zwei
+Grundlagen:
+1. **EU-SCC 2021.**
+   - Der EDÖB anerkennt sie seit dem 27.08.2021 als Garantie nach Art. 16 Abs. 2 lit. d DSG,
+     aber nur mit Anpassungen an das Schweizer Recht:
+     - das DSG als massgebliches Recht für Schweizer Daten;
+     - der EDÖB als Aufsichtsbehörde;
+     - Klagemöglichkeit betroffener Personen am gewöhnlichen Aufenthaltsort in der Schweiz.
+   - Das DPA enthält diese Anpassungen **nicht** und nennt das Modul nicht.
+   - Damit ist der Schweizer Bezug der SCC **nicht belegt**. Vertraglich ist das die
+     konkrete Lücke.
+2. **„Adequacy decision … under Article 45 GDPR“.**
+   - Das ist der EU-Beschluss zum EU-U.S. DPF. Er gilt für EU-Daten.
+   - Für Schweizer Daten ist massgeblich, ob der US-Empfänger unter dem **Swiss-U.S. DPF**
+     zertifiziert ist. Seit dem 15.09.2024 sind die USA für so zertifizierte Unternehmen in
+     DSV Anhang 1 aufgeführt.
+   - Diese Angabe stammt aus eigener Kenntnis; der Fedlex-Text war maschinell nicht lesbar.
+     Vor der Veröffentlichung im Browser bestätigen.
+   - Eine solche Zertifizierung von OpenAI ist nicht belegt.
+
+**Notwendige Schutzmassnahmen**, ohne neue Funktionen:
+1. **Schriftliche Bestätigung von OpenAI einholen**, z. B. über die Funktion „Execute Data
+   Processing Agreement“ oder den Datenschutzkontakt. Gefragt wird:
+   - ob die SCC für Schweizer Daten mit den vom EDÖB verlangten Anpassungen gelten (Swiss
+     Addendum);
+   - welches Modul gilt;
+   - ob die US-Empfänger unter dem Swiss-U.S. DPF zertifiziert sind.
+
+   Das ist eine ausgehende Anfrage und braucht die Freigabe des PO.
+2. **DPF-Liste im Browser prüfen**, für „OpenAI OpCo, LLC“: Teilnahme am Swiss-U.S. DPF und
+   abgedeckte Datenarten (nicht HR).
+3. **Text vorsichtig halten**, wie in Abschnitt 5 umgesetzt:
+   - Er nennt den irischen Vertragspartner, die Weitergabe in die USA und die EU-SCC laut DPA.
+   - Er behauptet weder Schweizer Anpassungen noch eine DPF-Zertifizierung.
+   - Er nennt den Staat und die Garantie, wie Art. 19 Abs. 4 DSG verlangt.
+4. **Bestehende Begrenzung beibehalten:**
+   - keine Konto-Kennungen an OpenAI;
+   - Hinweis gegen Namen und sensible Angaben;
+   - `store: false`;
+   - Ergebnis nur 24 h abrufbar.
+
+   Zero Data Retention bei OpenAI würde die 30-Tage-Protokolle entfallen lassen, braucht aber
+   eine Genehmigung des Anbieters. Das ist eine Option, kein Startbedarf.
+
+**Bewertung:** Mit Massnahmen 1 und 2 lässt sich die Lücke schliessen oder bestätigen. Ohne
+sie trägt KursNavi das Restrisiko, dass die US-Weitergabe aus Schweizer Sicht nicht
+ausreichend vertraglich abgesichert ist. Diese Abwägung kann eine rechtliche Beratung
+bestätigen; eine Zustimmung des PO löst die Lücke nicht.
+
+### 6.4 Verbleibende, nicht durch Vertragsstellen auflösbare Punkte
+
+- **Freitexte mit Angaben über Dritte:**
+  - Ein Hinweis verhindert nicht, dass jemand Namen oder sensible Angaben eingibt; eine
+    Filterung gibt es nicht.
+  - Das DPA sieht dafür nur „unexpectedly in unstructured data“ vor.
+  - Gemildert wird das durch den Hinweis, die fehlende Kontozuordnung bei OpenAI und die
+    kurze Speicherung bei KursNavi.
